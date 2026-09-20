@@ -19,26 +19,37 @@ export type GuideGroup = {
 export const SENKI_RARITIES: SenkiRarity[] = ["N", "R", "SR"];
 export const SENKI_CATS = ["宝物", "鎧兜", "武器", "軍配", "馬", "書物", "宝石"] as const;
 
-const RYUHA_INK: Record<string, { omote: string; ura: string; head: string }> = {
-  部隊: { omote: "#d7eadc", ura: "#173224", head: "#3d8a5a" },
-  士気: { omote: "#efe3b4", ura: "#3a2e0c", head: "#c4a000" },
-  城塞: { omote: "#d8dee8", ura: "#1b2430", head: "#7d8aa0" },
-  兵種: { omote: "#edd4d4", ura: "#3a1518", head: "#c45a5e" },
-  琥煌: { omote: "#f0d8b4", ura: "#3a220c", head: "#c45a00" },
+const RYUHA_INK: Record<string, { omote: string; fg: string }> = {
+  部隊: { omote: "#5c2d82", fg: "#f3efe6" },
+  士気: { omote: "#c9a227", fg: "#1a1612" },
+  城塞: { omote: "#1a7a45", fg: "#f3efe6" },
+  兵種: { omote: "#b41e22", fg: "#f3efe6" },
+  琥煌: { omote: "#c45a00", fg: "#f3efe6" },
 };
+
+function invertHex(hex: string): string {
+  const n = parseInt(hex.slice(1), 16);
+  const r = 255 - ((n >> 16) & 255);
+  const g = 255 - ((n >> 8) & 255);
+  const b = 255 - (n & 255);
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
+}
 
 export function ryuhaTheme(title: string) {
   const ura = title.includes("裏");
   const kind = title.split("・")[0] ?? "";
   const pal = RYUHA_INK[kind];
   if (!pal) return null;
+  const bg = ura ? invertHex(pal.omote) : pal.omote;
+  const fg = ura ? invertHex(pal.fg) : pal.fg;
+  const lightText = parseInt(fg.slice(1, 3), 16) > 140;
   return {
     ura,
-    head: pal.head,
-    cardBg: ura ? pal.ura : pal.omote,
-    cardFg: ura ? "#f3efe6" : "#1a1612",
-    muted: ura ? "rgb(243 239 230 / 0.72)" : "rgb(26 22 18 / 0.62)",
-    factBg: ura ? "rgb(0 0 0 / 0.28)" : "rgb(255 255 255 / 0.45)",
+    head: bg,
+    cardBg: bg,
+    cardFg: fg,
+    muted: lightText ? "rgb(243 239 230 / 0.78)" : "rgb(26 22 18 / 0.62)",
+    factBg: lightText ? "rgb(0 0 0 / 0.22)" : "rgb(255 255 255 / 0.38)",
   };
 }
 
