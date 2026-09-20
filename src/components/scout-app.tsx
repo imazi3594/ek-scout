@@ -32,6 +32,7 @@ import { GuidePage } from "@/components/guide-page";
 import { SkillList } from "@/components/skill-chip";
 import { cn } from "@/lib/utils";
 import { initInstallCapture } from "@/lib/install";
+import type { GuideTopic } from "@/data/guide";
 
 initInstallCapture();
 
@@ -41,17 +42,25 @@ type Hist =
   | { v: "home" }
   | { v: "card"; id: string }
   | { v: "skills" }
+  | { v: "guide"; topic: GuideTopic }
   | { v: "recents" }
   | { v: "about" }
   | { v: "filters" };
 
-function histOf(tab: Tab, selectedId: string | null, filtersOpen: boolean): Hist {
+function histOf(tab: Tab, selectedId: string | null, filtersOpen: boolean, guideTopic: GuideTopic | null): Hist {
   if (tab === "about") return { v: "about" };
-  if (tab === "skills") return { v: "skills" };
+  if (tab === "skills") return guideTopic ? { v: "guide", topic: guideTopic } : { v: "skills" };
   if (tab === "recents") return { v: "recents" };
   if (selectedId) return { v: "card", id: selectedId };
   if (filtersOpen) return { v: "filters" };
   return { v: "home" };
+}
+
+function sameHist(a: Hist, b: Hist): boolean {
+  if (a.v !== b.v) return false;
+  if (a.v === "card" && b.v === "card") return a.id === b.id;
+  if (a.v === "guide" && b.v === "guide") return a.topic === b.topic;
+  return true;
 }
 
 export function ScoutApp() {
@@ -65,6 +74,7 @@ export function ScoutApp() {
   const [costs, setCosts] = useState<number[]>([]);
   const [moreFilters, setMoreFilters] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(true);
+  const [guideTopic, setGuideTopic] = useState<GuideTopic | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const query = useScout((s) => s.query);
@@ -80,7 +90,7 @@ export function ScoutApp() {
   function pushView(next: Hist) {
     if (fromPop.current) return;
     const cur = (history.state ?? { v: "home" }) as Hist;
-    if (cur.v === next.v && (next.v !== "card" || (cur.v === "card" && cur.id === next.id))) return;
+    if (sameHist(cur, next)) return;
     history.pushState(next, "");
   }
 
@@ -88,22 +98,33 @@ export function ScoutApp() {
     const s = state ?? { v: "home" as const };
     if (s.v === "about") {
       setTab("about");
+      setGuideTopic(null);
       select(null);
       setFiltersOpen(false);
       return;
     }
     if (s.v === "skills") {
       setTab("skills");
+      setGuideTopic(null);
+      select(null);
+      setFiltersOpen(false);
+      return;
+    }
+    if (s.v === "guide") {
+      setTab("skills");
+      setGuideTopic(s.topic);
       select(null);
       setFiltersOpen(false);
       return;
     }
     if (s.v === "recents") {
       setTab("recents");
+      setGuideTopic(null);
       select(null);
       return;
     }
     setTab("search");
+    setGuideTopic(null);
     if (s.v === "card") {
       select(s.id);
       return;
@@ -117,6 +138,12 @@ export function ScoutApp() {
 
   function goTab(next: Tab) {
     if (next === tab) {
+      if (next === "skills" && guideTopic) {
+        const cur = history.state as Hist | null;
+        if (cur?.v === "guide") history.back();
+        else setGuideTopic(null);
+        return;
+      }
       if ((next === "search" || next === "recents") && selectedId) {
         const cur = history.state as Hist | null;
         if (cur?.v === "card") history.back();
@@ -128,7 +155,22 @@ export function ScoutApp() {
       return;
     }
     setTab(next);
-    pushView(histOf(next, selectedId, false));
+    if (next !== "skills") setGuideTopic(null);
+    pushView(histOf(next, selectedId, false, next === "skills" ? guideTopic : null));
+  }
+
+  function setGuideView(next: GuideTopic | null) {
+    if (next) {
+      setGuideTopic(next);
+      pushView({ v: "guide", topic: next });
+      return;
+    }
+    const cur = history.state as Hist | null;
+    if (cur?.v === "guide") history.back();
+    else {
+      setGuideTopic(null);
+      pushView({ v: "skills" });
+    }
   }
 
   useEffect(() => {
@@ -244,7 +286,7 @@ export function ScoutApp() {
           {tab === "about" ? (
             <AboutPage />
           ) : tab === "skills" ? (
-            <GuidePage />
+            <GuidePage topic={guideTopic} onTopic={setGuideView} />
           ) : tab === "recents" ? (
             <>
               <p className="shrink-0 px-4 pt-3 pb-1 text-xs tabular-nums text-faint sm:px-6">

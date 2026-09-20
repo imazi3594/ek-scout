@@ -23,9 +23,7 @@ const TOPICS: { id: GuideTopic; title: string; blurb: string }[] = [
   { id: "ryuha", title: "流派", blurb: "壱・弐・参の型。表為永久，裏多為時限。" },
 ];
 
-export function GuidePage() {
-  const [topic, setTopic] = useState<GuideTopic | null>(null);
-
+export function GuidePage({ topic, onTopic }: { topic: GuideTopic | null; onTopic: (topic: GuideTopic | null) => void }) {
   if (!topic) {
     return (
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">
@@ -35,7 +33,7 @@ export function GuidePage() {
             <button
               key={item.id}
               type="button"
-              onClick={() => setTopic(item.id)}
+              onClick={() => onTopic(item.id)}
               className="rounded-lg bg-surface-2 px-4 py-3 text-left hover:bg-surface-3"
             >
               <p className="font-display text-lg text-fg">{item.title}</p>
@@ -51,7 +49,7 @@ export function GuidePage() {
     <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">
       <button
         type="button"
-        onClick={() => setTopic(null)}
+        onClick={() => onTopic(null)}
         className="mb-4 inline-flex h-8 items-center gap-1 rounded-md bg-surface-2 px-2.5 text-xs text-fg"
       >
         <ChevronLeft className="size-3.5" />
