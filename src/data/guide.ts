@@ -19,15 +19,12 @@ export type GuideGroup = {
 export const SENKI_RARITIES: SenkiRarity[] = ["N", "R", "SR"];
 export const SENKI_CATS = ["宝物", "鎧兜", "武器", "軍配", "馬", "書物", "宝石"] as const;
 
-const PAPER = "#f3efe6";
-const INK = "#1a1612";
-
-const RYUHA_INK: Record<string, { accent: string; onAccent: string }> = {
-  部隊: { accent: "#5c2d82", onAccent: PAPER },
-  士気: { accent: "#c9a227", onAccent: INK },
-  城塞: { accent: "#1a7a45", onAccent: PAPER },
-  兵種: { accent: "#b41e22", onAccent: PAPER },
-  琥煌: { accent: "#c45a00", onAccent: PAPER },
+const RYUHA_INK: Record<string, { deep: string; pale: string }> = {
+  部隊: { deep: "#3d2a52", pale: "#5a4270" },
+  士気: { deep: "#6a5a1c", pale: "#8a7630" },
+  城塞: { deep: "#1e3d2e", pale: "#335c45" },
+  兵種: { deep: "#4a2428", pale: "#6a3a3e" },
+  琥煌: { deep: "#4a2e14", pale: "#6e4624" },
 };
 
 export function ryuhaTheme(title: string) {
@@ -35,27 +32,17 @@ export function ryuhaTheme(title: string) {
   const kind = title.split("・")[0] ?? "";
   const pal = RYUHA_INK[kind];
   if (!pal) return null;
-  if (!ura) {
-    return {
-      ura,
-      head: pal.accent,
-      cardBg: pal.accent,
-      cardFg: pal.onAccent,
-      factBg: PAPER,
-      factFg: INK,
-      muted: pal.onAccent,
-      factMuted: "rgb(26 22 18 / 0.58)",
-    };
-  }
+  const outer = ura ? pal.pale : pal.deep;
+  const inner = ura ? pal.deep : pal.pale;
   return {
     ura,
-    head: pal.accent,
-    cardBg: PAPER,
-    cardFg: INK,
-    factBg: pal.accent,
-    factFg: pal.onAccent,
-    muted: "rgb(26 22 18 / 0.62)",
-    factMuted: pal.onAccent,
+    head: pal.pale,
+    cardBg: outer,
+    cardFg: "#e6e0d4",
+    factBg: inner,
+    factFg: "#e6e0d4",
+    muted: "rgb(230 224 212 / 0.7)",
+    factMuted: "rgb(230 224 212 / 0.62)",
   };
 }
 
