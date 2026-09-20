@@ -333,15 +333,6 @@ export function ScoutApp() {
                 <p className="min-w-0 flex-1 truncate text-xs tabular-nums text-faint">{resultLabel}</p>
                 <button
                   type="button"
-                  className="flex h-8 shrink-0 items-center gap-1 rounded-md bg-surface-2 px-2.5 text-xs text-fg"
-                  onClick={openRandom}
-                  aria-label="隨機一張卡"
-                >
-                  <Dices className="size-3.5" />
-                  隨機
-                </button>
-                <button
-                  type="button"
                   className="flex h-8 shrink-0 items-center rounded-md bg-faction-hi px-2.5 text-xs font-medium text-white"
                   onClick={clearAll}
                 >
@@ -466,9 +457,20 @@ export function ScoutApp() {
 
             <div className="relative min-h-0 flex-1">
               {!query.trim() && !layerActive ? (
-                <p className="px-6 pt-10 text-center text-sm leading-relaxed text-pretty text-muted">
-                  可使用篩選，或輸入名稱、卡號或計略名的其中一字即可極速搜查。
-                </p>
+                <div className="px-6 pt-10 text-center">
+                  <p className="text-sm leading-relaxed text-pretty text-muted">
+                    可使用篩選，或輸入名稱、卡號或計略名的其中一字即可極速搜查。
+                  </p>
+                  <button
+                    type="button"
+                    className="mt-5 inline-flex h-10 items-center gap-1.5 rounded-md bg-surface-2 px-4 text-sm text-fg"
+                    onClick={openRandom}
+                    aria-label="隨機一張卡"
+                  >
+                    <Dices className="size-4" />
+                    隨機一張
+                  </button>
+                </div>
               ) : (
                 <ul className="h-full overflow-y-auto overscroll-contain px-2 py-2 sm:px-4">
                   {!hits.length ? (
