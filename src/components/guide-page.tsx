@@ -189,12 +189,12 @@ function GuideSection({ group, showRarity, themed }: { group: GuideGroup; showRa
                     )}
                     style={tone ? { backgroundColor: tone.factBg } : undefined}
                   >
-                    <dt className={cn("shrink-0 text-xs", !tone && "text-faint")} style={tone ? { color: tone.muted } : undefined}>
+                    <dt className={cn("shrink-0 text-xs", !tone && "text-faint")} style={tone ? { color: tone.factMuted } : undefined}>
                       {row.label}
                     </dt>
                     <dd
                       className={cn("text-right text-xs leading-relaxed text-pretty", !tone && "text-muted")}
-                      style={tone ? { color: tone.cardFg } : undefined}
+                      style={tone ? { color: tone.factFg } : undefined}
                     >
                       {row.value}
                     </dd>

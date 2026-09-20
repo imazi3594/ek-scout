@@ -19,37 +19,43 @@ export type GuideGroup = {
 export const SENKI_RARITIES: SenkiRarity[] = ["N", "R", "SR"];
 export const SENKI_CATS = ["宝物", "鎧兜", "武器", "軍配", "馬", "書物", "宝石"] as const;
 
-const RYUHA_INK: Record<string, { omote: string; fg: string }> = {
-  部隊: { omote: "#5c2d82", fg: "#f3efe6" },
-  士気: { omote: "#c9a227", fg: "#1a1612" },
-  城塞: { omote: "#1a7a45", fg: "#f3efe6" },
-  兵種: { omote: "#b41e22", fg: "#f3efe6" },
-  琥煌: { omote: "#c45a00", fg: "#f3efe6" },
-};
+const PAPER = "#f3efe6";
+const INK = "#1a1612";
 
-function invertHex(hex: string): string {
-  const n = parseInt(hex.slice(1), 16);
-  const r = 255 - ((n >> 16) & 255);
-  const g = 255 - ((n >> 8) & 255);
-  const b = 255 - (n & 255);
-  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
-}
+const RYUHA_INK: Record<string, { accent: string; onAccent: string }> = {
+  部隊: { accent: "#5c2d82", onAccent: PAPER },
+  士気: { accent: "#c9a227", onAccent: INK },
+  城塞: { accent: "#1a7a45", onAccent: PAPER },
+  兵種: { accent: "#b41e22", onAccent: PAPER },
+  琥煌: { accent: "#c45a00", onAccent: PAPER },
+};
 
 export function ryuhaTheme(title: string) {
   const ura = title.includes("裏");
   const kind = title.split("・")[0] ?? "";
   const pal = RYUHA_INK[kind];
   if (!pal) return null;
-  const bg = ura ? invertHex(pal.omote) : pal.omote;
-  const fg = ura ? invertHex(pal.fg) : pal.fg;
-  const lightText = parseInt(fg.slice(1, 3), 16) > 140;
+  if (!ura) {
+    return {
+      ura,
+      head: pal.accent,
+      cardBg: pal.accent,
+      cardFg: pal.onAccent,
+      factBg: PAPER,
+      factFg: INK,
+      muted: pal.onAccent,
+      factMuted: "rgb(26 22 18 / 0.58)",
+    };
+  }
   return {
     ura,
-    head: bg,
-    cardBg: bg,
-    cardFg: fg,
-    muted: lightText ? "rgb(243 239 230 / 0.78)" : "rgb(26 22 18 / 0.62)",
-    factBg: lightText ? "rgb(0 0 0 / 0.22)" : "rgb(255 255 255 / 0.38)",
+    head: pal.accent,
+    cardBg: PAPER,
+    cardFg: INK,
+    factBg: pal.accent,
+    factFg: pal.onAccent,
+    muted: "rgb(26 22 18 / 0.62)",
+    factMuted: pal.onAccent,
   };
 }
 
