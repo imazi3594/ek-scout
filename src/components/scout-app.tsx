@@ -28,7 +28,8 @@ import { CardThemeBackdrop, HomeWash } from "@/components/card-theme";
 import { CostPips, RarityMark } from "@/components/card-identity";
 import { UnitIcon } from "@/components/unit-icon";
 import { AboutPage } from "@/components/about-page";
-import { SkillExplain, SkillList } from "@/components/skill-chip";
+import { GuidePage } from "@/components/guide-page";
+import { SkillList } from "@/components/skill-chip";
 import { cn } from "@/lib/utils";
 import { initInstallCapture } from "@/lib/install";
 
@@ -224,7 +225,7 @@ export function ScoutApp() {
         </div>
         <nav className="mx-auto flex max-w-6xl gap-0 px-2 sm:gap-1 sm:px-6">
           <TabBtn id="search" tab={tab} setTab={goTab} icon={<Search className="size-4" />} label="速查" />
-          <TabBtn id="skills" tab={tab} setTab={goTab} icon={<BookOpen className="size-4" />} label="特技" />
+          <TabBtn id="skills" tab={tab} setTab={goTab} icon={<BookOpen className="size-4" />} label="資料" />
           <TabBtn id="recents" tab={tab} setTab={goTab} icon={<Clock className="size-4" />} label="最近" />
           <TabBtn id="about" tab={tab} setTab={goTab} icon={<Info className="size-4" />} label="關於" />
         </nav>
@@ -235,17 +236,7 @@ export function ScoutApp() {
           {tab === "about" ? (
             <AboutPage />
           ) : tab === "skills" ? (
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">
-              <p className="text-sm leading-relaxed text-pretty text-muted">
-                1C＝2.4 秒，全場 99C。以下為各特技的持續／成本換算。計略的具體 C 數見於武將詳情。
-              </p>
-              <p className="mt-1 text-xs tabular-nums text-faint">5C＝12秒　10C＝24秒　50C＝120秒　先陣約 49C</p>
-              <div className="mt-5 flex flex-col gap-3">
-                {SKILLS.map((s) => (
-                  <SkillExplain key={s.id} id={s.id} />
-                ))}
-              </div>
-            </div>
+            <GuidePage />
           ) : tab === "recents" ? (
             <>
               <p className="shrink-0 px-4 pt-3 pb-1 text-xs tabular-nums text-faint sm:px-6">
