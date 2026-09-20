@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-const MAX_RECENT = 20;
+const MAX_RECENT = 50;
 
 type ScoutState = {
   query: string;
