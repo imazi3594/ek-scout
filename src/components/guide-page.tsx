@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 const TOPICS: { id: GuideTopic; title: string; blurb: string }[] = [
   { id: "skills", title: "特技", blurb: "武將固有被動。開場、戰鬥、移動與槽類效果。" },
   { id: "senki", title: "戰器", blurb: "對戰中僅能使用一次的裝備技。主效果與追加條件。" },
-  { id: "ryuha", title: "流派", blurb: "壱・弐・参之型。表為永久，裏多為時限。" },
+  { id: "ryuha", title: "流派", blurb: "壱・弐・参の型。表為永久，裏多為時限。" },
 ];
 
 export function GuidePage() {
