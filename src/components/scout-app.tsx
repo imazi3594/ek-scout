@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { BookOpen, ChevronDown, ChevronUp, Clock, Info, Search, X } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronUp, Clock, Dices, Info, Search, X } from "lucide-react";
 import {
   CARD_BY_ID,
   CARDS,
@@ -205,6 +205,15 @@ export function ScoutApp() {
 
   const resultLabel = query || layerActive ? `${hits.length} 筆${layerSummary ? `　${layerSummary}` : ""}` : "";
 
+  function openRandom() {
+    const pool = (hits.length ? hits : CARDS).filter((card) => card.id !== selectedId);
+    const list = pool.length ? pool : CARDS;
+    const card = list[Math.floor(Math.random() * list.length)];
+    if (!card) return;
+    select(card.id);
+    pushView({ v: "card", id: card.id });
+  }
+
   return (
     <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-bg text-fg">
       <HomeWash faded />
@@ -322,6 +331,15 @@ export function ScoutApp() {
                   {filtersOpen ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
                 </button>
                 <p className="min-w-0 flex-1 truncate text-xs tabular-nums text-faint">{resultLabel}</p>
+                <button
+                  type="button"
+                  className="flex h-8 shrink-0 items-center gap-1 rounded-md bg-surface-2 px-2.5 text-xs text-fg"
+                  onClick={openRandom}
+                  aria-label="隨機一張卡"
+                >
+                  <Dices className="size-3.5" />
+                  隨機
+                </button>
                 <button
                   type="button"
                   className="flex h-8 shrink-0 items-center rounded-md bg-faction-hi px-2.5 text-xs font-medium text-white"
