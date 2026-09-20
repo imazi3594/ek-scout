@@ -1,7 +1,18 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronLeft } from "lucide-react";
-import { SKILLS } from "@/data/catalog";
-import { RYUHA_GROUPS, RYUHA_INTRO, SENKI_GROUPS, SENKI_INTRO, type GuideGroup, type GuideTopic } from "@/data/guide";
+import { RARITY_CHIP, SKILLS } from "@/data/catalog";
+import { RarityMark } from "@/components/card-identity";
+import {
+  RYUHA_GROUPS,
+  RYUHA_INTRO,
+  SENKI_CATS,
+  SENKI_GROUPS,
+  SENKI_INTRO,
+  SENKI_RARITIES,
+  type GuideGroup,
+  type GuideTopic,
+  type SenkiRarity,
+} from "@/data/guide";
 import { SkillExplain } from "@/components/skill-chip";
 import { cn } from "@/lib/utils";
 
@@ -46,7 +57,7 @@ export function GuidePage() {
         返回資料
       </button>
       {topic === "skills" ? <SkillsGuide /> : null}
-      {topic === "senki" ? <GroupGuide intro={SENKI_INTRO} groups={SENKI_GROUPS} /> : null}
+      {topic === "senki" ? <SenkiGuide /> : null}
       {topic === "ryuha" ? <GroupGuide intro={RYUHA_INTRO} groups={RYUHA_GROUPS} /> : null}
     </div>
   );
@@ -68,34 +79,111 @@ function SkillsGuide() {
   );
 }
 
+function toggle<T>(list: T[], value: T, set: (next: T[]) => void) {
+  set(list.includes(value) ? list.filter((x) => x !== value) : [...list, value]);
+}
+
+function SenkiGuide() {
+  const [rarities, setRarities] = useState<SenkiRarity[]>([]);
+  const [cats, setCats] = useState<string[]>([]);
+  const groups = useMemo(() => {
+    return SENKI_GROUPS.flatMap((group) => {
+      if (cats.length && !cats.some((c) => group.title.startsWith(c))) return [];
+      const items = group.items.filter((item) => {
+        if (!rarities.length) return true;
+        return item.rarity ? rarities.includes(item.rarity) : false;
+      });
+      if (!items.length) return [];
+      return [{ ...group, items }];
+    });
+  }, [rarities, cats]);
+
+  return (
+    <>
+      <p className="text-sm leading-relaxed text-pretty text-muted">{SENKI_INTRO}</p>
+      <div className="mt-4 flex flex-col gap-2">
+        <div className="flex flex-wrap gap-1.5">
+          {SENKI_RARITIES.map((r) => {
+            const on = rarities.includes(r);
+            return (
+              <button
+                key={r}
+                type="button"
+                onClick={() => toggle(rarities, r, setRarities)}
+                className={cn("h-8 min-w-8 rounded-md px-2.5 text-xs", on ? RARITY_CHIP[r].active : RARITY_CHIP[r].idle)}
+              >
+                {r}
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {SENKI_CATS.map((cat) => {
+            const on = cats.includes(cat);
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => toggle(cats, cat, setCats)}
+                className={cn(
+                  "h-8 rounded-md px-2.5 text-xs",
+                  on ? "bg-surface-2 font-medium text-fg ring-2 ring-inset ring-fg" : "bg-surface-2 text-muted",
+                )}
+              >
+                {cat}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div className="mt-5 flex flex-col gap-6">
+        {groups.length ? (
+          groups.map((group) => <GuideSection key={group.title} group={group} showRarity />)
+        ) : (
+          <p className="text-sm text-muted">沒有符合篩選的戰器。</p>
+        )}
+      </div>
+    </>
+  );
+}
+
+function GuideSection({ group, showRarity }: { group: GuideGroup; showRarity?: boolean }) {
+  return (
+    <section>
+      <h3 className="font-display text-base text-fg">{group.title}</h3>
+      {group.blurb ? <p className="mt-1 text-xs leading-relaxed text-pretty text-muted">{group.blurb}</p> : null}
+      <div className="mt-3 flex flex-col gap-2">
+        {group.items.map((item) => (
+          <article key={item.name} className="rounded-lg bg-surface-2 p-3">
+            <div className="flex items-baseline gap-2">
+              {showRarity && item.rarity ? <RarityMark rarity={item.rarity} className="text-xs" /> : null}
+              <p className="font-display text-sm text-fg">{item.name}</p>
+            </div>
+            {item.note ? <p className="mt-1 text-sm leading-relaxed text-pretty text-fg">{item.note}</p> : null}
+            {item.facts?.length ? (
+              <dl className={cn("grid grid-cols-1 gap-1.5 sm:grid-cols-2", item.note ? "mt-2" : "mt-3")}>
+                {item.facts.map((row) => (
+                  <div key={row.label} className="flex items-baseline justify-between gap-3 rounded-md bg-bg/50 px-2.5 py-1.5">
+                    <dt className="shrink-0 text-xs text-faint">{row.label}</dt>
+                    <dd className="text-right text-xs leading-relaxed text-pretty text-muted">{row.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : null}
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function GroupGuide({ intro, groups }: { intro: string; groups: GuideGroup[] }) {
   return (
     <>
       <p className="text-sm leading-relaxed text-pretty text-muted">{intro}</p>
       <div className="mt-5 flex flex-col gap-6">
         {groups.map((group) => (
-          <section key={group.title}>
-            <h3 className="font-display text-base text-fg">{group.title}</h3>
-            {group.blurb ? <p className="mt-1 text-xs leading-relaxed text-pretty text-muted">{group.blurb}</p> : null}
-            <div className="mt-3 flex flex-col gap-2">
-              {group.items.map((item) => (
-                <article key={item.name} className="rounded-lg bg-surface-2 p-3">
-                  <p className="font-display text-sm text-fg">{item.name}</p>
-                  {item.note ? <p className="mt-1 text-sm leading-relaxed text-pretty text-fg">{item.note}</p> : null}
-                  {item.facts?.length ? (
-                    <dl className={cn("grid grid-cols-1 gap-1.5 sm:grid-cols-2", item.note ? "mt-2" : "mt-3")}>
-                      {item.facts.map((row) => (
-                        <div key={row.label} className="flex items-baseline justify-between gap-3 rounded-md bg-bg/50 px-2.5 py-1.5">
-                          <dt className="shrink-0 text-xs text-faint">{row.label}</dt>
-                          <dd className="text-right text-xs leading-relaxed text-pretty text-muted">{row.value}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                  ) : null}
-                </article>
-              ))}
-            </div>
-          </section>
+          <GuideSection key={group.title} group={group} />
         ))}
       </div>
     </>
