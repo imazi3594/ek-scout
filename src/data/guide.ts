@@ -192,7 +192,17 @@ export const RYUHA_GROUPS: GuideGroup[] = [
           { label: "槍擊", value: "每次約 0.15%" },
         ],
       },
-      { name: "弐の型　動作傷害增加", note: "提高基本兵種動作的固定傷害。" },
+      {
+        name: "弐の型　動作傷害增加",
+        note: "提高基本兵種動作的固定傷害。槍兵含迎擊。Ver.2.0.0A 由参の型改列為弐の型並調整數值；官方未再公布現行％。下表為改列前最後公開值，僅供參考。",
+        facts: [
+          { label: "突擊", value: "＋6%" },
+          { label: "斬擊", value: "＋6%" },
+          { label: "槍擊／迎擊", value: "＋1.8%" },
+          { label: "弓攻擊", value: "＋1.4%" },
+          { label: "射擊", value: "＋1.2%" },
+        ],
+      },
       {
         name: "参の型　動作強化",
         facts: [
