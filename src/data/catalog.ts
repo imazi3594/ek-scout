@@ -254,15 +254,16 @@ export const SKILLS: SkillDef[] = [
     short: "活",
     official: "撤退した際、復活するために必要な時間が減少します。",
     detail:
-      "撤退後復活等待時間縮短。依卡組「復活」持有數疊加，並非每張卡各自 −4 秒。",
-    playTip: "對手復活多＝戰線不易空虛。擊破後要趁復活空窗推城。",
+      "只縮短「這張卡」自己的復活等待。有幾個復活就睇下表，並非每次 −4 秒，亦不是全隊復活加埋一齊計。",
+    playTip: "雙復活、三復活的卡自己返場快。擊破後要趁佢未返推城或換點。",
     kind: "combat",
     facts: [
-      { label: "1 個", value: "−4 秒（約 1.7C）" },
-      { label: "2 個", value: "−7 秒（約 2.9C）" },
-      { label: "3 個", value: "−9 秒（約 3.8C）" },
+      { label: "基本復活", value: "30 秒（12.5C）" },
+      { label: "1 個", value: "−4 秒 → 26 秒（約 10.8C）" },
+      { label: "2 個", value: "−7 秒 → 23 秒（約 9.6C）" },
+      { label: "3 個", value: "−9 秒 → 21 秒（約 8.8C）" },
     ],
-    durationC: "復活等待縮短 1.7〜3.8C",
+    durationC: "此卡 −4／−7／−9 秒",
   },
   {
     id: 3,
@@ -1864,8 +1865,15 @@ export function skillCardFacts(card: Card, skillId: number): StatLine[] {
         { label: "打知力 8", value: `${ambushDamage(card.intel, 8)}%` },
         { label: "打知力 10", value: `${ambushDamage(card.intel, 10)}%` },
       ];
-    case 2:
-      return [{ label: "此卡持有", value: `${copies} 個　（卡組合計先算縮短）` }];
+    case 2: {
+      const cut = copies >= 3 ? 9 : copies === 2 ? 7 : 4;
+      const wait = 30 - cut;
+      const c = (wait / 2.4).toFixed(1);
+      return [
+        { label: "此卡復活", value: `${copies} 個　−${cut} 秒` },
+        { label: "等待", value: `${wait} 秒（約 ${c}C）` },
+      ];
+    }
     case 5:
       return [
         { label: "鎖定", value: "2 秒（約 0.8C）" },
