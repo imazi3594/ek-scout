@@ -186,10 +186,11 @@ export const RYUHA_GROUPS: GuideGroup[] = [
         name: "壱の型　動作攻城",
         note: "基本兵種動作可對敵城造成傷害。以下為武力 5 時之參考。",
         facts: [
-          { label: "突擊／斬擊", value: "每次約 0.55%" },
-          { label: "弓攻擊", value: "每次約 0.20%" },
-          { label: "射擊", value: "每擊約 0.19%" },
-          { label: "槍擊", value: "每次約 0.15%" },
+          { label: "騎兵／突擊", value: "每次約 0.55%" },
+          { label: "劍豪／斬擊", value: "每次約 0.55%" },
+          { label: "弓兵／弓攻擊", value: "每次約 0.20%" },
+          { label: "鐵砲隊／射擊", value: "每擊約 0.19%" },
+          { label: "槍兵／槍擊", value: "每次約 0.15%" },
         ],
       },
       {
