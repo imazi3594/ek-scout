@@ -19,17 +19,17 @@ export type GuideGroup = {
 export const SENKI_RARITIES: SenkiRarity[] = ["N", "R", "SR"];
 export const SENKI_CATS = ["宝物", "鎧兜", "武器", "軍配", "馬", "書物", "宝石"] as const;
 
-const RYUHA_INK: Record<string, { deep: string; pale: string }> = {
-  部隊: { deep: "#3d2a52", pale: "#5a4270" },
-  士気: { deep: "#8a7618", pale: "#c4a430" },
-  城塞: { deep: "#1e3d2e", pale: "#335c45" },
-  兵種: { deep: "#4a2428", pale: "#6a3a3e" },
-  琥煌: { deep: "#4a2e14", pale: "#6e4624" },
+const RYUHA_INK: Record<string, { deep: string; pale: string; fg: string; muted: string }> = {
+  部隊: { deep: "#3d2a52", pale: "#5a4270", fg: "#e6e0d4", muted: "rgb(230 224 212 / 0.7)" },
+  士氣: { deep: "#c4a000", pale: "#e2c15a", fg: "#1a1612", muted: "rgb(26 22 18 / 0.62)" },
+  城塞: { deep: "#1e3d2e", pale: "#335c45", fg: "#e6e0d4", muted: "rgb(230 224 212 / 0.7)" },
+  兵種: { deep: "#4a2428", pale: "#6a3a3e", fg: "#e6e0d4", muted: "rgb(230 224 212 / 0.7)" },
+  琥煌: { deep: "#4a2e14", pale: "#6e4624", fg: "#e6e0d4", muted: "rgb(230 224 212 / 0.7)" },
 };
 
 export function ryuhaTheme(title: string) {
   const ura = title.includes("裏");
-  const kind = title.split("・")[0] ?? "";
+  const kind = (title.split("・")[0] ?? "").replace("気", "氣");
   const pal = RYUHA_INK[kind];
   if (!pal) return null;
   const outer = ura ? pal.pale : pal.deep;
@@ -38,11 +38,11 @@ export function ryuhaTheme(title: string) {
     ura,
     head: pal.pale,
     cardBg: outer,
-    cardFg: "#e6e0d4",
+    cardFg: pal.fg,
     factBg: inner,
-    factFg: "#e6e0d4",
-    muted: "rgb(230 224 212 / 0.7)",
-    factMuted: "rgb(230 224 212 / 0.62)",
+    factFg: pal.fg,
+    muted: pal.muted,
+    factMuted: pal.muted,
   };
 }
 
