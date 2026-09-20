@@ -106,7 +106,6 @@ export function ScoutApp() {
     setTab("search");
     if (s.v === "card") {
       select(s.id);
-      setFiltersOpen(false);
       return;
     }
     select(null);
@@ -137,6 +136,7 @@ export function ScoutApp() {
 
     history.replaceState({ v: "root" } satisfies Hist, "");
     history.pushState({ v: "home" } satisfies Hist, "");
+    history.pushState({ v: "filters" } satisfies Hist, "");
 
     const onPop = (event: PopStateEvent) => {
       const s = (event.state ?? { v: "root" }) as Hist;
@@ -206,13 +206,21 @@ export function ScoutApp() {
 
   const resultLabel = query || layerActive ? `${hits.length} 筆${layerSummary ? `　${layerSummary}` : ""}` : "";
 
+  function openCard(id: string) {
+    if (tab === "search" && filtersOpen) {
+      const cur = history.state as Hist | null;
+      if (cur?.v !== "filters" && cur?.v !== "card") history.pushState({ v: "filters" } satisfies Hist, "");
+    }
+    select(id);
+    pushView({ v: "card", id });
+  }
+
   function openRandom() {
     const pool = (hits.length ? hits : CARDS).filter((card) => card.id !== selectedId);
     const list = pool.length ? pool : CARDS;
     const card = list[Math.floor(Math.random() * list.length)];
     if (!card) return;
-    select(card.id);
-    pushView({ v: "card", id: card.id });
+    openCard(card.id);
   }
 
   return (
@@ -249,10 +257,7 @@ export function ScoutApp() {
                       <CardHitRow
                         card={card}
                         active={card.id === selectedId}
-                        onOpen={() => {
-                          select(card.id);
-                          pushView({ v: "card", id: card.id });
-                        }}
+                        onOpen={() => openCard(card.id)}
                       />
                     </li>
                   ))
