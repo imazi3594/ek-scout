@@ -21,7 +21,7 @@ export const SENKI_CATS = ["宝物", "鎧兜", "武器", "軍配", "馬", "書�
 
 const RYUHA_INK: Record<string, { deep: string; pale: string }> = {
   部隊: { deep: "#3d2a52", pale: "#5a4270" },
-  士気: { deep: "#6a5a1c", pale: "#8a7630" },
+  士気: { deep: "#8a7618", pale: "#c4a430" },
   城塞: { deep: "#1e3d2e", pale: "#335c45" },
   兵種: { deep: "#4a2428", pale: "#6a3a3e" },
   琥煌: { deep: "#4a2e14", pale: "#6e4624" },
