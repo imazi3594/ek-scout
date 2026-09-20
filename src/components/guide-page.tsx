@@ -12,6 +12,7 @@ import {
   type GuideGroup,
   type GuideTopic,
   type SenkiRarity,
+  ryuhaTheme,
 } from "@/data/guide";
 import { SkillExplain } from "@/components/skill-chip";
 import { cn } from "@/lib/utils";
@@ -58,7 +59,7 @@ export function GuidePage() {
       </button>
       {topic === "skills" ? <SkillsGuide /> : null}
       {topic === "senki" ? <SenkiGuide /> : null}
-      {topic === "ryuha" ? <GroupGuide intro={RYUHA_INTRO} groups={RYUHA_GROUPS} /> : null}
+      {topic === "ryuha" ? <GroupGuide intro={RYUHA_INTRO} groups={RYUHA_GROUPS} themed /> : null}
     </div>
   );
 }
@@ -147,25 +148,56 @@ function SenkiGuide() {
   );
 }
 
-function GuideSection({ group, showRarity }: { group: GuideGroup; showRarity?: boolean }) {
+function GuideSection({ group, showRarity, themed }: { group: GuideGroup; showRarity?: boolean; themed?: boolean }) {
+  const tone = themed ? ryuhaTheme(group.title) : null;
   return (
     <section>
-      <h3 className="font-display text-base text-fg">{group.title}</h3>
-      {group.blurb ? <p className="mt-1 text-xs leading-relaxed text-pretty text-muted">{group.blurb}</p> : null}
+      <h3 className={cn("font-display text-base", !tone && "text-fg")} style={tone ? { color: tone.head } : undefined}>
+        {group.title}
+      </h3>
+      {group.blurb ? (
+        <p className="mt-1 text-xs leading-relaxed text-pretty text-muted">{group.blurb}</p>
+      ) : null}
       <div className="mt-3 flex flex-col gap-2">
         {group.items.map((item) => (
-          <article key={item.name} className="rounded-lg bg-surface-2 p-3">
-            <div className="flex items-baseline gap-2">
+          <article
+            key={item.name}
+            className={cn("rounded-lg p-3", !tone && "bg-surface-2")}
+            style={
+              tone
+                ? { backgroundColor: tone.cardBg, color: tone.cardFg }
+                : undefined
+            }
+          >
+            <div className={cn("flex items-baseline gap-2", !tone && "text-fg")}>
               {showRarity && item.rarity ? <RarityMark rarity={item.rarity} className="text-xs" /> : null}
-              <p className="font-display text-sm text-fg">{item.name}</p>
+              <p className={cn("font-display text-sm", !tone && "text-fg")}>{item.name}</p>
             </div>
-            {item.note ? <p className="mt-1 text-sm leading-relaxed text-pretty text-fg">{item.note}</p> : null}
+            {item.note ? (
+              <p className="mt-1 text-sm leading-relaxed text-pretty" style={tone ? { color: tone.cardFg } : undefined}>
+                {item.note}
+              </p>
+            ) : null}
             {item.facts?.length ? (
               <dl className={cn("grid grid-cols-1 gap-1.5 sm:grid-cols-2", item.note ? "mt-2" : "mt-3")}>
                 {item.facts.map((row) => (
-                  <div key={row.label} className="flex items-baseline justify-between gap-3 rounded-md bg-bg/50 px-2.5 py-1.5">
-                    <dt className="shrink-0 text-xs text-faint">{row.label}</dt>
-                    <dd className="text-right text-xs leading-relaxed text-pretty text-muted">{row.value}</dd>
+                  <div
+                    key={row.label}
+                    className={cn(
+                      "flex items-baseline justify-between gap-3 rounded-md px-2.5 py-1.5",
+                      !tone && "bg-bg/50",
+                    )}
+                    style={tone ? { backgroundColor: tone.factBg } : undefined}
+                  >
+                    <dt className={cn("shrink-0 text-xs", !tone && "text-faint")} style={tone ? { color: tone.muted } : undefined}>
+                      {row.label}
+                    </dt>
+                    <dd
+                      className={cn("text-right text-xs leading-relaxed text-pretty", !tone && "text-muted")}
+                      style={tone ? { color: tone.cardFg } : undefined}
+                    >
+                      {row.value}
+                    </dd>
                   </div>
                 ))}
               </dl>
@@ -177,13 +209,13 @@ function GuideSection({ group, showRarity }: { group: GuideGroup; showRarity?: b
   );
 }
 
-function GroupGuide({ intro, groups }: { intro: string; groups: GuideGroup[] }) {
+function GroupGuide({ intro, groups, themed }: { intro: string; groups: GuideGroup[]; themed?: boolean }) {
   return (
     <>
       <p className="text-sm leading-relaxed text-pretty text-muted">{intro}</p>
       <div className="mt-5 flex flex-col gap-6">
         {groups.map((group) => (
-          <GuideSection key={group.title} group={group} />
+          <GuideSection key={group.title} group={group} themed={themed} />
         ))}
       </div>
     </>

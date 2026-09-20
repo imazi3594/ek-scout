@@ -19,6 +19,29 @@ export type GuideGroup = {
 export const SENKI_RARITIES: SenkiRarity[] = ["N", "R", "SR"];
 export const SENKI_CATS = ["宝物", "鎧兜", "武器", "軍配", "馬", "書物", "宝石"] as const;
 
+const RYUHA_INK: Record<string, { omote: string; ura: string; head: string }> = {
+  部隊: { omote: "#d7eadc", ura: "#173224", head: "#3d8a5a" },
+  士気: { omote: "#efe3b4", ura: "#3a2e0c", head: "#c4a000" },
+  城塞: { omote: "#d8dee8", ura: "#1b2430", head: "#7d8aa0" },
+  兵種: { omote: "#edd4d4", ura: "#3a1518", head: "#c45a5e" },
+  琥煌: { omote: "#f0d8b4", ura: "#3a220c", head: "#c45a00" },
+};
+
+export function ryuhaTheme(title: string) {
+  const ura = title.includes("裏");
+  const kind = title.split("・")[0] ?? "";
+  const pal = RYUHA_INK[kind];
+  if (!pal) return null;
+  return {
+    ura,
+    head: pal.head,
+    cardBg: ura ? pal.ura : pal.omote,
+    cardFg: ura ? "#f3efe6" : "#1a1612",
+    muted: ura ? "rgb(243 239 230 / 0.72)" : "rgb(26 22 18 / 0.62)",
+    factBg: ura ? "rgb(0 0 0 / 0.28)" : "rgb(255 255 255 / 0.45)",
+  };
+}
+
 export const RYUHA_INTRO = [
   "對戰中蓄積流派槽後，可發動所選流派的型。",
   "壱の型消耗槽 100%（1 條），弐の型 200%，参の型 300%。同一場中各型僅能發動一次，但可同時存在、不會互相覆蓋。",
