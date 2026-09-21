@@ -44,15 +44,13 @@ type Hist =
   | { v: "skills" }
   | { v: "guide"; topic: GuideTopic }
   | { v: "recents" }
-  | { v: "about" }
-  | { v: "filters" };
+  | { v: "about" };
 
-function histOf(tab: Tab, selectedId: string | null, filtersOpen: boolean, guideTopic: GuideTopic | null): Hist {
+function histOf(tab: Tab, selectedId: string | null, guideTopic: GuideTopic | null): Hist {
   if (tab === "about") return { v: "about" };
   if (tab === "skills") return guideTopic ? { v: "guide", topic: guideTopic } : { v: "skills" };
   if (tab === "recents") return { v: "recents" };
   if (selectedId) return { v: "card", id: selectedId };
-  if (filtersOpen) return { v: "filters" };
   return { v: "home" };
 }
 
@@ -100,21 +98,18 @@ export function ScoutApp() {
       setTab("about");
       setGuideTopic(null);
       select(null);
-      setFiltersOpen(false);
       return;
     }
     if (s.v === "skills") {
       setTab("skills");
       setGuideTopic(null);
       select(null);
-      setFiltersOpen(false);
       return;
     }
     if (s.v === "guide") {
       setTab("skills");
       setGuideTopic(s.topic);
       select(null);
-      setFiltersOpen(false);
       return;
     }
     if (s.v === "recents") {
@@ -130,7 +125,6 @@ export function ScoutApp() {
       return;
     }
     select(null);
-    setFiltersOpen(s.v === "filters");
   }
 
   const applyHistRef = useRef(applyHist);
@@ -149,14 +143,14 @@ export function ScoutApp() {
         if (cur?.v === "card") history.back();
         else {
           select(null);
-          pushView(next === "recents" ? { v: "recents" } : { v: filtersOpen ? "filters" : "home" });
+          pushView(next === "recents" ? { v: "recents" } : { v: "home" });
         }
       }
       return;
     }
     setTab(next);
     if (next !== "skills") setGuideTopic(null);
-    pushView(histOf(next, selectedId, false, next === "skills" ? guideTopic : null));
+    pushView(histOf(next, selectedId, next === "skills" ? guideTopic : null));
   }
 
   function setGuideView(next: GuideTopic | null) {
@@ -178,7 +172,6 @@ export function ScoutApp() {
 
     history.replaceState({ v: "root" } satisfies Hist, "");
     history.pushState({ v: "home" } satisfies Hist, "");
-    history.pushState({ v: "filters" } satisfies Hist, "");
 
     const onPop = (event: PopStateEvent) => {
       const s = (event.state ?? { v: "root" }) as Hist;
@@ -249,10 +242,6 @@ export function ScoutApp() {
   const resultLabel = query || layerActive ? `${hits.length} 筆${layerSummary ? `　${layerSummary}` : ""}` : "";
 
   function openCard(id: string) {
-    if (tab === "search" && filtersOpen) {
-      const cur = history.state as Hist | null;
-      if (cur?.v !== "filters" && cur?.v !== "card") history.pushState({ v: "filters" } satisfies Hist, "");
-    }
     select(id);
     pushView({ v: "card", id });
   }
@@ -353,16 +342,7 @@ export function ScoutApp() {
                 <button
                   type="button"
                   className="flex h-8 shrink-0 items-center gap-0.5 rounded-md bg-surface-2 px-2.5 text-xs text-fg lg:hidden"
-                  onClick={() => {
-                    if (filtersOpen) {
-                      const cur = history.state as Hist | null;
-                      if (cur?.v === "filters") history.back();
-                      else setFiltersOpen(false);
-                    } else {
-                      setFiltersOpen(true);
-                      pushView({ v: "filters" });
-                    }
-                  }}
+                  onClick={() => setFiltersOpen((open) => !open)}
                   aria-expanded={filtersOpen}
                 >
                   篩選
@@ -519,10 +499,7 @@ export function ScoutApp() {
                         <CardHitRow
                           card={card}
                           active={card.id === selectedId}
-                          onOpen={() => {
-                            select(card.id);
-                            pushView({ v: "card", id: card.id });
-                          }}
+                          onOpen={() => openCard(card.id)}
                         />
                       </li>
                     ))
