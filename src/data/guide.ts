@@ -242,26 +242,27 @@ export const RYUHA_GROUPS: GuideGroup[] = [
   },
   {
     title: "琥煌・表",
-    blurb: "發動時增加琥煌槽。",
+    blurb: "需登錄持【琥煌】計略的武將方可選擇。效果持續至戰鬥結束。",
     items: [
       {
         name: "壱の型　敵城弱體",
         facts: [
-          { label: "效果", value: "對敵城傷害上升；攻城時自城受傷下降" },
+          { label: "對敵城傷害", value: "1.05 倍" },
+          { label: "攻城時自城受傷", value: "由每 1 秒 1% 改為每 2 秒 1%" },
           { label: "琥煌槽", value: "＋1" },
         ],
       },
       {
         name: "弐の型　士氣上升",
         facts: [
-          { label: "士氣", value: "＋1" },
+          { label: "士氣", value: "即時 ＋1" },
           { label: "琥煌槽", value: "＋1" },
         ],
       },
       {
         name: "参の型　兵力持續回復",
         facts: [
-          { label: "效果", value: "友軍全部隊兵力逐漸回復" },
+          { label: "兵力回復", value: "友軍全部隊　約每 2 秒 0.8%" },
           { label: "琥煌槽", value: "＋2" },
         ],
       },
