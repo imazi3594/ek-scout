@@ -1139,11 +1139,11 @@ const YUE_AFTER: [string, string][] = [
 
 export function translateDesc(desc: string): string {
   let s = localizeJp(desc.replace(/<br\s*\/?>/gi, " ").replace(/<[^>]+>/g, " "));
-  s = s.replace(/【琥煌：最大消耗[0-9]劍】\s*(\([^)]*\))?\s*/g, "");
-  s = s.replace(/^【渾身】\s*(\([^)]*\))?\s*/, "");
-  s = s.replace(/【陣形】\s*(\([^)]*\))?\s*/g, "【陣形】");
-  s = s.replace(/【蓄力計略】\s*(\([^)]*\))?\s*/g, "【蓄力計略】");
-  s = s.replace(/【舞い】\s*(\([^)]*\))?\s*/g, "【舞い】");
+  s = s.replace(/【琥煌：最大消耗([0-9])劍】\s*(?:\([^)]*\))?\s*/g, "【琥煌：最大消耗$1劍】 ");
+  s = s.replace(/【渾身】\s*(?:\([^)]*\))?\s*/g, "【渾身】 ");
+  s = s.replace(/【陣形】\s*(?:\([^)]*\))?\s*/g, "【陣形】 ");
+  s = s.replace(/【蓄力計略】\s*(?:\([^)]*\))?\s*/g, "【蓄力計略】 ");
+  s = s.replace(/【舞い】\s*(?:\([^)]*\))?\s*/g, "【舞い】 ");
   s = s.replace(/\(\s*\)/g, "").replace(/ {2,}/g, " ").trim();
   return s;
 }
