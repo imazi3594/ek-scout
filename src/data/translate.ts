@@ -1099,9 +1099,9 @@ export function localizeJp(input: string): string {
   s = s.replace(/，{2,}/g, "，").replace(/,{2,}/g, ",");
   s = s.replace(/，、/g, "，").replace(/。。/g, "。");
   s = s.replace(/的的/g, "的").replace(/與與/g, "與");
-  s = s.replace(/\s+/g, " ").trim();
   s = s.replace(/\(\s+/g, "(").replace(/\s+\)/g, ")");
-  s = s.replace(/ {2,}/g, " ");
+  s = s.replace(/[^\S\n]+/g, " ");
+  s = s.replace(/ *\n */g, "\n").replace(/\n{2,}/g, "\n").trim();
   return s;
 }
 
@@ -1151,8 +1151,10 @@ const YUE_AFTER: [string, string][] = [
 ];
 
 export function translateDesc(desc: string): string {
-  let s = localizeJp(desc.replace(/<br\s*\/?>/gi, " ").replace(/<[^>]+>/g, " "));
-  s = s.replace(/\(\s*\)/g, "").replace(/ {2,}/g, " ").trim();
+  let s = localizeJp(desc.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, " "));
+  s = s.replace(/\(\s*\)/g, "");
+  s = s.replace(/(?<!\n)(短計・)/g, "\n$1");
+  s = s.replace(/ *\n */g, "\n").replace(/\n{2,}/g, "\n").trim();
   return s;
 }
 

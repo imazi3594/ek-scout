@@ -77,7 +77,7 @@ export function CardDetail({ card }: { card: Card }) {
 
       <section className="rounded-lg border border-white/10 bg-black/35 p-4">
         <StratTitle card={card} />
-        {desc ? <p className="mt-3 text-sm leading-relaxed text-pretty text-fg">{desc}</p> : null}
+        {desc ? <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-pretty text-fg">{desc}</p> : null}
       </section>
 
       {hasData ? (
