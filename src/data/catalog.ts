@@ -1837,13 +1837,7 @@ export function cardTanken(card: Card): Tanken[] {
 }
 
 export function displayMainStratDesc(card: Card): string {
-  const tanken = parseTankenBlocks(card.stratDesc ?? "");
-  const special = parseSpecialBranches(tanken.main);
-  const source = isUseCountCard(card) ? useCountMainDesc(special.main) : special.main;
-  if (!tanken.blocks.length && !special.items.length && source === (card.stratDesc ?? "")) {
-    return translateDesc(card.stratDesc ?? "");
-  }
-  return translateDesc(source);
+  return translateDesc(card.stratDesc ?? "");
 }
 
 export function displayCats(card: Card): string[] {

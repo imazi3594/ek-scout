@@ -1029,6 +1029,7 @@ const PROPER = [
   "渾身",
   "琥煌",
   "舞い",
+  "てつはう",
   "剣豪",
   "鉄砲隊",
   "騎兵",
@@ -1074,7 +1075,7 @@ export function localizeJp(input: string): string {
   s = s.replace(/に/g, "在");
   s = s.replace(/と/g, "與");
   s = s.replace(/で/g, "以");
-  s = s.replace(/[\u3040-\u309F\u30A0-\u30FF]+/g, "");
+  s = s.replace(/[\u3040-\u309F\u30A0-\u30FA\u30FC-\u30FF]+/g, "");
   s = s.replace(/(\d+)[体體]/g, "$1隊");
   s = s.replace(/与傷害/g, "造成傷害");
   s = s.replace(/代在/g, "變成");
