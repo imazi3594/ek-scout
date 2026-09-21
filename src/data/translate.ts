@@ -885,6 +885,7 @@ const GLYPH: Record<string, string> = {
   毎: "每",
   満: "滿",
   焼: "燒",
+  触: "觸",
   独: "獨",
   現: "現",
   画: "畫",
@@ -1078,6 +1079,7 @@ export function localizeJp(input: string): string {
   s = s.replace(/[\u3040-\u309F\u30A0-\u30FA\u30FC-\u30FF]+/g, "");
   s = s.replace(/(\d+)[体體]/g, "$1隊");
   s = s.replace(/与傷害/g, "造成傷害");
+  s = s.replace(/接触/g, "接觸");
   s = s.replace(/代在/g, "變成");
   s = s.replace(/徐々在下/g, "逐漸下降");
   s = s.replace(/徐々在上/g, "逐漸上升");
