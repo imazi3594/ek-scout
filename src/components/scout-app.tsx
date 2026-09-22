@@ -594,10 +594,15 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    let frame = 0;
     let settle = 0;
+    let axis: "h" | "v" | null = null;
+    let x0 = 0;
+    let y0 = 0;
+    let startLeft = 0;
+    let dragging = false;
 
     const sync = () => {
+      if (dragging) return;
       const w = el.clientWidth || 1;
       const i = Math.max(0, Math.min(TABS.length - 1, Math.round(el.scrollLeft / w)));
       const next = TABS[i];
@@ -607,16 +612,78 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
     };
 
     const onScroll = () => {
+      if (dragging) return;
       window.clearTimeout(settle);
       settle = window.setTimeout(sync, 80);
     };
     const onScrollEnd = () => {
+      if (dragging) return;
       window.clearTimeout(settle);
       sync();
     };
 
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select")) {
+        axis = "v";
+        return;
+      }
+      const t = e.touches[0];
+      if (!t) return;
+      x0 = t.clientX;
+      y0 = t.clientY;
+      startLeft = el.scrollLeft;
+      axis = null;
+      dragging = false;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1 || axis === "v") return;
+      const t = e.touches[0];
+      if (!t) return;
+      const dx = t.clientX - x0;
+      const dy = t.clientY - y0;
+      if (axis == null) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        axis = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
+        if (axis === "v") return;
+        dragging = true;
+        el.style.scrollSnapType = "none";
+      }
+      if (axis !== "h") return;
+      e.preventDefault();
+      const w = el.clientWidth || 1;
+      const max = (TABS.length - 1) * w;
+      let next = startLeft - dx;
+      if (next < 0) next *= 0.28;
+      else if (next > max) next = max + (next - max) * 0.28;
+      el.scrollLeft = next;
+    };
+
+    const onTouchEnd = () => {
+      if (axis === "h") {
+        const w = el.clientWidth || 1;
+        const i = Math.max(0, Math.min(TABS.length - 1, Math.round(el.scrollLeft / w)));
+        el.style.scrollSnapType = "";
+        dragging = false;
+        el.scrollTo({ left: i * w, behavior: "smooth" });
+        const next = TABS[i];
+        if (next && next !== tabRef.current) {
+          skipScroll.current = true;
+          goRef.current(next);
+        }
+      }
+      axis = null;
+      dragging = false;
+    };
+
     el.addEventListener("scroll", onScroll, { passive: true });
     el.addEventListener("scrollend", onScrollEnd);
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false, capture: true });
+    el.addEventListener("touchend", onTouchEnd);
+    el.addEventListener("touchcancel", onTouchEnd);
     const ro = new ResizeObserver(() => {
       el.scrollLeft = TABS.indexOf(tabRef.current) * el.clientWidth;
     });
@@ -624,9 +691,12 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
     return () => {
       el.removeEventListener("scroll", onScroll);
       el.removeEventListener("scrollend", onScrollEnd);
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove, true);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
       ro.disconnect();
       window.clearTimeout(settle);
-      if (frame) cancelAnimationFrame(frame);
     };
   }, []);
 
