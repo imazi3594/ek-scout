@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { BookOpen, ChevronDown, ChevronUp, Clock, Dices, Info, Search, X } from "lucide-react";
 import {
   CARD_BY_ID,
@@ -255,12 +255,11 @@ export function ScoutApp() {
     openCard(card.id);
   }
 
-  const swipe = useTabSwipe(tab, goTab);
+  const scrollerRef = useTabScroller(tab, goTab);
 
   return (
     <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-bg text-fg">
       <HomeWash faded />
-      <div className="relative z-10 flex min-h-0 flex-1 touch-pan-y flex-col" {...swipe}>
       <header className="relative z-10 shrink-0 border-b border-border bg-bg/60 backdrop-blur-sm">
         <div className="mx-auto max-w-6xl px-4 py-2.5 sm:px-6 sm:pb-3 sm:pt-5">
           <p className="hidden text-xs tracking-widest text-faint sm:block">EIKETSU TAISEN</p>
@@ -275,34 +274,9 @@ export function ScoutApp() {
       </header>
 
       <div className="relative z-10 mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_30rem]">
-        <section className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col border-border lg:border-r">
-          {tab === "about" ? (
-            <AboutPage />
-          ) : tab === "skills" ? (
-            <GuidePage topic={guideTopic} onTopic={setGuideView} />
-          ) : tab === "recents" ? (
-            <>
-              <p className="shrink-0 px-4 pt-3 pb-1 text-xs tabular-nums text-faint sm:px-6">
-                {recents.length ? `最近 ${recents.length} 張` : "最近查看"}
-              </p>
-              <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2 sm:px-4">
-                {recentCards.length ? (
-                  recentCards.map((card) => (
-                    <li key={card.id}>
-                      <CardHitRow
-                        card={card}
-                        active={card.id === selectedId}
-                        onOpen={() => openCard(card.id)}
-                      />
-                    </li>
-                  ))
-                ) : (
-                  <li className="px-3 py-16 text-center text-sm text-muted">尚未查看武將。在速查開啟過即會顯示於此。</li>
-                )}
-              </ul>
-            </>
-          ) : (
-            <>
+        <section className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-border lg:border-r">
+          <div ref={scrollerRef} className="tab-pager">
+          <div className="tab-pane">
             <div className="shrink-0 border-b border-border bg-bg/60 px-4 py-2.5 backdrop-blur-sm sm:px-6">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-faint" />
@@ -511,8 +485,34 @@ export function ScoutApp() {
                 </ul>
               )}
             </div>
-          </>
-          )}
+          </div>
+          <div className="tab-pane">
+            <GuidePage topic={guideTopic} onTopic={setGuideView} />
+          </div>
+          <div className="tab-pane">
+            <p className="shrink-0 px-4 pt-3 pb-1 text-xs tabular-nums text-faint sm:px-6">
+              {recents.length ? `最近 ${recents.length} 張` : "最近查看"}
+            </p>
+            <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2 sm:px-4">
+              {recentCards.length ? (
+                recentCards.map((card) => (
+                  <li key={card.id}>
+                    <CardHitRow
+                      card={card}
+                      active={card.id === selectedId}
+                      onOpen={() => openCard(card.id)}
+                    />
+                  </li>
+                ))
+              ) : (
+                <li className="px-3 py-16 text-center text-sm text-muted">尚未查看武將。在速查開啟過即會顯示於此。</li>
+              )}
+            </ul>
+          </div>
+          <div className="tab-pane">
+            <AboutPage />
+          </div>
+          </div>
         </section>
 
         <aside className="relative hidden min-h-0 overflow-hidden lg:block">
@@ -527,7 +527,6 @@ export function ScoutApp() {
             )}
           </div>
         </aside>
-      </div>
       </div>
 
       {exitHint ? (
@@ -560,60 +559,66 @@ export function ScoutApp() {
   );
 }
 
-function useTabSwipe(tab: Tab, goTab: (next: Tab) => void) {
-  const start = useRef<{ x: number; y: number } | null>(null);
-  const axis = useRef<"h" | "v" | null>(null);
-  const swallow = useRef(false);
+function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
+  const ref = useRef<HTMLDivElement>(null);
   const tabRef = useRef(tab);
   const goRef = useRef(goTab);
+  const skipScroll = useRef(false);
   tabRef.current = tab;
   goRef.current = goTab;
 
-  function reset() {
-    start.current = null;
-    axis.current = null;
-  }
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (skipScroll.current) {
+      skipScroll.current = false;
+      return;
+    }
+    const left = TABS.indexOf(tab) * el.clientWidth;
+    if (Math.abs(el.scrollLeft - left) < 8) return;
+    el.scrollTo({ left, behavior: "smooth" });
+  }, [tab]);
 
-  return {
-    onPointerDown(e: PointerEvent<HTMLDivElement>) {
-      if (e.pointerType === "mouse") return;
-      const el = e.target as HTMLElement | null;
-      if (el?.closest("input, textarea, select")) return;
-      start.current = { x: e.clientX, y: e.clientY };
-      axis.current = null;
-    },
-    onPointerMove(e: PointerEvent<HTMLDivElement>) {
-      if (!start.current) return;
-      const dx = e.clientX - start.current.x;
-      const dy = e.clientY - start.current.y;
-      if (axis.current) return;
-      if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
-      axis.current = Math.abs(dx) > Math.abs(dy) * 1.2 ? "h" : "v";
-    },
-    onPointerUp(e: PointerEvent<HTMLDivElement>) {
-      if (!start.current) return;
-      const dx = e.clientX - start.current.x;
-      const dy = e.clientY - start.current.y;
-      const horizontal = axis.current === "h";
-      reset();
-      if (!horizontal) return;
-      if (Math.abs(dx) < 64 || Math.abs(dx) < Math.abs(dy) * 1.25) return;
-      const i = TABS.indexOf(tabRef.current);
-      const next = dx < 0 ? TABS[i + 1] : TABS[i - 1];
-      if (!next) return;
-      swallow.current = true;
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let frame = 0;
+    let settle = 0;
+
+    const sync = () => {
+      const w = el.clientWidth || 1;
+      const i = Math.max(0, Math.min(TABS.length - 1, Math.round(el.scrollLeft / w)));
+      const next = TABS[i];
+      if (!next || next === tabRef.current) return;
+      skipScroll.current = true;
       goRef.current(next);
-    },
-    onPointerCancel() {
-      reset();
-    },
-    onClickCapture(e: { preventDefault: () => void; stopPropagation: () => void }) {
-      if (!swallow.current) return;
-      e.preventDefault();
-      e.stopPropagation();
-      swallow.current = false;
-    },
-  };
+    };
+
+    const onScroll = () => {
+      window.clearTimeout(settle);
+      settle = window.setTimeout(sync, 80);
+    };
+    const onScrollEnd = () => {
+      window.clearTimeout(settle);
+      sync();
+    };
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    el.addEventListener("scrollend", onScrollEnd);
+    const ro = new ResizeObserver(() => {
+      el.scrollLeft = TABS.indexOf(tabRef.current) * el.clientWidth;
+    });
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      el.removeEventListener("scrollend", onScrollEnd);
+      ro.disconnect();
+      window.clearTimeout(settle);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  return ref;
 }
 
 function CardHitRow({
