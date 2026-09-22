@@ -576,6 +576,7 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
   const tabRef = useRef(tab);
   const goRef = useRef(goTab);
   const skipScroll = useRef(false);
+  const busy = useRef(false);
   tabRef.current = tab;
   goRef.current = goTab;
 
@@ -588,39 +589,66 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
     }
     const left = TABS.indexOf(tab) * el.clientWidth;
     if (Math.abs(el.scrollLeft - left) < 8) return;
+    busy.current = true;
+    el.style.scrollSnapType = "none";
     el.scrollTo({ left, behavior: "smooth" });
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      busy.current = false;
+      el.style.scrollSnapType = "";
+    };
+    const onEnd = () => finish();
+    el.addEventListener("scrollend", onEnd);
+    const timer = window.setTimeout(finish, 450);
+    return () => {
+      el.removeEventListener("scrollend", onEnd);
+      window.clearTimeout(timer);
+    };
   }, [tab]);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    let settle = 0;
     let axis: "h" | "v" | null = null;
     let x0 = 0;
     let y0 = 0;
     let startLeft = 0;
     let t0 = 0;
     let dragging = false;
+    let snapTimer = 0;
 
-    const sync = () => {
-      if (dragging) return;
+    const settleTo = (i: number) => {
       const w = el.clientWidth || 1;
-      const i = Math.max(0, Math.min(TABS.length - 1, Math.round(el.scrollLeft / w)));
-      const next = TABS[i];
-      if (!next || next === tabRef.current) return;
-      skipScroll.current = true;
-      goRef.current(next);
-    };
-
-    const onScroll = () => {
-      if (dragging) return;
-      window.clearTimeout(settle);
-      settle = window.setTimeout(sync, 80);
-    };
-    const onScrollEnd = () => {
-      if (dragging) return;
-      window.clearTimeout(settle);
-      sync();
+      const left = i * w;
+      dragging = false;
+      busy.current = true;
+      el.style.scrollSnapType = "none";
+      window.clearTimeout(snapTimer);
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        busy.current = false;
+        el.style.scrollSnapType = "";
+        const next = TABS[i];
+        if (next && next !== tabRef.current) {
+          skipScroll.current = true;
+          goRef.current(next);
+        }
+      };
+      const onEnd = () => {
+        el.removeEventListener("scrollend", onEnd);
+        finish();
+      };
+      el.addEventListener("scrollend", onEnd);
+      snapTimer = window.setTimeout(() => {
+        el.removeEventListener("scrollend", onEnd);
+        finish();
+      }, 450);
+      if (Math.abs(el.scrollLeft - left) < 2) finish();
+      else el.scrollTo({ left, behavior: "smooth" });
     };
 
     const onTouchStart = (e: TouchEvent) => {
@@ -651,6 +679,7 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
         axis = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
         if (axis === "v") return;
         dragging = true;
+        busy.current = true;
         el.style.scrollSnapType = "none";
       }
       if (axis !== "h") return;
@@ -677,38 +706,28 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
           if (moved > 8) i = Math.min(TABS.length - 1, i0 + 1);
           else if (moved < -8) i = Math.max(0, i0 - 1);
         }
-        el.style.scrollSnapType = "";
-        dragging = false;
-        el.scrollTo({ left: i * w, behavior: "smooth" });
-        const next = TABS[i];
-        if (next && next !== tabRef.current) {
-          skipScroll.current = true;
-          goRef.current(next);
-        }
+        settleTo(i);
       }
       axis = null;
       dragging = false;
     };
 
-    el.addEventListener("scroll", onScroll, { passive: true });
-    el.addEventListener("scrollend", onScrollEnd);
     el.addEventListener("touchstart", onTouchStart, { passive: true });
     el.addEventListener("touchmove", onTouchMove, { passive: false, capture: true });
     el.addEventListener("touchend", onTouchEnd);
     el.addEventListener("touchcancel", onTouchEnd);
     const ro = new ResizeObserver(() => {
+      if (busy.current || dragging) return;
       el.scrollLeft = TABS.indexOf(tabRef.current) * el.clientWidth;
     });
     ro.observe(el);
     return () => {
-      el.removeEventListener("scroll", onScroll);
-      el.removeEventListener("scrollend", onScrollEnd);
       el.removeEventListener("touchstart", onTouchStart);
       el.removeEventListener("touchmove", onTouchMove, true);
       el.removeEventListener("touchend", onTouchEnd);
       el.removeEventListener("touchcancel", onTouchEnd);
       ro.disconnect();
-      window.clearTimeout(settle);
+      window.clearTimeout(snapTimer);
     };
   }, []);
 
