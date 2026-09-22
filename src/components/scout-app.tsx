@@ -599,6 +599,7 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
     let x0 = 0;
     let y0 = 0;
     let startLeft = 0;
+    let t0 = 0;
     let dragging = false;
 
     const sync = () => {
@@ -633,6 +634,7 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
       if (!t) return;
       x0 = t.clientX;
       y0 = t.clientY;
+      t0 = performance.now();
       startLeft = el.scrollLeft;
       axis = null;
       dragging = false;
@@ -664,7 +666,17 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
     const onTouchEnd = () => {
       if (axis === "h") {
         const w = el.clientWidth || 1;
-        const i = Math.max(0, Math.min(TABS.length - 1, Math.round(el.scrollLeft / w)));
+        const i0 = Math.max(0, TABS.indexOf(tabRef.current));
+        const moved = el.scrollLeft - startLeft;
+        const dist = Math.abs(moved);
+        const dt = Math.max(16, performance.now() - t0);
+        const speed = dist / dt;
+        const commit = dist >= Math.max(72, w * 0.22) || (dist >= 48 && speed >= 0.5);
+        let i = i0;
+        if (commit) {
+          if (moved > 8) i = Math.min(TABS.length - 1, i0 + 1);
+          else if (moved < -8) i = Math.max(0, i0 - 1);
+        }
         el.style.scrollSnapType = "";
         dragging = false;
         el.scrollTo({ left: i * w, behavior: "smooth" });
