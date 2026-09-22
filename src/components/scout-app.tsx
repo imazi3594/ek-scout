@@ -85,6 +85,7 @@ export function ScoutApp() {
   const fromPop = useRef(false);
   const lastBack = useRef(0);
   const [exitHint, setExitHint] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   function pushView(next: Hist) {
     if (fromPop.current) return;
@@ -98,33 +99,38 @@ export function ScoutApp() {
     if (s.v === "about") {
       setTab("about");
       setGuideTopic(null);
+      setSheetOpen(false);
       select(null);
       return;
     }
     if (s.v === "skills") {
       setTab("skills");
       setGuideTopic(null);
+      setSheetOpen(false);
       select(null);
       return;
     }
     if (s.v === "guide") {
       setTab("skills");
       setGuideTopic(s.topic);
+      setSheetOpen(false);
       select(null);
       return;
     }
     if (s.v === "recents") {
       setTab("recents");
       setGuideTopic(null);
-      select(null);
+      setSheetOpen(false);
       return;
     }
     setTab("search");
     setGuideTopic(null);
     if (s.v === "card") {
       select(s.id);
+      setSheetOpen(true);
       return;
     }
+    setSheetOpen(false);
     select(null);
   }
 
@@ -143,12 +149,14 @@ export function ScoutApp() {
         const cur = history.state as Hist | null;
         if (cur?.v === "card") history.back();
         else {
+          setSheetOpen(false);
           select(null);
           pushView(next === "recents" ? { v: "recents" } : { v: "home" });
         }
       }
       return;
     }
+    setSheetOpen(false);
     setTab(next);
     if (next !== "skills") setGuideTopic(null);
     pushView(histOf(next, selectedId, next === "skills" ? guideTopic : null));
@@ -244,6 +252,7 @@ export function ScoutApp() {
 
   function openCard(id: string) {
     select(id);
+    setSheetOpen(true);
     pushView({ v: "card", id });
   }
 
@@ -535,7 +544,7 @@ export function ScoutApp() {
         </div>
       ) : null}
 
-      {selected && (tab === "search" || tab === "recents") ? (
+      {sheetOpen && selected && (tab === "search" || tab === "recents") ? (
         <div className="absolute inset-0 z-50 flex min-h-0 flex-col bg-bg lg:hidden">
           <CardThemeBackdrop card={selected} />
           <button
@@ -543,7 +552,10 @@ export function ScoutApp() {
             onClick={() => {
               const cur = history.state as Hist | null;
               if (cur?.v === "card") history.back();
-              else select(null);
+              else {
+                setSheetOpen(false);
+                select(null);
+              }
             }}
             className="absolute right-2 top-[max(0.35rem,env(safe-area-inset-top))] z-20 grid size-10 place-items-center rounded-full bg-black/70 text-fg shadow-[0_0_0_1px_rgba(255,255,255,0.12)] backdrop-blur-sm hover:bg-black/85"
             aria-label="關閉"
