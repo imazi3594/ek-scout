@@ -42,8 +42,16 @@ const UNIT_KEY = "騎兵|槍兵|弓兵|剣豪|鉄砲隊";
 
 /** Break cramped scale tables (黃熾槽／兵力／成本…) into one line per tier. */
 export function splitEffectValue(value: string): { note: string; lines: string[] } {
-  const s = value.replace(/\s+/g, " ").trim();
+  let s = value.replace(/\s+/g, " ").trim();
   if (!s) return { note: "", lines: [] };
+
+  let prefixNote = "";
+  const intelNote = s.match(/^[（(]知力依存[^）)]*[）)]\s*/);
+  if (intelNote) {
+    const raw = intelNote[0].trim();
+    prefixNote = /無|なし|なし/.test(raw) ? "" : raw;
+    s = s.slice(intelNote[0].length).trim();
+  }
 
   let text = s.replace(new RegExp(String.raw`(${STAT_VALUE})\s+(?=\S[^:]{0,48}:\s*(?:${STAT_VALUE}))`, "g"), "$1\n");
   if ((s.match(new RegExp(`(?:${UNIT_KEY}):`, "g")) ?? []).length >= 2) {
@@ -54,7 +62,9 @@ export function splitEffectValue(value: string): { note: string; lines: string[]
     .split("\n")
     .map((x) => x.trim())
     .filter(Boolean);
-  if (lines.length < 2) return { note: "", lines: [s] };
+  if (lines.length < 2) {
+    return { note: prefixNote, lines: s ? [s] : [] };
+  }
 
   const lead = lines[0].match(new RegExp(String.raw`^(.*?)\s+(\S[^:]*:\s*(?:${STAT_VALUE}))$`));
   if (lead?.[1]?.trim()) {
@@ -67,10 +77,11 @@ export function splitEffectValue(value: string): { note: string; lines: string[]
     }
   }
 
+  const joinNote = (note: string) => [prefixNote, note].filter(Boolean).join(" ");
   if (!/[:：]/.test(lines[0])) {
-    return { note: lines[0], lines: lines.slice(1).map(tidyPair) };
+    return { note: joinNote(lines[0]), lines: lines.slice(1).map(tidyPair) };
   }
-  return { note: "", lines: lines.map(tidyPair) };
+  return { note: prefixNote, lines: lines.map(tidyPair) };
 }
 
 function tidyPair(line: string): string {
@@ -750,6 +761,18 @@ export function formatStratDuration(card: Card): StratDuration {
   if (hasPerBranchDuration(card) && /部隊数/.test(card.stratDesc ?? "")) {
     return { compact: "依部隊數", label: "依部隊數", seconds: "", dep: "", extra: "各隊數時長見下列", hint, cap: false };
   }
+  const scaleFx = pickMainDurationEffect(card);
+  if (scaleFx && isScaleDurationValue(scaleFx.value)) {
+    return {
+      compact: "依特技",
+      label: "依特技",
+      seconds: "",
+      dep: card.stratTime === "固定時間" ? "固定時長，不隨知力" : "",
+      extra: "各特技時長見下列",
+      hint,
+      cap: false,
+    };
+  }
   const picked = pickMainDuration(card);
   const q = durQualifier(picked.note);
   const kyotenCap = picked.cap && isKyotenCard(card);
@@ -904,8 +927,8 @@ function effectRows(effects: CardEffect[], hide?: CardEffect | null, rippleC?: n
   const seen = new Set<string>();
   for (const effect of effects) {
     if (hide) {
-      if (effect.label === hide.label && effect.value === hide.value) continue;
-    } else if (isDurationEffectLabel(effect.label) || effect.label.startsWith("効果時間")) {
+      if (effect.label === hide.label && effect.value === hide.value && !isScaleDurationValue(effect.value)) continue;
+    } else if ((isDurationEffectLabel(effect.label) || effect.label.startsWith("効果時間")) && !isScaleDurationValue(effect.value)) {
       continue;
     }
     let rawLabel = effect.label;
@@ -1257,6 +1280,12 @@ function hasPerBranchDuration(card: Card): boolean {
   const durs = (card.effects ?? []).filter((effect) => effect.label.startsWith("効果時間") && /知力依存/.test(effect.value));
   if (durs.length < 2) return false;
   return new Set(durs.map((effect) => effect.value.replace(/[▲▼↑↓\s]/g, ""))).size > 1;
+}
+
+function isScaleDurationValue(value: string): boolean {
+  const marks = value.match(/計\s*[0-9０-９]+\s*つ/g) ?? [];
+  const beats = value.match(/\d+(?:\.\d+)?\s*C/g) ?? [];
+  return marks.length >= 2 || (marks.length >= 1 && beats.length >= 2);
 }
 
 function hasPerSchoolDuration(card: Card): boolean {
