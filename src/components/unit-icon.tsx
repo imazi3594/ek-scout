@@ -22,6 +22,17 @@ export function UnitIcon({
   style?: CSSProperties;
 }) {
   const src = `${import.meta.env.BASE_URL}units/${FILE[unit]}`;
+  if (unit === "剣豪") {
+    return (
+      <img
+        src={src}
+        alt={title ?? ""}
+        aria-hidden={title ? undefined : true}
+        className={cn("inline-block size-5 shrink-0 object-contain", className)}
+        style={style}
+      />
+    );
+  }
   return (
     <span
       className={cn("inline-block size-5 shrink-0 bg-current", className)}
