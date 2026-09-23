@@ -264,7 +264,7 @@ export function ScoutApp() {
     openCard(card.id);
   }
 
-  const scrollerRef = useTabScroller(tab, goTab);
+  const pager = useTabScroller(tab, goTab);
 
   return (
     <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-bg text-fg">
@@ -284,7 +284,8 @@ export function ScoutApp() {
 
       <div className="relative z-10 mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_30rem]">
         <section className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-border lg:border-r">
-          <div ref={scrollerRef} className="tab-pager">
+          <div ref={pager.rootRef} className="tab-pager">
+          <div ref={pager.trackRef} className="tab-track">
           <div className="tab-pane">
             <div className="shrink-0 border-b border-border bg-bg/60 px-4 py-2.5 backdrop-blur-sm sm:px-6">
               <div className="relative">
@@ -522,6 +523,7 @@ export function ScoutApp() {
             <AboutPage />
           </div>
           </div>
+          </div>
         </section>
 
         <aside className="relative hidden min-h-0 overflow-hidden lg:block">
@@ -572,7 +574,8 @@ export function ScoutApp() {
 }
 
 function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
-  const ref = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const tabRef = useRef(tab);
   const goRef = useRef(goTab);
   const skipScroll = useRef(false);
@@ -580,75 +583,76 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
   tabRef.current = tab;
   goRef.current = goTab;
 
+  function place(x: number, animate: boolean) {
+    const track = trackRef.current;
+    if (!track) return;
+    track.style.transition = animate ? "transform 260ms cubic-bezier(0.22, 1, 0.36, 1)" : "none";
+    track.style.transform = `translate3d(${x}px,0,0)`;
+  }
+
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    const track = trackRef.current;
+    const root = rootRef.current;
+    if (!track || !root) return;
     if (skipScroll.current) {
       skipScroll.current = false;
       return;
     }
-    const left = TABS.indexOf(tab) * el.clientWidth;
-    if (Math.abs(el.scrollLeft - left) < 8) return;
+    const x = -TABS.indexOf(tab) * (root.clientWidth || 1);
     busy.current = true;
-    el.style.scrollSnapType = "none";
-    el.scrollTo({ left, behavior: "smooth" });
+    place(x, true);
     let done = false;
     const finish = () => {
       if (done) return;
       done = true;
       busy.current = false;
-      el.style.scrollSnapType = "";
     };
-    const onEnd = () => finish();
-    el.addEventListener("scrollend", onEnd);
-    const timer = window.setTimeout(finish, 450);
+    track.addEventListener("transitionend", finish);
+    const timer = window.setTimeout(finish, 320);
     return () => {
-      el.removeEventListener("scrollend", onEnd);
+      track.removeEventListener("transitionend", finish);
       window.clearTimeout(timer);
     };
   }, [tab]);
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    const root = rootRef.current;
+    const track = trackRef.current;
+    if (!root || !track) return;
     let axis: "h" | "v" | null = null;
     let x0 = 0;
     let y0 = 0;
-    let startLeft = 0;
+    let base = 0;
+    let w = 1;
     let t0 = 0;
-    let dragging = false;
+    let dx = 0;
     let snapTimer = 0;
 
     const settleTo = (i: number) => {
-      const w = el.clientWidth || 1;
-      const left = i * w;
-      dragging = false;
       busy.current = true;
-      el.style.scrollSnapType = "none";
       window.clearTimeout(snapTimer);
       let done = false;
       const finish = () => {
         if (done) return;
         done = true;
         busy.current = false;
-        el.style.scrollSnapType = "";
         const next = TABS[i];
         if (next && next !== tabRef.current) {
           skipScroll.current = true;
           goRef.current(next);
         }
       };
-      const onEnd = () => {
-        el.removeEventListener("scrollend", onEnd);
+      const onEnd = (e: TransitionEvent) => {
+        if (e.target !== track || e.propertyName !== "transform") return;
+        track.removeEventListener("transitionend", onEnd);
         finish();
       };
-      el.addEventListener("scrollend", onEnd);
+      track.addEventListener("transitionend", onEnd);
       snapTimer = window.setTimeout(() => {
-        el.removeEventListener("scrollend", onEnd);
+        track.removeEventListener("transitionend", onEnd);
         finish();
-      }, 450);
-      if (Math.abs(el.scrollLeft - left) < 2) finish();
-      else el.scrollTo({ left, behavior: "smooth" });
+      }, 320);
+      place(-i * w, true);
     };
 
     const onTouchStart = (e: TouchEvent) => {
@@ -663,75 +667,72 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
       x0 = t.clientX;
       y0 = t.clientY;
       t0 = performance.now();
-      startLeft = el.scrollLeft;
+      w = root.clientWidth || 1;
+      base = -Math.max(0, TABS.indexOf(tabRef.current)) * w;
+      dx = 0;
       axis = null;
-      dragging = false;
     };
 
     const onTouchMove = (e: TouchEvent) => {
       if (e.touches.length !== 1 || axis === "v") return;
       const t = e.touches[0];
       if (!t) return;
-      const dx = t.clientX - x0;
+      dx = t.clientX - x0;
       const dy = t.clientY - y0;
       if (axis == null) {
-        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
         axis = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
         if (axis === "v") return;
-        dragging = true;
         busy.current = true;
-        el.style.scrollSnapType = "none";
+        track.style.transition = "none";
       }
       if (axis !== "h") return;
       e.preventDefault();
-      const w = el.clientWidth || 1;
-      const max = (TABS.length - 1) * w;
-      let next = startLeft - dx;
-      if (next < 0) next *= 0.28;
-      else if (next > max) next = max + (next - max) * 0.28;
-      el.scrollLeft = next;
+      const min = -(TABS.length - 1) * w;
+      let x = base + dx;
+      if (x > 0) x *= 0.28;
+      else if (x < min) x = min + (x - min) * 0.28;
+      track.style.transform = `translate3d(${x}px,0,0)`;
     };
 
     const onTouchEnd = () => {
       if (axis === "h") {
-        const w = el.clientWidth || 1;
         const i0 = Math.max(0, TABS.indexOf(tabRef.current));
-        const moved = el.scrollLeft - startLeft;
-        const dist = Math.abs(moved);
+        const dist = Math.abs(dx);
         const dt = Math.max(16, performance.now() - t0);
         const speed = dist / dt;
         const commit = dist >= Math.max(72, w * 0.22) || (dist >= 48 && speed >= 0.5);
         let i = i0;
         if (commit) {
-          if (moved > 8) i = Math.min(TABS.length - 1, i0 + 1);
-          else if (moved < -8) i = Math.max(0, i0 - 1);
+          if (dx < -8) i = Math.min(TABS.length - 1, i0 + 1);
+          else if (dx > 8) i = Math.max(0, i0 - 1);
         }
         settleTo(i);
       }
       axis = null;
-      dragging = false;
     };
 
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: false, capture: true });
-    el.addEventListener("touchend", onTouchEnd);
-    el.addEventListener("touchcancel", onTouchEnd);
+    root.addEventListener("touchstart", onTouchStart, { passive: true });
+    root.addEventListener("touchmove", onTouchMove, { passive: false, capture: true });
+    root.addEventListener("touchend", onTouchEnd);
+    root.addEventListener("touchcancel", onTouchEnd);
     const ro = new ResizeObserver(() => {
-      if (busy.current || dragging) return;
-      el.scrollLeft = TABS.indexOf(tabRef.current) * el.clientWidth;
+      if (busy.current || axis === "h") return;
+      w = root.clientWidth || 1;
+      place(-Math.max(0, TABS.indexOf(tabRef.current)) * w, false);
     });
-    ro.observe(el);
+    ro.observe(root);
     return () => {
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchmove", onTouchMove, true);
-      el.removeEventListener("touchend", onTouchEnd);
-      el.removeEventListener("touchcancel", onTouchEnd);
+      root.removeEventListener("touchstart", onTouchStart);
+      root.removeEventListener("touchmove", onTouchMove, true);
+      root.removeEventListener("touchend", onTouchEnd);
+      root.removeEventListener("touchcancel", onTouchEnd);
       ro.disconnect();
       window.clearTimeout(snapTimer);
     };
   }, []);
 
-  return ref;
+  return { rootRef, trackRef };
 }
 
 function CardHitRow({
