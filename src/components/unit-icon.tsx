@@ -2,6 +2,8 @@ import type { CSSProperties } from "react";
 import type { UnitName } from "@/data/catalog";
 import { cn } from "@/lib/utils";
 
+const PICTURE: ReadonlySet<UnitName> = new Set(["剣豪", "鉄砲隊"]);
+
 const FILE: Record<UnitName, string> = {
   騎兵: "cavalry.png",
   槍兵: "spear.png",
@@ -22,7 +24,7 @@ export function UnitIcon({
   style?: CSSProperties;
 }) {
   const src = `${import.meta.env.BASE_URL}units/${FILE[unit]}`;
-  if (unit === "剣豪") {
+  if (PICTURE.has(unit)) {
     return (
       <img
         src={src}
