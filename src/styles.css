@@ -81,6 +81,12 @@
   [role="button"]:not(:disabled) {
     cursor: pointer;
     touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:not(:disabled):active,
+  [role="button"]:not(:disabled):active {
+    box-shadow: inset 0 0 0 999px rgb(243 239 230 / 0.16);
   }
 }
 
