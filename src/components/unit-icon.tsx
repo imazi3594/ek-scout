@@ -23,12 +23,22 @@ export function UnitIcon({
 }) {
   const src = `${import.meta.env.BASE_URL}units/${FILE[unit]}`;
   return (
-    <img
-      src={src}
-      alt={title ?? ""}
+    <span
+      className={cn("inline-block size-5 shrink-0 bg-current", className)}
+      style={{
+        WebkitMaskImage: `url("${src}")`,
+        maskImage: `url("${src}")`,
+        WebkitMaskSize: "contain",
+        maskSize: "contain",
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
+        WebkitMaskPosition: "center",
+        maskPosition: "center",
+        ...style,
+      }}
+      role={title ? "img" : undefined}
+      aria-label={title}
       aria-hidden={title ? undefined : true}
-      className={cn("inline-block size-5 shrink-0 object-contain", className)}
-      style={style}
     />
   );
 }
