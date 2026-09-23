@@ -201,7 +201,7 @@ export function ScoutApp() {
         window.setTimeout(() => {
           btn.classList.remove("tap-flash");
           timers.delete(btn);
-        }, 220),
+        }, 360),
       );
     };
     const onCancel = () => {
