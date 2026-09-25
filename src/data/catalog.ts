@@ -1617,6 +1617,7 @@ export type KokouTiers = {
   shared: StatLine[];
   extra: { title: string; rows: StatLine[] } | null;
   cols: KokouCol[];
+  specials: string[];
 };
 
 export function isKokouCard(card: Card): boolean {
@@ -1697,6 +1698,10 @@ export function kokouTiers(card: Card): KokouTiers | null {
 
   if (groups.length < 2) return null;
 
+  const specials = [...shared, ...(extra ?? []), ...groups.flat()].flatMap((effect) =>
+    effect.label === "特殊効果" ? [effect.value] : [],
+  );
+
   if (max == null) {
     return {
       max: 6,
@@ -1713,6 +1718,7 @@ export function kokouTiers(card: Card): KokouTiers | null {
           rows: effectRows(groups.slice(1).flat()),
         },
       ],
+      specials,
     };
   }
 
@@ -1728,6 +1734,7 @@ export function kokouTiers(card: Card): KokouTiers | null {
       highlight: i === groups.length - 1,
       rows: effectRows(group),
     })),
+    specials,
   };
 }
 
@@ -1865,6 +1872,12 @@ export function cardSpecial(card: Card): SpecialBlock | null {
   if (!specials.length) return null;
   const hide = pickMainDurationEffect(card);
   const covered = konshinSpecialTexts(card);
+  if (isKokouCard(card)) {
+    for (const text of kokouTiers(card)?.specials ?? []) {
+      covered.add(text);
+      covered.add(stripBranchTail(text));
+    }
+  }
   const seen = new Set<string>();
   const items = specials.flatMap((item) => {
     if (covered.has(item.text)) return [];
