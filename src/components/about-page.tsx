@@ -143,7 +143,11 @@ export function AboutPage() {
         <p className="mt-3">
           數值整理及翻譯自{" "}
           <a className="text-fg underline decoration-border underline-offset-2" href="https://eiketsudb.com/" target="_blank" rel="noreferrer">
-            eiketsudb.com
+            英傑大戦データベース
+          </a>
+          {" "}與{" "}
+          <a className="text-fg underline decoration-border underline-offset-2" href="https://w.atwiki.jp/eiketsu-taisen/" target="_blank" rel="noreferrer">
+            英傑大戦wiki
           </a>
           ，對戰時不必另開網頁翻查。
         </p>
