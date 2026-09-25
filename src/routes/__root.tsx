@@ -1,10 +1,30 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "英傑大戦⚡️速查";
 const APP_SHORT = "英傑⚡️速查";
+const NOTO =
+  "https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
+
+function OnlineFonts() {
+  useEffect(() => {
+    const load = () => {
+      if (!navigator.onLine || document.querySelector("link[data-noto]")) return;
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = NOTO;
+      link.setAttribute("data-noto", "");
+      document.head.appendChild(link);
+    };
+    if (navigator.onLine) load();
+    else window.addEventListener("online", load, { once: true });
+    return () => window.removeEventListener("online", load);
+  }, []);
+  return null;
+}
 
 export const Route = createRootRoute({
   head: () => ({
@@ -27,12 +47,6 @@ export const Route = createRootRoute({
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "manifest", href: "/__grok/manifest.webmanifest" },
       { rel: "stylesheet", href: appCss },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap",
-      },
     ],
   }),
   component: () => (
@@ -42,6 +56,7 @@ export const Route = createRootRoute({
       </head>
       <body className="antialiased">
         <PreviewHostBridge />
+        <OnlineFonts />
         <div className="flex min-h-0 flex-1 flex-col">
           <AuthProvider>
             <Outlet />

@@ -23,8 +23,8 @@
   --color-faction-ou: #c4a000;
   --color-cost: #e2c15a;
   --color-rarity-r: #c5c9d2;
-  --font-sans: "Noto Sans HK", "Noto Sans JP", "PingFang TC", "Hiragino Sans GB", sans-serif;
-  --font-display: "Noto Sans HK", "Noto Sans JP", "PingFang TC", sans-serif;
+  --font-sans: "Noto Sans HK", "Noto Sans JP", "PingFang TC", "PingFang HK", "Hiragino Sans CNS", "Noto Sans CJK TC", "Microsoft JhengHei", sans-serif;
+  --font-display: "Noto Sans HK", "Noto Sans JP", "PingFang TC", "PingFang HK", "Hiragino Sans CNS", "Microsoft JhengHei", sans-serif;
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
