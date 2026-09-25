@@ -86,6 +86,7 @@ export function ScoutApp() {
   const lastBack = useRef(0);
   const [exitHint, setExitHint] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [tapGlow, setTapGlow] = useState(0);
 
   function pushView(next: Hist) {
     if (fromPop.current) return;
@@ -195,13 +196,15 @@ export function ScoutApp() {
       if (!btn || btn.matches(":disabled") || btn.getAttribute("aria-disabled") === "true") return;
       const prev = timers.get(btn);
       if (prev) window.clearTimeout(prev);
+      btn.classList.remove("tap-flash");
+      void btn.offsetWidth;
       btn.classList.add("tap-flash");
       timers.set(
         btn,
         window.setTimeout(() => {
           btn.classList.remove("tap-flash");
           timers.delete(btn);
-        }, 360),
+        }, btn.classList.contains("list-row") ? 680 : 360),
       );
     };
     const onCancel = () => {
@@ -294,6 +297,7 @@ export function ScoutApp() {
   function openCard(id: string) {
     select(id);
     setSheetOpen(true);
+    setTapGlow((n) => n + 1);
     pushView({ v: "card", id });
   }
 
@@ -608,6 +612,12 @@ export function ScoutApp() {
           <div className="relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-[max(3rem,calc(env(safe-area-inset-top)+2.5rem))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
             <CardDetail card={selected} />
           </div>
+          {tapGlow ? (
+            <div
+              key={tapGlow}
+              className="pointer-events-none absolute inset-0 z-30 animate-[tap-glow_560ms_ease-out_forwards] bg-[rgb(226_193_90/0.34)]"
+            />
+          ) : null}
         </div>
       ) : null}
     </div>
