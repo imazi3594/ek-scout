@@ -121,6 +121,7 @@ export function ScoutApp() {
       setTab("recents");
       setGuideTopic(null);
       setSheetOpen(false);
+      select(null);
       return;
     }
     setTab("search");
@@ -156,10 +157,17 @@ export function ScoutApp() {
       }
       return;
     }
+    const cur = history.state as Hist | null;
     setSheetOpen(false);
     setTab(next);
     if (next !== "skills") setGuideTopic(null);
-    pushView(histOf(next, selectedId, next === "skills" ? guideTopic : null));
+    const dest = histOf(next, null, next === "skills" ? guideTopic : null);
+    if (cur?.v === "card") {
+      select(null);
+      history.replaceState(dest, "");
+      return;
+    }
+    pushView(dest);
   }
 
   function setGuideView(next: GuideTopic | null) {
