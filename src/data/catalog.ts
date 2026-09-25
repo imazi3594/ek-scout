@@ -1025,6 +1025,18 @@ function stripKonshinMarks(effects: CardEffect[]): CardEffect[] {
   return effects.map((effect) => ({ ...effect, value: stripKonshinMoraleMark(effect.value) }));
 }
 
+function konshinSpecialTexts(card: Card): Set<string> {
+  if (!isKonshinCard(card)) return new Set();
+  const groups = collapseKonshinGroups(splitKonshinGroups(card.effects ?? []));
+  const texts = new Set<string>();
+  for (const group of groups) {
+    for (const effect of group) {
+      if (effect.label === "特殊効果") texts.add(effect.value);
+    }
+  }
+  return texts;
+}
+
 export function konshinTiers(card: Card): KonshinTier[] | null {
   if (!isKonshinCard(card)) return null;
   const groups = collapseKonshinGroups(splitKonshinGroups(card.effects ?? [])).map(stripKonshinMarks);
@@ -1852,8 +1864,10 @@ export function cardSpecial(card: Card): SpecialBlock | null {
   const { specials } = peelSpecials(card);
   if (!specials.length) return null;
   const hide = pickMainDurationEffect(card);
+  const covered = konshinSpecialTexts(card);
   const seen = new Set<string>();
   const items = specials.flatMap((item) => {
+    if (covered.has(item.text)) return [];
     const text = translateDesc(item.text);
     const rows = item.nested.length ? effectRows(item.nested, hide) : undefined;
     const key = `${text}|${(rows ?? []).map((row) => `${row.label}:${row.value}`).join(";")}`;
