@@ -42,6 +42,9 @@ const UNIT_KEY = "騎兵|槍兵|弓兵|剣豪|鉄砲隊";
 
 /** Break cramped scale tables (黃熾槽／兵力／成本…) into one line per tier. */
 export function splitEffectValue(value: string): { note: string; lines: string[] } {
+  const intelBands = splitIntelBands(value);
+  if (intelBands) return intelBands;
+
   let s = value.replace(/\s+/g, " ").trim();
   if (!s) return { note: "", lines: [] };
 
@@ -86,6 +89,23 @@ export function splitEffectValue(value: string): { note: string; lines: string[]
 
 function tidyPair(line: string): string {
   return line.replace(/\s*:\s*/, " : ").replace(/\s+/g, " ").trim();
+}
+
+/** 知力2~3的敵-3 知力4~5的敵-4 … → one line per enemy-intel band. */
+function splitIntelBands(value: string): { note: string; lines: string[] } | null {
+  const re = /知力\s*(\d+)\s*[~～〜]\s*(\d+)\s*的敵\s*([+\-＋－]?\d+)/g;
+  const lines: string[] = [];
+  for (const match of value.matchAll(re)) {
+    const raw = match[3].replace("＋", "+").replace("－", "-");
+    const n = raw.replace(/^[+\-]/, "");
+    const sign = raw.startsWith("+") ? "+" : "−";
+    lines.push(`敵知力 ${match[1]}–${match[2]}：${sign}${n}`);
+  }
+  if (lines.length < 2) return null;
+  re.lastIndex = 0;
+  const rest = value.replace(re, "").replace(/\s+/g, "").trim();
+  if (rest) return null;
+  return { note: "", lines };
 }
 
 export type KonshinTierId = "strong" | "weak" | "none";
