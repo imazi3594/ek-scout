@@ -191,7 +191,7 @@ export function ScoutApp() {
       if (!armed) return;
       armed = false;
       if (Math.hypot(e.clientX - x0, e.clientY - y0) > 14) return;
-      const btn = (e.target as HTMLElement | null)?.closest?.("button, [role='button']");
+      const btn = (e.target as HTMLElement | null)?.closest?.("button, [role='button']") as HTMLElement | null;
       if (!btn || btn.matches(":disabled") || btn.getAttribute("aria-disabled") === "true") return;
       const prev = timers.get(btn);
       if (prev) window.clearTimeout(prev);
