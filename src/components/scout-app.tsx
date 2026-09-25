@@ -86,6 +86,18 @@ export function ScoutApp() {
   const lastBack = useRef(0);
   const [exitHint, setExitHint] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [offline, setOffline] = useState(() => typeof navigator !== "undefined" && navigator.onLine === false);
+
+  useEffect(() => {
+    const sync = () => setOffline(navigator.onLine === false);
+    window.addEventListener("online", sync);
+    window.addEventListener("offline", sync);
+    sync();
+    return () => {
+      window.removeEventListener("online", sync);
+      window.removeEventListener("offline", sync);
+    };
+  }, []);
 
   function pushView(next: Hist) {
     if (fromPop.current) return;
@@ -319,6 +331,12 @@ export function ScoutApp() {
 
   return (
     <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-bg text-fg">
+      {offline ? (
+        <p className="relative z-[80] shrink-0 border-b border-white/10 bg-black/80 px-4 pt-[max(0.35rem,env(safe-area-inset-top))] pb-1.5 text-center text-xs text-muted">
+          離線模式　已儲存的資料仍可查閱
+        </p>
+      ) : null}
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <HomeWash faded />
       <header className="relative z-10 shrink-0 border-b border-border bg-bg/60 backdrop-blur-sm">
         <div className="mx-auto max-w-6xl px-4 py-2.5 sm:px-6 sm:pb-3 sm:pt-5">
@@ -620,6 +638,7 @@ export function ScoutApp() {
           </div>
         </div>
       ) : null}
+      </div>
     </div>
   );
 }
