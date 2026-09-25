@@ -1388,6 +1388,7 @@ function restoreProper(s: string, slots: string[]): string {
 export function localizeJp(input: string): string {
   if (!input) return "";
   let s = input.replace(/▲/g, "↑").replace(/▼/g, "↓").replace(/◆/g, "").replace(/◇/g, "※ ");
+  s = s.replace(/約(\d+(?:\.\d+)?)秒ごとに(約?[+\-＋－]?\d+(?:\.\d+)?%?)/g, "每約$1秒$2");
   s = s.replace(/（/g, "(").replace(/）/g, ")");
   s = applyPairs(s, [...GRAMMAR, ...PHRASES, ...INFLECT]);
   const held = protectProper(s);

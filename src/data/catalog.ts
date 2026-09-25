@@ -1004,9 +1004,18 @@ function effectRows(effects: CardEffect[], hide?: CardEffect | null, rippleC?: n
   return rows;
 }
 
+function stripKonshinMoraleMark(value: string): string {
+  const rest = value.replace(/^所持士気が必要士気\S*\s+/, "").trim();
+  return rest || value;
+}
+
+function stripKonshinMarks(effects: CardEffect[]): CardEffect[] {
+  return effects.map((effect) => ({ ...effect, value: stripKonshinMoraleMark(effect.value) }));
+}
+
 export function konshinTiers(card: Card): KonshinTier[] | null {
   if (!isKonshinCard(card)) return null;
-  const groups = collapseKonshinGroups(splitKonshinGroups(card.effects ?? []));
+  const groups = collapseKonshinGroups(splitKonshinGroups(card.effects ?? [])).map(stripKonshinMarks);
   if (groups.length < 2) return null;
 
   const noneRows = effectRows(groups[0] ?? []);
