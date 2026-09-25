@@ -20,7 +20,7 @@ import {
   useCountTiers,
   type Card,
   type KokouTiers,
-  type KonshinView,
+  type KonshinTier,
   type RecastCol,
   type SenkiCol,
   type SchoolCol,
@@ -60,22 +60,21 @@ export function StratTitle({ card }: { card: Card }) {
 export function CardDetail({ card }: { card: Card }) {
   const duration = formatStratDuration(card);
   const konshin = konshinTiers(card);
-  const konshinTiersView = konshin?.tiers ?? null;
-  const kokou = konshinTiersView ? null : kokouTiers(card);
+  const kokou = konshin ? null : kokouTiers(card);
   const shukusei = konshin || kokou ? null : shukuseiTiers(card);
   const useCount = konshin || kokou || shukusei ? null : useCountTiers(card);
   const senki = konshin || kokou || shukusei || useCount ? null : senkiTiers(card);
   const school = konshin || kokou || shukusei || useCount || senki ? null : schoolTiers(card);
   const recast = konshin || kokou || shukusei || useCount || senki || school ? null : recastTiers(card);
   const spin = konshin || kokou || shukusei || useCount || senki || school || recast ? null : spinTiers(card);
-  const effects = konshinTiersView || kokou || shukusei || useCount || senki || school || recast || spin ? [] : displayEffects(card);
+  const effects = konshin || kokou || shukusei || useCount || senki || school || recast || spin ? [] : displayEffects(card);
   const formation = formationMorale(card);
   const area = displayArea(card);
   const desc = displayMainStratDesc(card);
   const tankens = cardTanken(card);
   const special = school || recast ? null : cardSpecial(card);
   const meta = [duration.seconds, duration.dep, duration.extra].filter(Boolean);
-  const hasData = Boolean(konshinTiersView || kokou || shukusei || useCount || senki || school || recast || spin || effects.length || formation || area || duration.label);
+  const hasData = Boolean(konshin || kokou || shukusei || useCount || senki || school || recast || spin || effects.length || formation || area || duration.label);
 
   return (
     <div className="flex flex-col gap-3 pb-8">
@@ -104,7 +103,7 @@ export function CardDetail({ card }: { card: Card }) {
           ) : null}
 
           {konshin ? (
-            <KonshinGrid view={konshin} />
+            <KonshinGrid tiers={konshin} />
           ) : kokou ? (
             <KokouGrid data={kokou} />
           ) : shukusei ? (
@@ -245,12 +244,12 @@ function EffectRow({ row }: { row: StatLine }) {
   );
 }
 
-function KonshinGrid({ view }: { view: KonshinView }) {
+function KonshinGrid({ tiers }: { tiers: KonshinTier[] }) {
   return (
     <div className="mt-4">
       <p className="text-xs leading-relaxed text-pretty text-muted">發動時所持士氣愈接近所需，效果愈強。</p>
       <div className="mt-2 flex flex-col gap-2">
-        {view.tiers.map((tier) => (
+        {tiers.map((tier) => (
           <section
             key={tier.id}
             className={cn(
@@ -270,12 +269,6 @@ function KonshinGrid({ view }: { view: KonshinView }) {
               <p className="text-xs tabular-nums text-faint">{tier.morale}</p>
             </div>
             <TierRows id={tier.id} rows={tier.rows} />
-          </section>
-        ))}
-        {view.shared.map((block) => (
-          <section key={block.title || "shared"} className="rounded-md bg-surface-2 px-2.5 py-2">
-            {block.title ? <h3 className="font-display text-sm leading-tight text-muted">{block.title}</h3> : null}
-            <TierRows id="shared" rows={block.rows} />
           </section>
         ))}
       </div>

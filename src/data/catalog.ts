@@ -97,11 +97,6 @@ export type KonshinTier = {
   rows: StatLine[];
 };
 
-export type KonshinView = {
-  tiers: KonshinTier[];
-  shared: { title: string; rows: StatLine[] }[];
-};
-
 export type ShukuseiTier = {
   id: "star" | "normal";
   title: string;
@@ -1030,44 +1025,21 @@ function stripKonshinMarks(effects: CardEffect[]): CardEffect[] {
   return effects.map((effect) => ({ ...effect, value: stripKonshinMoraleMark(effect.value) }));
 }
 
-function hoistSharedSpecials(groups: CardEffect[][]): { groups: CardEffect[][]; shared: CardEffect[]; allTiers: boolean } {
-  if (groups.length < 3) return { groups, shared: [], allTiers: false };
-  const key = (effect: CardEffect) => `${effect.label}|${effect.value}`;
-  const weakKeys = new Set(groups[1].filter((effect) => effect.label === "特殊効果").map(key));
-  const shared = groups[2].filter((effect) => effect.label === "特殊効果" && weakKeys.has(key(effect)));
-  if (!shared.length) return { groups, shared: [], allTiers: false };
-  const drop = new Set(shared.map(key));
-  const strip = (list: CardEffect[]) => list.filter((effect) => !(effect.label === "特殊効果" && drop.has(key(effect))));
-  const allTiers = groups[0].some((effect) => effect.label === "特殊効果" && drop.has(key(effect)));
-  return { groups: [strip(groups[0]), strip(groups[1]), strip(groups[2])], shared, allTiers };
-}
-
-export function konshinTiers(card: Card): KonshinView | null {
+export function konshinTiers(card: Card): KonshinTier[] | null {
   if (!isKonshinCard(card)) return null;
-  const collapsed = collapseKonshinGroups(splitKonshinGroups(card.effects ?? [])).map(stripKonshinMarks);
-  if (collapsed.length < 2) return null;
-  const { groups, shared, allTiers } = hoistSharedSpecials(collapsed);
+  const groups = collapseKonshinGroups(splitKonshinGroups(card.effects ?? [])).map(stripKonshinMarks);
+  if (groups.length < 2) return null;
 
   const noneRows = effectRows(groups[0] ?? []);
   const weakRows = effectRows(groups[1] ?? groups[0] ?? []);
   const strongRows = effectRows(groups[2] ?? groups[1] ?? groups[0] ?? []);
   const cost = card.stratCost;
 
-  return {
-    tiers: [
-      { id: "strong", title: "強渾身", morale: `士氣 ${cost}`, rows: strongRows },
-      { id: "weak", title: "弱渾身", morale: `士氣 ${cost + 1}`, rows: weakRows },
-      { id: "none", title: "無渾身", morale: `士氣 ${cost + 2}+`, rows: noneRows },
-    ],
-    shared: shared.length
-      ? [
-          {
-            title: allTiers ? "" : "強渾身・弱渾身",
-            rows: effectRows(shared),
-          },
-        ]
-      : [],
-  };
+  return [
+    { id: "strong", title: "強渾身", morale: `士氣 ${cost}`, rows: strongRows },
+    { id: "weak", title: "弱渾身", morale: `士氣 ${cost + 1}`, rows: weakRows },
+    { id: "none", title: "無渾身", morale: `士氣 ${cost + 2}+`, rows: noneRows },
+  ];
 }
 
 function parseMoraleMark(value: string): { abs: number } | { delta: number } | null {
@@ -1880,12 +1852,17 @@ export function cardSpecial(card: Card): SpecialBlock | null {
   const { specials } = peelSpecials(card);
   if (!specials.length) return null;
   const hide = pickMainDurationEffect(card);
-  return {
-    items: specials.map((item) => ({
-      text: translateDesc(item.text),
-      rows: item.nested.length ? effectRows(item.nested, hide) : undefined,
-    })),
-  };
+  const seen = new Set<string>();
+  const items = specials.flatMap((item) => {
+    const text = translateDesc(item.text);
+    const rows = item.nested.length ? effectRows(item.nested, hide) : undefined;
+    const key = `${text}|${(rows ?? []).map((row) => `${row.label}:${row.value}`).join(";")}`;
+    if (seen.has(key)) return [];
+    seen.add(key);
+    return [{ text, rows }];
+  });
+  if (!items.length) return null;
+  return { items };
 }
 
 function parseTankenBlocks(desc: string): { main: string; blocks: { name: string; cost: string | null; text: string }[] } {
