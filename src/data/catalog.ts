@@ -843,6 +843,64 @@ function retagSecondaryDurations(effects: CardEffect[], hide: CardEffect | null)
   });
 }
 
+export type SpinCol = {
+  id: "left" | "right";
+  title: string;
+  rows: StatLine[];
+};
+
+export type SpinTiers = {
+  shared: StatLine[];
+  cols: SpinCol[];
+};
+
+/** 向左／向右旋轉斬擊效果不同（鬼神のお松）。 */
+export function spinTiers(card: Card): SpinTiers | null {
+  const desc = card.stratDesc ?? "";
+  if (!/右回りの旋回操作/.test(desc) || !/左回りの旋回操作/.test(desc)) return null;
+
+  const hide = pickMainDurationEffect(card);
+  const shared: CardEffect[] = [];
+  const right: CardEffect[] = [];
+  const left: CardEffect[] = [];
+  let side: "shared" | "right" | "left" = "shared";
+  let rangeAdded = false;
+  const bare = (effect: CardEffect): CardEffect => ({
+    ...effect,
+    label: effect.label.replace(/[（(](?:基本|追加)[）)]/g, ""),
+  });
+
+  for (const raw of card.effects ?? []) {
+    const effect = bare(raw);
+    if (hide && effect.label === hide.label && effect.value === hide.value) continue;
+    if (/[（(]基本[）)]/.test(raw.label)) {
+      shared.push(effect);
+      side = "right";
+      continue;
+    }
+    if (/[（(]追加[）)]/.test(raw.label)) {
+      side = "left";
+      left.push(effect);
+      continue;
+    }
+    if (side === "left" && effect.label.startsWith("効果時間") && /斬撃の範囲/.test(desc) && !rangeAdded) {
+      left.push({ label: "斬撃範囲", value: "拡大" });
+      rangeAdded = true;
+    }
+    if (side === "left") left.push(effect);
+    else if (side === "right") right.push(effect);
+    else shared.push(effect);
+  }
+
+  return {
+    shared: effectRows(shared, hide),
+    cols: [
+      { id: "left", title: "向左", rows: effectRows(left, hide) },
+      { id: "right", title: "向右", rows: effectRows(right, hide) },
+    ],
+  };
+}
+
 export function displayEffects(card: Card): StatLine[] {
   const { rest } = peelSpecials(card);
   const { items } = parseSpecialBranches(card.stratDesc ?? "");

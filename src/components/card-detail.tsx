@@ -14,6 +14,7 @@ import {
   schoolTiers,
   senkiTiers,
   shukuseiTiers,
+  spinTiers,
   splitEffectValue,
   useCountTiers,
   type Card,
@@ -24,6 +25,7 @@ import {
   type SchoolCol,
   type ShukuseiTier,
   type SpecialBlock,
+  type SpinTiers,
   type StatLine,
   type Tanken,
   type UseCountTier,
@@ -63,13 +65,14 @@ export function CardDetail({ card }: { card: Card }) {
   const senki = konshin || kokou || shukusei || useCount ? null : senkiTiers(card);
   const school = konshin || kokou || shukusei || useCount || senki ? null : schoolTiers(card);
   const recast = konshin || kokou || shukusei || useCount || senki || school ? null : recastTiers(card);
-  const effects = konshin || kokou || shukusei || useCount || senki || school || recast ? [] : displayEffects(card);
+  const spin = konshin || kokou || shukusei || useCount || senki || school || recast ? null : spinTiers(card);
+  const effects = konshin || kokou || shukusei || useCount || senki || school || recast || spin ? [] : displayEffects(card);
   const area = displayArea(card);
   const desc = displayMainStratDesc(card);
   const tankens = cardTanken(card);
   const special = school || recast ? null : cardSpecial(card);
   const meta = [duration.seconds, duration.dep, duration.extra].filter(Boolean);
-  const hasData = Boolean(konshin || kokou || shukusei || useCount || senki || school || recast || effects.length || area || duration.label);
+  const hasData = Boolean(konshin || kokou || shukusei || useCount || senki || school || recast || spin || effects.length || area || duration.label);
 
   return (
     <div className="flex flex-col gap-3 pb-8">
@@ -111,6 +114,8 @@ export function CardDetail({ card }: { card: Card }) {
             <SchoolGrid cols={school} />
           ) : recast ? (
             <RecastGrid cols={recast} />
+          ) : spin ? (
+            <SpinGrid data={spin} />
           ) : effects.length ? (
             <EffectList rows={effects} />
           ) : null}
@@ -292,6 +297,28 @@ function UseCountGrid({ tiers }: { tiers: UseCountTier[] }) {
               ) : null}
             </div>
             <TierRows id={tier.id} rows={tier.rows} />
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SpinGrid({ data }: { data: SpinTiers }) {
+  return (
+    <div className="mt-4">
+      <p className="text-xs leading-relaxed text-pretty text-muted">向左或向右旋轉後斬擊，效果不同。</p>
+      {data.shared.length ? (
+        <div className="mt-2 rounded-md bg-surface-2 px-2.5 py-2">
+          <p className="text-xs text-faint">基本</p>
+          <TierRows id="spin-shared" rows={data.shared} />
+        </div>
+      ) : null}
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        {data.cols.map((col) => (
+          <section key={col.id} className="min-w-0 rounded-md bg-surface-2 px-2.5 py-2">
+            <h3 className="font-display text-sm leading-tight text-fg">{col.title}</h3>
+            <TierRows id={col.id} rows={col.rows} />
           </section>
         ))}
       </div>
