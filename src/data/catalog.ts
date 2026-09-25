@@ -909,7 +909,19 @@ export function displayEffects(card: Card): StatLine[] {
       ? rest.filter((effect) => effect.label !== "特殊効果" || !isBranchFragment(effect.value, items))
       : rest;
   const hide = pickMainDurationEffect(card);
-  return effectRows(retagSecondaryDurations(filtered, hide), hide, rippleIntervalC(card));
+  const withoutFormation = formationMorale(card)
+    ? filtered.filter((effect) => effect.label !== "計略の必要士気")
+    : filtered;
+  return effectRows(retagSecondaryDurations(withoutFormation, hide), hide, rippleIntervalC(card));
+}
+
+/** 奉武：受到友軍陣形效果時，此計略所需士氣下降。 */
+export function formationMorale(card: Card): { normal: number; reduced: number } | null {
+  if (!/味方の陣形の効果を受けている時、この計略の必要士気が下がる/.test(card.stratDesc ?? "")) return null;
+  const hit = (card.effects ?? []).find((effect) => effect.label === "計略の必要士気");
+  const delta = Number(String(hit?.value ?? "").replace(/[＋]/g, "+").replace(/[－]/g, "-"));
+  if (!Number.isFinite(delta) || delta >= 0) return null;
+  return { normal: card.stratCost, reduced: card.stratCost + delta };
 }
 
 /** 紫勢力渾身：eiketsudb 由弱至強（無→弱→強），畫面由左至右 強｜弱｜無。 */

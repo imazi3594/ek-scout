@@ -7,6 +7,7 @@ import {
   displayEffects,
   displayMainStratDesc,
   formatStratDuration,
+  formationMorale,
   kokouTiers,
   konshinTiers,
   officialUrl,
@@ -67,12 +68,13 @@ export function CardDetail({ card }: { card: Card }) {
   const recast = konshin || kokou || shukusei || useCount || senki || school ? null : recastTiers(card);
   const spin = konshin || kokou || shukusei || useCount || senki || school || recast ? null : spinTiers(card);
   const effects = konshin || kokou || shukusei || useCount || senki || school || recast || spin ? [] : displayEffects(card);
+  const formation = formationMorale(card);
   const area = displayArea(card);
   const desc = displayMainStratDesc(card);
   const tankens = cardTanken(card);
   const special = school || recast ? null : cardSpecial(card);
   const meta = [duration.seconds, duration.dep, duration.extra].filter(Boolean);
-  const hasData = Boolean(konshin || kokou || shukusei || useCount || senki || school || recast || spin || effects.length || area || duration.label);
+  const hasData = Boolean(konshin || kokou || shukusei || useCount || senki || school || recast || spin || effects.length || formation || area || duration.label);
 
   return (
     <div className="flex flex-col gap-3 pb-8">
@@ -119,6 +121,8 @@ export function CardDetail({ card }: { card: Card }) {
           ) : effects.length ? (
             <EffectList rows={effects} />
           ) : null}
+
+          {formation ? <FormationMoraleBox normal={formation.normal} reduced={formation.reduced} /> : null}
 
           {area ? (
             <p className="mt-3 text-sm text-muted">
@@ -299,6 +303,24 @@ function UseCountGrid({ tiers }: { tiers: UseCountTier[] }) {
             <TierRows id={tier.id} rows={tier.rows} />
           </section>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function FormationMoraleBox({ normal, reduced }: { normal: number; reduced: number }) {
+  return (
+    <div className="mt-4">
+      <p className="text-xs leading-relaxed text-pretty text-muted">受到友軍陣形效果時，所需士氣下降。</p>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <section className="rounded-md bg-surface-2 px-2.5 py-2">
+          <h3 className="font-display text-sm leading-tight text-muted">平常</h3>
+          <p className="mt-1 font-display text-2xl tabular-nums leading-none text-fg">{normal}</p>
+        </section>
+        <section className="rounded-md bg-faction-ao/25 px-2.5 py-2">
+          <h3 className="font-display text-sm leading-tight text-fg">陣形中</h3>
+          <p className="mt-1 font-display text-2xl tabular-nums leading-none text-fg">{reduced}</p>
+        </section>
       </div>
     </div>
   );
