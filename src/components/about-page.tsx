@@ -141,11 +141,11 @@ export function AboutPage() {
         <p className="mt-1">{DATA_META.pack}</p>
         <p className="mt-1 tabular-nums">遊戲更新 {DATA_META.gameDate.replaceAll("-", "/")}　資料擷取 {DATA_META.dataDate.replaceAll("-", "/")}</p>
         <p className="mt-3">
-          數值整理自{" "}
+          數值整理及翻譯自{" "}
           <a className="text-fg underline decoration-border underline-offset-2" href="https://eiketsudb.com/" target="_blank" rel="noreferrer">
             eiketsudb.com
           </a>
-          ，對戰時不必另開官網翻查。
+          ，對戰時不必另開網頁翻查。
         </p>
         <p className="mt-3">英傑大戦為 SEGA 的遊戲。此為玩家自用速查，與官方無關。</p>
       </section>
@@ -153,17 +153,6 @@ export function AboutPage() {
       <section className="mt-4 rounded-lg border border-white/10 bg-black/35 p-4 text-sm leading-relaxed text-pretty text-muted">
         <p className="text-xs text-faint">Credit</p>
         <p className="mt-2 text-fg">Grok（xAI）設計與製作</p>
-        <p className="mt-1">
-          開源：{" "}
-          <a
-            className="text-fg underline decoration-border underline-offset-2"
-            href="https://github.com/imazi3594/ek-scout"
-            target="_blank"
-            rel="noreferrer"
-          >
-            github.com/imazi3594/ek-scout
-          </a>
-        </p>
       </section>
     </div>
   );
