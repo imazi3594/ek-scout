@@ -37,7 +37,7 @@ import type { GuideTopic } from "@/data/guide";
 initInstallCapture();
 
 type Tab = "search" | "skills" | "recents" | "about";
-const TABS: Tab[] = ["search", "skills", "recents", "about"];
+const TABS: Tab[] = ["search", "recents", "skills", "about"];
 type Hist =
   | { v: "root" }
   | { v: "home" }
@@ -376,8 +376,8 @@ export function ScoutApp() {
         </div>
         <nav className="mx-auto flex max-w-6xl gap-0 px-2 sm:gap-1 sm:px-6">
           <TabBtn id="search" tab={tab} setTab={goTab} icon={<Search className="size-4" />} label="速查" />
-          <TabBtn id="skills" tab={tab} setTab={goTab} icon={<BookOpen className="size-4" />} label="資料" />
           <TabBtn id="recents" tab={tab} setTab={goTab} icon={<Clock className="size-4" />} label="最近" />
+          <TabBtn id="skills" tab={tab} setTab={goTab} icon={<BookOpen className="size-4" />} label="資料" />
           <TabBtn id="about" tab={tab} setTab={goTab} icon={<Info className="size-4" />} label="關於" />
         </nav>
       </header>
@@ -614,9 +614,6 @@ export function ScoutApp() {
             </div>
           </div>
           <div className="tab-pane">
-            <GuidePage topic={guideTopic} onTopic={setGuideView} />
-          </div>
-          <div className="tab-pane">
             <p className="shrink-0 px-4 pt-3 pb-1 text-xs tabular-nums text-faint sm:px-6">
               {recents.length ? `最近 ${recents.length} 張` : "最近查看"}
             </p>
@@ -635,6 +632,9 @@ export function ScoutApp() {
                 <li className="px-3 py-16 text-center text-sm text-muted">尚未查看武將。在速查開啟過即會顯示於此。</li>
               )}
             </ul>
+          </div>
+          <div className="tab-pane">
+            <GuidePage topic={guideTopic} onTopic={setGuideView} />
           </div>
           <div className="tab-pane">
             <AboutPage />
