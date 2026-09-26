@@ -45,7 +45,7 @@ export function splitEffectValue(value: string): { note: string; lines: string[]
   const intelBands = splitIntelBands(value);
   if (intelBands) return intelBands;
 
-  let s = value.replace(/\s+/g, " ").trim();
+  let s = value.replace(/[^\S\n]+/g, " ").trim();
   if (!s) return { note: "", lines: [] };
 
   let prefixNote = "";
