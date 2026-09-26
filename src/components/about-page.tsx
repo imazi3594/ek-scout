@@ -3,6 +3,13 @@ import { Copy, Download, Share, Smartphone } from "lucide-react";
 import { CARD_COUNT, DATA_META } from "@/data/catalog";
 import { deviceKind, isStandalone, subscribeInstall, type BeforeInstall } from "@/lib/install";
 
+const FEATURES = [
+  { icon: "🔍", title: "極速搜查", body: "輸入武將名稱、卡號或計略字詞，即可查找卡牌。" },
+  { icon: "🎛️", title: "篩選", body: "可按稀有度、兵種、計略類型等條件收窄結果。" },
+  { icon: "📖", title: "繁體中文", body: "計略說明為繁體中文翻譯，對戰時不必另開網頁翻查。" },
+  { icon: "⚡️", title: "對戰速查", body: "專為對戰準備時翻查而設，重點數值一眼可見。" },
+] as const;
+
 const PAGE_URL = "https://imazi3594.github.io/ek-scout/";
 
 export function AboutPage() {
@@ -72,9 +79,22 @@ export function AboutPage() {
         <p className="mt-1 text-sm tabular-nums text-muted">收錄卡牌 {CARD_COUNT} 張</p>
       </div>
 
-      <p className="mt-6 text-sm leading-relaxed text-pretty text-fg">
-        輸入卡牌武將的名稱、卡號或計略的其中字詞，或使用篩選功能，就能極速查詢卡牌資料，而且是繁體中文翻譯版本，專為對戰準備時速查而設！！！
-      </p>
+      <ul className="mt-6 flex flex-col gap-2.5">
+        {FEATURES.map((item) => (
+          <li
+            key={item.title}
+            className="flex items-start gap-3 rounded-lg border border-white/10 bg-black/35 px-3.5 py-3.5"
+          >
+            <span className="w-7 shrink-0 text-center text-lg leading-6" aria-hidden>
+              {item.icon}
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-fg">{item.title}</p>
+              <p className="mt-1 text-sm leading-relaxed text-muted">{item.body}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
 
       <section className="mt-6 rounded-lg border border-white/10 bg-black/35 p-4">
         <p className="flex items-center gap-2 text-xs text-faint">
