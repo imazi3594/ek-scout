@@ -332,7 +332,7 @@ export function ScoutApp() {
   return (
     <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-bg text-fg">
       {offline ? (
-        <p className="relative z-[80] shrink-0 border-b border-white/10 bg-black/80 px-4 pt-[max(0.35rem,env(safe-area-inset-top))] pb-1.5 text-center text-xs text-muted">
+        <p className="relative z-[80] shrink-0 border-b border-red-950 bg-red-800 px-4 pt-[max(0.35rem,env(safe-area-inset-top))] pb-1.5 text-center text-xs text-white">
           離線模式　已儲存的資料仍可查閱
         </p>
       ) : null}
