@@ -567,30 +567,32 @@ export function ScoutApp() {
                   <p className="text-sm leading-relaxed text-pretty text-muted">
                     可使用篩選，或輸入名稱、卡號或計略名的其中一字即可極速搜查。
                   </p>
-                  <button
-                    type="button"
-                    className="mt-5 inline-flex h-10 items-center gap-1.5 rounded-md bg-surface-2 px-4 text-sm text-fg"
-                    onClick={openRandom}
-                    aria-label="隨機一張卡"
-                  >
-                    <Dices className="size-4" />
-                    隨機一張
-                  </button>
-                  {webBrowse ? (
-                    <>
-                      <button
-                        type="button"
-                        className="mt-3 inline-flex h-10 items-center gap-1.5 rounded-md border border-dashed border-faint px-4 text-sm text-muted"
-                        onClick={() => void promoteInstall()}
-                      >
-                        <Download className="size-4" />
-                        安裝到手機
-                      </button>
-                      {installHint ? (
-                        <p className="mx-auto mt-2 max-w-xs text-xs leading-relaxed text-pretty text-muted">{installHint}</p>
-                      ) : null}
-                    </>
-                  ) : null}
+                  <div className="mt-5 flex flex-col items-center">
+                    <button
+                      type="button"
+                      className="inline-flex h-10 items-center gap-1.5 rounded-md bg-surface-2 px-4 text-sm text-fg"
+                      onClick={openRandom}
+                      aria-label="隨機一張卡"
+                    >
+                      <Dices className="size-4" />
+                      隨機一張
+                    </button>
+                    {webBrowse ? (
+                      <>
+                        <button
+                          type="button"
+                          className="mt-3 inline-flex h-10 items-center gap-1.5 rounded-md border border-dashed border-faint px-4 text-sm text-muted"
+                          onClick={() => void promoteInstall()}
+                        >
+                          <Download className="size-4" />
+                          安裝到手機
+                        </button>
+                        {installHint ? (
+                          <p className="mt-2 max-w-xs text-xs leading-relaxed text-pretty text-muted">{installHint}</p>
+                        ) : null}
+                      </>
+                    ) : null}
+                  </div>
                 </div>
               ) : (
                 <ul className="h-full overflow-y-auto overscroll-contain px-2 py-2 sm:px-4">
