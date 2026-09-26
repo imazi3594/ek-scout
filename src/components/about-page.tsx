@@ -79,7 +79,7 @@ export function AboutPage() {
       <section className="mt-6 rounded-lg border border-white/10 bg-black/35 p-4">
         <p className="flex items-center gap-2 text-xs text-faint">
           <Smartphone className="size-3.5" />
-          安裝為獨立 App（無地址欄）
+          安裝為獨立 App
         </p>
         {installed ? (
           <p className="mt-3 text-sm text-fg">目前已是獨立畫面。之後由主畫面閃電圖示開啟即可。</p>
@@ -128,7 +128,7 @@ export function AboutPage() {
               </ol>
             ) : (
               <p className="mt-3 text-sm leading-relaxed text-muted">
-                Android Chrome 須選「安裝應用程式」，請勿選「加到主畫面」——後者會保留 browser toolbar。
+                安裝後可享全螢幕更佳體驗。
               </p>
             )}
           </>
