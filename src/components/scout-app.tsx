@@ -72,7 +72,6 @@ export function ScoutApp() {
   const [stratCats, setStratCats] = useState<string[]>([]);
   const [costs, setCosts] = useState<number[]>([]);
   const [moreFilters, setMoreFilters] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(true);
   const [guideTopic, setGuideTopic] = useState<GuideTopic | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -429,12 +428,15 @@ export function ScoutApp() {
               <div className="mt-2 flex items-center gap-2">
                 <button
                   type="button"
-                  className="flex h-8 shrink-0 items-center gap-0.5 rounded-md bg-cost px-2.5 text-xs font-medium text-black lg:hidden"
-                  onClick={() => setFiltersOpen((open) => !open)}
-                  aria-expanded={filtersOpen}
+                  className="flex h-8 shrink-0 items-center gap-0.5 rounded-md bg-cost px-2.5 text-xs font-medium text-black"
+                  onClick={() => setMoreFilters((v) => !v)}
+                  aria-expanded={moreFilters}
                 >
-                  篩選
-                  {filtersOpen ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+                  更多篩選
+                  {periods.length + skills.length + rarities.length + stratCats.length ? (
+                    <span className="tabular-nums">{periods.length + skills.length + rarities.length + stratCats.length}</span>
+                  ) : null}
+                  {moreFilters ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
                 </button>
                 <p className="min-w-0 flex-1 truncate text-xs tabular-nums text-faint">{resultLabel}</p>
                 <button
@@ -446,13 +448,7 @@ export function ScoutApp() {
                 </button>
               </div>
 
-              <div
-                className={cn(
-                  "flex-col gap-1 overflow-x-hidden",
-                  filtersOpen ? "mt-2 flex max-h-[min(52vh,26rem)] overflow-y-auto" : "hidden",
-                  "lg:mt-3 lg:flex lg:max-h-[min(42vh,24rem)] lg:overflow-y-auto",
-                )}
-              >
+              <div className="mt-2 flex max-h-[min(52vh,26rem)] flex-col gap-1 overflow-x-hidden overflow-y-auto lg:max-h-[min(42vh,24rem)]">
                 <FilterRule label="勢力" />
                 <ChipGrid
                   cols="grid-cols-7"
@@ -493,21 +489,6 @@ export function ScoutApp() {
                       }))}
                     />
                   </div>
-
-                <div className="mt-1 flex items-center">
-                  <button
-                    type="button"
-                    className="flex h-8 shrink-0 items-center gap-0.5 rounded-md bg-cost px-2.5 text-xs font-medium text-black"
-                    onClick={() => setMoreFilters((v) => !v)}
-                    aria-expanded={moreFilters}
-                  >
-                    更多篩選
-                    {periods.length + skills.length + rarities.length + stratCats.length ? (
-                      <span className="tabular-nums">{periods.length + skills.length + rarities.length + stratCats.length}</span>
-                    ) : null}
-                    {moreFilters ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
-                  </button>
-                </div>
 
                 {moreFilters ? (
                   <div className="flex flex-col gap-1 overflow-x-hidden pb-1">
