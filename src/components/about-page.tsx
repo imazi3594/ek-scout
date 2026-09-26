@@ -91,7 +91,7 @@ export function AboutPage() {
               className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-md border border-black bg-cost font-medium text-black"
             >
               <Download className="size-4" />
-              安裝到手機
+              安裝到手機以離線瀏覽
             </button>
             {hint ? <p className="mt-3 text-sm leading-relaxed text-pretty text-fg">{hint}</p> : null}
 

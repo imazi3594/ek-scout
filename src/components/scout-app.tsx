@@ -585,7 +585,7 @@ export function ScoutApp() {
                           onClick={() => void promoteInstall()}
                         >
                           <Download className="size-4" />
-                          安裝到手機
+                          安裝到手機以離線瀏覽
                         </button>
                         {installHint ? (
                           <p className="mt-2 max-w-xs text-xs leading-relaxed text-pretty text-muted">{installHint}</p>
