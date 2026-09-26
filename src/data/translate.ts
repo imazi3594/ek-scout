@@ -1485,7 +1485,17 @@ const YUE_AFTER: [string, string][] = [
 ];
 
 export function translateDesc(desc: string): string {
-  let s = localizeJp(desc.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, " "));
+  let raw = desc.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, " ");
+  const names: string[] = [];
+  raw = raw.replace(/短計・[^【：<\n]+(?:【[^】]*】)?/g, (name) => {
+    const token = `§N${names.length}§`;
+    names.push(name);
+    return token;
+  });
+  let s = localizeJp(raw);
+  names.forEach((name, i) => {
+    s = s.split(`§N${i}§`).join(name);
+  });
   s = s.replace(/\(\s*\)/g, "");
   s = s.replace(/(?<!\n)(短計・)/g, "\n$1");
   s = s.replace(/ *\n */g, "\n").replace(/\n{2,}/g, "\n").trim();
