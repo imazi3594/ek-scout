@@ -6,7 +6,7 @@ import { deviceKind, isStandalone, subscribeInstall, type BeforeInstall } from "
 const FEATURES = [
   { icon: "🔍", title: "極速搜查", body: "輸入武將名稱、卡號或計略字詞，即可查找卡牌。" },
   { icon: "🎛️", title: "篩選", body: "可按稀有度、兵種、計略類型等條件收窄結果。" },
-  { icon: "📖", title: "繁體中文", body: "計略說明為繁體中文翻譯，對戰時不必另開網頁翻查。" },
+  { icon: "📖", title: "繁體中文", body: "計略說明為繁體中文翻譯，不必為語言不通而煩惱。" },
   { icon: "⚡️", title: "對戰速查", body: "專為對戰準備時翻查而設，重點數值一眼可見。" },
 ] as const;
 
