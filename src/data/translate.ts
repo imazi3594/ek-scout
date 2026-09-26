@@ -1395,7 +1395,11 @@ export function localizeJp(input: string): string {
   if (!input) return "";
   let s = input.replace(/▲/g, "↑").replace(/▼/g, "↓").replace(/◆/g, "").replace(/◇/g, "※ ");
   s = s.replace(/約(\d+(?:\.\d+)?)秒ごとに(約?[+\-＋－]?\d+(?:\.\d+)?%?)/g, "每約$1秒$2");
-  s = s.replace(/通常の射撃(\d+)ＨＩＴにかかる時間と[、,]ほぼ同時間で(\d+)ＨＩＴする/g, "在通常射擊打出 $1 HIT 所需的時間內，打出 $2 HIT");
+  s = s.replace(/通常の射撃(\d+)ＨＩＴにかかる時間と[、,]ほぼ同時間で(\d+)ＨＩＴする/g, (_m, normal, hits) => {
+    // データベース・wiki 仍作 7 HIT。明智光秀「決意の銃弾」最新修正為 8 HIT。
+    const shown = hits === "7" ? "8" : hits;
+    return `在通常射擊打出 ${normal} HIT 所需的時間內，打出 ${shown} HIT`;
+  });
   s = s.replace(/ＨＩＴ/g, "HIT");
   s = s.replace(/（/g, "(").replace(/）/g, ")");
   s = applyPairs(s, [...GRAMMAR, ...PHRASES, ...INFLECT]);
