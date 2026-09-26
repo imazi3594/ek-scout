@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { BookOpen, ChevronDown, ChevronUp, Clock, Dices, Info, Search, X } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronUp, Clock, Dices, Download, Info, Search, X } from "lucide-react";
 import {
   CARD_BY_ID,
   CARDS,
@@ -31,7 +31,7 @@ import { AboutPage } from "@/components/about-page";
 import { GuidePage } from "@/components/guide-page";
 import { SkillList } from "@/components/skill-chip";
 import { cn } from "@/lib/utils";
-import { initInstallCapture } from "@/lib/install";
+import { deviceKind, initInstallCapture, isStandalone, subscribeInstall, type BeforeInstall } from "@/lib/install";
 import type { GuideTopic } from "@/data/guide";
 
 initInstallCapture();
@@ -87,6 +87,9 @@ export function ScoutApp() {
   const [exitHint, setExitHint] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [offline, setOffline] = useState(() => typeof navigator !== "undefined" && navigator.onLine === false);
+  const [webBrowse, setWebBrowse] = useState(() => typeof window !== "undefined" && !isStandalone());
+  const [installEvent, setInstallEvent] = useState<BeforeInstall | null>(null);
+  const [installHint, setInstallHint] = useState("");
 
   useEffect(() => {
     const sync = () => setOffline(navigator.onLine === false);
@@ -98,6 +101,34 @@ export function ScoutApp() {
       window.removeEventListener("offline", sync);
     };
   }, []);
+
+  useEffect(() => {
+    setWebBrowse(!isStandalone());
+    return subscribeInstall(setInstallEvent);
+  }, []);
+
+  async function promoteInstall() {
+    if (installEvent) {
+      await installEvent.prompt();
+      const { outcome } = await installEvent.userChoice;
+      if (outcome === "accepted") setWebBrowse(false);
+      return;
+    }
+    const { ios, iosChrome, android } = deviceKind();
+    if (iosChrome) {
+      setInstallHint("iPhone 的 Chrome 無法隱藏地址欄。請用 Safari 開啟，再加到主畫面。");
+      return;
+    }
+    if (ios) {
+      setInstallHint("按底欄分享鍵，再選「加到主畫面」。");
+      return;
+    }
+    if (android) {
+      setInstallHint("Chrome 右上 ⋮ → 選「安裝應用程式」，不要選「加到主畫面」。");
+      return;
+    }
+    setInstallHint("用 Chrome 右上 ⋮ →「安裝應用程式」。");
+  }
 
   function pushView(next: Hist) {
     if (fromPop.current) return;
@@ -545,6 +576,21 @@ export function ScoutApp() {
                     <Dices className="size-4" />
                     隨機一張
                   </button>
+                  {webBrowse ? (
+                    <>
+                      <button
+                        type="button"
+                        className="mt-3 inline-flex h-10 items-center gap-1.5 rounded-md border border-dashed border-faint px-4 text-sm text-muted"
+                        onClick={() => void promoteInstall()}
+                      >
+                        <Download className="size-4" />
+                        安裝到手機
+                      </button>
+                      {installHint ? (
+                        <p className="mx-auto mt-2 max-w-xs text-xs leading-relaxed text-pretty text-muted">{installHint}</p>
+                      ) : null}
+                    </>
+                  ) : null}
                 </div>
               ) : (
                 <ul className="h-full overflow-y-auto overscroll-contain px-2 py-2 sm:px-4">
