@@ -2,6 +2,7 @@
 
 const PHRASES: [string, string][] = [
   ["ただし戦場にいる対象ではない味方が撤退する", "但不在效果範圍內的友軍撤退"],
+  ["蒼の味方の武力が上がる。さらに自身の武力が上がり、射撃時の攻撃回数が増え、攻撃間隔が短くなる", "蒼勢友軍武力上升。再者，自身武力上升，射擊次數增加，射擊間隔縮短"],
   ["敵にダメージを与えるたびに攻城ゲージを下げる", "每次對敵軍造成傷害時，攻城槽下降"],
   ["敵にダメージを与えると攻城ゲージを下げる", "對敵軍造成傷害時，攻城槽下降"],
   ["1秒に溜まる攻城ゲージを1とした時", "以1秒所累積的攻城槽為1時"],
@@ -1394,6 +1395,8 @@ export function localizeJp(input: string): string {
   if (!input) return "";
   let s = input.replace(/▲/g, "↑").replace(/▼/g, "↓").replace(/◆/g, "").replace(/◇/g, "※ ");
   s = s.replace(/約(\d+(?:\.\d+)?)秒ごとに(約?[+\-＋－]?\d+(?:\.\d+)?%?)/g, "每約$1秒$2");
+  s = s.replace(/通常の射撃(\d+)ＨＩＴにかかる時間と[、,]ほぼ同時間で(\d+)ＨＩＴする/g, "在通常射擊打出 $1 HIT 所需的時間內，打出 $2 HIT");
+  s = s.replace(/ＨＩＴ/g, "HIT");
   s = s.replace(/（/g, "(").replace(/）/g, ")");
   s = applyPairs(s, [...GRAMMAR, ...PHRASES, ...INFLECT]);
   const held = protectProper(s);
