@@ -429,7 +429,7 @@ export function ScoutApp() {
               <div className="mt-2 flex items-center gap-2">
                 <button
                   type="button"
-                  className="flex h-8 shrink-0 items-center gap-0.5 rounded-md bg-surface-2 px-2.5 text-xs text-fg lg:hidden"
+                  className="flex h-8 shrink-0 items-center gap-0.5 rounded-md bg-cost px-2.5 text-xs font-medium text-black lg:hidden"
                   onClick={() => setFiltersOpen((open) => !open)}
                   aria-expanded={filtersOpen}
                 >
@@ -497,7 +497,7 @@ export function ScoutApp() {
                 <div className="mt-1 flex items-center">
                   <button
                     type="button"
-                    className="flex h-8 shrink-0 items-center gap-0.5 rounded-md bg-surface-2 px-2.5 text-xs text-fg"
+                    className="flex h-8 shrink-0 items-center gap-0.5 rounded-md bg-cost px-2.5 text-xs font-medium text-black"
                     onClick={() => setMoreFilters((v) => !v)}
                     aria-expanded={moreFilters}
                   >
