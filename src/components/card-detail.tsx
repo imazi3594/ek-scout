@@ -103,23 +103,23 @@ export function CardDetail({ card }: { card: Card }) {
           ) : null}
 
           {konshin ? (
-            <KonshinGrid tiers={konshin} />
+            <KonshinGrid tiers={konshin} href={card.dbUrl} />
           ) : kokou ? (
-            <KokouGrid data={kokou} />
+            <KokouGrid data={kokou} href={card.dbUrl} />
           ) : shukusei ? (
-            <ShukuseiGrid tiers={shukusei} />
+            <ShukuseiGrid tiers={shukusei} href={card.dbUrl} />
           ) : useCount ? (
-            <UseCountGrid tiers={useCount} />
+            <UseCountGrid tiers={useCount} href={card.dbUrl} />
           ) : senki ? (
-            <SenkiGrid cols={senki} />
+            <SenkiGrid cols={senki} href={card.dbUrl} />
           ) : school ? (
-            <SchoolGrid cols={school} />
+            <SchoolGrid cols={school} href={card.dbUrl} />
           ) : recast ? (
-            <RecastGrid cols={recast} />
+            <RecastGrid cols={recast} href={card.dbUrl} />
           ) : spin ? (
-            <SpinGrid data={spin} />
+            <SpinGrid data={spin} href={card.dbUrl} />
           ) : effects.length ? (
-            <EffectList rows={effects} />
+            <EffectList rows={effects} href={card.dbUrl} />
           ) : null}
 
           {formation ? <FormationMoraleBox normal={formation.normal} reduced={formation.reduced} /> : null}
@@ -133,10 +133,10 @@ export function CardDetail({ card }: { card: Card }) {
         </section>
       ) : null}
 
-      {special ? <SpecialBox block={special} /> : null}
+      {special ? <SpecialBox block={special} href={card.dbUrl} /> : null}
 
       {tankens.map((tanken) => (
-        <TankenBox key={tanken.name} tanken={tanken} />
+        <TankenBox key={tanken.name} tanken={tanken} href={card.dbUrl} />
       ))}
 
       <div className="flex gap-2">
@@ -159,7 +159,7 @@ export function CardDetail({ card }: { card: Card }) {
   );
 }
 
-function TankenBox({ tanken }: { tanken: Tanken }) {
+function TankenBox({ tanken, href }: { tanken: Tanken; href?: string }) {
   return (
     <section className="rounded-lg border border-white/10 bg-black/35 p-4">
       <p className="text-xs text-faint">短計</p>
@@ -168,12 +168,12 @@ function TankenBox({ tanken }: { tanken: Tanken }) {
         {tanken.cost ? <MoraleCost cost={tanken.cost} /> : null}
       </div>
       {tanken.text ? <p className="mt-3 text-sm leading-relaxed text-pretty text-fg">{tanken.text}</p> : null}
-      {tanken.rows.length ? <EffectList rows={tanken.rows} /> : null}
+      {tanken.rows.length ? <EffectList rows={tanken.rows} href={href} /> : null}
     </section>
   );
 }
 
-function SpecialBox({ block }: { block: SpecialBlock }) {
+function SpecialBox({ block, href }: { block: SpecialBlock; href?: string }) {
   return (
     <section className="rounded-lg border border-white/10 bg-black/35 p-4">
       <p className="text-xs text-faint">特殊效果</p>
@@ -195,7 +195,7 @@ function SpecialBox({ block }: { block: SpecialBlock }) {
             </p>
             {item.rows?.length ? (
               <div className="pl-4">
-                <EffectList rows={item.rows} compact />
+                <EffectList rows={item.rows} compact href={href} />
               </div>
             ) : null}
           </li>
@@ -205,24 +205,53 @@ function SpecialBox({ block }: { block: SpecialBlock }) {
   );
 }
 
-function EffectList({ rows, compact }: { rows: StatLine[]; compact?: boolean }) {
+function EffectList({ rows, compact, href }: { rows: StatLine[]; compact?: boolean; href?: string }) {
   return (
     <dl className={cn(compact ? "mt-1.5" : "mt-4", "grid grid-cols-1 gap-1.5")}>
       {rows.map((row) => (
-        <EffectRow key={`${row.label}-${row.value}`} row={row} />
+        <EffectRow key={`${row.label}-${row.value}`} row={row} href={href} />
       ))}
     </dl>
   );
 }
 
-function EffectRow({ row }: { row: StatLine }) {
+const EXT_REF = /(詳情請參閱外部網站|參閱外部網站)/g;
+
+function ValueText({ text, href }: { text: string; href?: string }) {
+  if (!href || !text.includes("參閱外部網站")) return <>{text}</>;
+  const parts = text.split(EXT_REF);
+  return (
+    <>
+      {parts.map((part, i) =>
+        part === "參閱外部網站" || part === "詳情請參閱外部網站" ? (
+          <a
+            key={i}
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 underline decoration-white/35 underline-offset-2"
+          >
+            {part}
+            <ExternalLink className="size-3.5 shrink-0" aria-hidden />
+          </a>
+        ) : (
+          <span key={i}>{part}</span>
+        ),
+      )}
+    </>
+  );
+}
+
+function EffectRow({ row, href }: { row: StatLine; href?: string }) {
   const { note, lines } = splitEffectValue(row.value);
   const listed = note || lines.length > 1;
   if (!listed) {
     return (
       <div className="flex items-baseline justify-between gap-3 rounded-md bg-surface-2 px-2.5 py-1.5">
         <dt className="shrink-0 text-xs text-faint">{row.label}</dt>
-        <dd className="text-right text-sm leading-relaxed text-pretty tabular-nums text-fg">{row.value}</dd>
+        <dd className="text-right text-sm leading-relaxed text-pretty tabular-nums text-fg">
+          <ValueText text={row.value} href={href} />
+        </dd>
       </div>
     );
   }
@@ -230,12 +259,16 @@ function EffectRow({ row }: { row: StatLine }) {
     <div className="rounded-md bg-surface-2 px-2.5 py-1.5">
       <dt className="text-xs text-faint">{row.label}</dt>
       <dd className="mt-1">
-        {note ? <p className="mb-0.5 text-xs leading-relaxed text-muted">{note}</p> : null}
+        {note ? (
+          <p className="mb-0.5 text-xs leading-relaxed text-muted">
+            <ValueText text={note} href={href} />
+          </p>
+        ) : null}
         <ul className="space-y-0.5">
           {lines.map((line) => (
             <li key={line} className="text-sm leading-relaxed tabular-nums text-fg">
               <span className="text-faint">· </span>
-              {line}
+              <ValueText text={line} href={href} />
             </li>
           ))}
         </ul>
@@ -244,7 +277,7 @@ function EffectRow({ row }: { row: StatLine }) {
   );
 }
 
-function KonshinGrid({ tiers }: { tiers: KonshinTier[] }) {
+function KonshinGrid({ tiers, href }: { tiers: KonshinTier[]; href?: string }) {
   return (
     <div className="mt-4">
       <p className="text-xs leading-relaxed text-pretty text-muted">發動時所持士氣愈接近所需，效果愈強。</p>
@@ -268,7 +301,7 @@ function KonshinGrid({ tiers }: { tiers: KonshinTier[] }) {
               </h3>
               <p className="text-xs tabular-nums text-faint">{tier.morale}</p>
             </div>
-            <TierRows id={tier.id} rows={tier.rows} />
+            <TierRows id={tier.id} rows={tier.rows} href={href} />
           </section>
         ))}
       </div>
@@ -276,7 +309,7 @@ function KonshinGrid({ tiers }: { tiers: KonshinTier[] }) {
   );
 }
 
-function UseCountGrid({ tiers }: { tiers: UseCountTier[] }) {
+function UseCountGrid({ tiers, href }: { tiers: UseCountTier[]; href?: string }) {
   const moraleVaries = new Set(tiers.map((tier) => tier.morale).filter((m) => m != null)).size > 1;
   return (
     <div className="mt-4">
@@ -300,7 +333,7 @@ function UseCountGrid({ tiers }: { tiers: UseCountTier[] }) {
                 </span>
               ) : null}
             </div>
-            <TierRows id={tier.id} rows={tier.rows} />
+            <TierRows id={tier.id} rows={tier.rows} href={href} />
           </section>
         ))}
       </div>
@@ -326,21 +359,21 @@ function FormationMoraleBox({ normal, reduced }: { normal: number; reduced: numb
   );
 }
 
-function SpinGrid({ data }: { data: SpinTiers }) {
+function SpinGrid({ data, href }: { data: SpinTiers; href?: string }) {
   return (
     <div className="mt-4">
       <p className="text-xs leading-relaxed text-pretty text-muted">向左或向右旋轉後斬擊，效果不同。</p>
       {data.shared.length ? (
         <div className="mt-2 rounded-md bg-surface-2 px-2.5 py-2">
           <p className="text-xs text-faint">基本</p>
-          <TierRows id="spin-shared" rows={data.shared} />
+          <TierRows id="spin-shared" rows={data.shared} href={href} />
         </div>
       ) : null}
       <div className="mt-2 grid grid-cols-2 gap-2">
         {data.cols.map((col) => (
           <section key={col.id} className="min-w-0 rounded-md bg-surface-2 px-2.5 py-2">
             <h3 className="font-display text-sm leading-tight text-fg">{col.title}</h3>
-            <TierRows id={col.id} rows={col.rows} />
+            <TierRows id={col.id} rows={col.rows} href={href} />
           </section>
         ))}
       </div>
@@ -348,7 +381,7 @@ function SpinGrid({ data }: { data: SpinTiers }) {
   );
 }
 
-function RecastGrid({ cols }: { cols: RecastCol[] }) {
+function RecastGrid({ cols, href }: { cols: RecastCol[]; href?: string }) {
   const retreat = cols.some((col) => col.title === "撤退中發動");
   return (
     <div className="mt-4">
@@ -365,7 +398,7 @@ function RecastGrid({ cols }: { cols: RecastCol[] }) {
               {col.title}
             </h3>
             {col.note ? <p className="mt-0.5 text-xs leading-relaxed text-pretty text-muted">{col.note}</p> : null}
-            <TierRows id={col.id} rows={col.rows} />
+            <TierRows id={col.id} rows={col.rows} href={href} />
           </section>
         ))}
       </div>
@@ -373,7 +406,7 @@ function RecastGrid({ cols }: { cols: RecastCol[] }) {
   );
 }
 
-function SchoolGrid({ cols }: { cols: SchoolCol[] }) {
+function SchoolGrid({ cols, href }: { cols: SchoolCol[]; href?: string }) {
   const byRyuha = cols.some((col) => /^(部隊|士氣|城塞|琥煌)$/.test(col.title));
   const byTroop = cols.some((col) => /隊/.test(col.title) && !byRyuha);
   return (
@@ -386,7 +419,7 @@ function SchoolGrid({ cols }: { cols: SchoolCol[] }) {
           <section key={col.id} className="rounded-md bg-surface-2 px-2.5 py-2">
             <h3 className="font-display text-sm leading-tight text-fg">{col.title}</h3>
             {col.note ? <p className="mt-0.5 text-xs leading-relaxed text-pretty text-muted">{col.note}</p> : null}
-            <TierRows id={col.id} rows={col.rows} />
+            <TierRows id={col.id} rows={col.rows} href={href} />
           </section>
         ))}
       </div>
@@ -394,7 +427,7 @@ function SchoolGrid({ cols }: { cols: SchoolCol[] }) {
   );
 }
 
-function SenkiGrid({ cols }: { cols: SenkiCol[] }) {
+function SenkiGrid({ cols, href }: { cols: SenkiCol[]; href?: string }) {
   return (
     <div className="mt-4">
       <p className="text-xs leading-relaxed text-pretty text-muted">自軍尚未解放戰器時，與已解放時效果不同。</p>
@@ -407,7 +440,7 @@ function SenkiGrid({ cols }: { cols: SenkiCol[] }) {
             <h3 className={cn("font-display text-sm leading-tight", col.highlight ? "text-fg" : "text-muted")}>
               {col.title}
             </h3>
-            <TierRows id={col.id} rows={col.rows} />
+            <TierRows id={col.id} rows={col.rows} href={href} />
           </section>
         ))}
       </div>
@@ -415,7 +448,7 @@ function SenkiGrid({ cols }: { cols: SenkiCol[] }) {
   );
 }
 
-function ShukuseiGrid({ tiers }: { tiers: ShukuseiTier[] }) {
+function ShukuseiGrid({ tiers, href }: { tiers: ShukuseiTier[]; href?: string }) {
   return (
     <div className="mt-4">
       <p className="text-xs leading-relaxed text-pretty text-muted">進入宿星（槽 200%）時，效果同消耗士氣會改變。</p>
@@ -439,7 +472,7 @@ function ShukuseiGrid({ tiers }: { tiers: ShukuseiTier[] }) {
                 <span className="font-display text-xl tabular-nums leading-none text-fg">{tier.morale}</span>
               </span>
             </div>
-            <TierRows id={tier.id} rows={tier.rows} />
+            <TierRows id={tier.id} rows={tier.rows} href={href} />
           </section>
         ))}
       </div>
@@ -447,7 +480,7 @@ function ShukuseiGrid({ tiers }: { tiers: ShukuseiTier[] }) {
   );
 }
 
-function KokouGrid({ data }: { data: KokouTiers }) {
+function KokouGrid({ data, href }: { data: KokouTiers; href?: string }) {
   const cols = [...data.cols].reverse();
   return (
     <div className="mt-4">
@@ -455,13 +488,13 @@ function KokouGrid({ data }: { data: KokouTiers }) {
       {data.shared.length ? (
         <div className="mt-2 rounded-md bg-surface-2 px-2.5 py-2">
           <p className="text-xs text-faint">各劍共通</p>
-          <TierRows id="shared" rows={data.shared} />
+          <TierRows id="shared" rows={data.shared} href={href} />
         </div>
       ) : null}
       {data.extra ? (
         <div className="mt-2 rounded-md bg-surface-2 px-2.5 py-2">
           <p className="text-xs text-faint">{data.extra.title}</p>
-          <TierRows id="extra" rows={data.extra.rows} />
+          <TierRows id="extra" rows={data.extra.rows} href={href} />
         </div>
       ) : null}
 
@@ -482,7 +515,7 @@ function KokouGrid({ data }: { data: KokouTiers }) {
                 )}
               </h3>
             </div>
-            <TierRows id={col.id} rows={col.rows} />
+            <TierRows id={col.id} rows={col.rows} href={href} />
           </section>
         ))}
       </div>
@@ -516,12 +549,12 @@ function KokouSwordMark() {
   );
 }
 
-function TierRows({ id, rows }: { id: string; rows: StatLine[] }) {
+function TierRows({ id, rows, href }: { id: string; rows: StatLine[]; href?: string }) {
   if (!rows.length) return <p className="mt-2 text-xs text-faint">—</p>;
   return (
     <dl className="mt-1.5 grid grid-cols-1 gap-1.5">
       {rows.map((row) => (
-        <EffectRow key={`${id}-${row.label}-${row.value}`} row={row} />
+        <EffectRow key={`${id}-${row.label}-${row.value}`} row={row} href={href} />
       ))}
     </dl>
   );
