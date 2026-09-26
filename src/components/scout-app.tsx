@@ -403,7 +403,7 @@ export function ScoutApp() {
                   type="search"
                   enterKeyHint="search"
                   inputMode="search"
-                  placeholder="織田信長、蒼173、指揮、伏兵…"
+                  placeholder="織田信長、蒼173、指揮…"
                   className="pl-10 pr-10 [&::-webkit-search-cancel-button]:hidden"
                   autoComplete="off"
                   autoCorrect="off"
