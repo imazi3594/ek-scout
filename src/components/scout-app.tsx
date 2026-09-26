@@ -504,11 +504,12 @@ export function ScoutApp() {
                     />
                     <FilterRule label="特技" />
                     <ChipGrid
-                      cols="grid-cols-4 sm:grid-cols-6"
+                      cols="grid-cols-7"
                       items={SKILLS.map((s) => ({
                         key: String(s.id),
-                        label: s.name,
+                        label: s.short,
                         active: skills.includes(s.id),
+                        ariaLabel: s.name,
                         className: "border border-black bg-black text-cost",
                         idleClassName: "border border-black bg-cost text-black",
                         toggle: () => toggle(skills, s.id, setSkills),
@@ -516,7 +517,7 @@ export function ScoutApp() {
                     />
                     <FilterRule label="計略類型" />
                     <ChipGrid
-                      cols="grid-cols-4 sm:grid-cols-5"
+                      cols="grid-cols-5"
                       items={STRAT_CATS.map((cat) => ({
                         key: cat,
                         label: translateCat(cat),
