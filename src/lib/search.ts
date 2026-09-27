@@ -110,8 +110,11 @@ export function filterCards(
     rarities: string[];
     costs: number[];
     stratCats?: string[];
+    durMin?: number;
+    durMax?: number;
   },
 ): Card[] {
+  const durOn = filters.durMin != null && filters.durMax != null && (filters.durMin > 0 || filters.durMax < 99);
   return cards.filter((c) => {
     if (filters.colors.length && !filters.colors.includes(c.color)) return false;
     if (filters.periods.length && !filters.periods.includes(c.period)) return false;
@@ -120,6 +123,7 @@ export function filterCards(
     if (filters.costs.length && !filters.costs.includes(c.cost)) return false;
     if (filters.skills.length && !filters.skills.some((id) => c.skills.includes(id))) return false;
     if (filters.stratCats?.length && !filters.stratCats.some((cat) => (c.stratCats ?? []).includes(cat))) return false;
+    if (durOn && (c.durC == null || c.durC < filters.durMin! || c.durC > filters.durMax!)) return false;
     return true;
   });
 }

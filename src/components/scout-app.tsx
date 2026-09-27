@@ -38,6 +38,8 @@ initInstallCapture();
 
 type Tab = "search" | "skills" | "recents" | "about";
 const TABS: Tab[] = ["search", "recents", "skills", "about"];
+const DUR_LO = 0;
+const DUR_HI = 99;
 type Hist =
   | { v: "root" }
   | { v: "home" }
@@ -71,6 +73,8 @@ export function ScoutApp() {
   const [rarities, setRarities] = useState<string[]>([]);
   const [stratCats, setStratCats] = useState<string[]>([]);
   const [costs, setCosts] = useState<number[]>([]);
+  const [durMin, setDurMin] = useState(DUR_LO);
+  const [durMax, setDurMax] = useState(DUR_HI);
   const [moreFilters, setMoreFilters] = useState(false);
   const [guideTopic, setGuideTopic] = useState<GuideTopic | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -306,15 +310,16 @@ export function ScoutApp() {
     };
   }, []);
 
-  const layerActive = colors.length + costs.length + units.length + periods.length + skills.length + rarities.length + stratCats.length;
+  const durOn = durMin > DUR_LO || durMax < DUR_HI;
+  const layerActive = colors.length + costs.length + units.length + periods.length + skills.length + rarities.length + stratCats.length + (durOn ? 1 : 0);
 
   const hits = useMemo(() => {
     const q = query.trim();
     if (!q && !layerActive) return [];
     let list = q ? searchCards(q, 200).map((h) => h.card) : CARDS;
-    if (layerActive) list = filterCards(list, { colors, periods, units, skills, rarities, costs, stratCats });
+    if (layerActive) list = filterCards(list, { colors, periods, units, skills, rarities, costs, stratCats, durMin, durMax });
     return list;
-  }, [query, colors, periods, units, skills, rarities, costs, stratCats, layerActive]);
+  }, [query, colors, periods, units, skills, rarities, costs, stratCats, durMin, durMax, layerActive]);
 
   const recentCards = useMemo(
     () => recents.map((id) => CARD_BY_ID[id]).filter(Boolean),
@@ -326,6 +331,7 @@ export function ScoutApp() {
     costs.length ? costs.map(formatCost).join("/") + " Cost" : null,
     units.length ? units.map((u) => UNIT_SHORT[u as keyof typeof UNIT_SHORT] ?? u).join(" ") : null,
     periods.length ? periods.join(" ") : null,
+    durOn ? `${durMin}–${durMax}C` : null,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -339,6 +345,8 @@ export function ScoutApp() {
     setSkills([]);
     setRarities([]);
     setStratCats([]);
+    setDurMin(DUR_LO);
+    setDurMax(DUR_HI);
   };
 
   const resultLabel = query || layerActive ? `${hits.length} 筆${layerSummary ? `　${layerSummary}` : ""}` : "";
@@ -435,8 +443,8 @@ export function ScoutApp() {
                   aria-expanded={moreFilters}
                 >
                   更多篩選
-                  {periods.length + skills.length + rarities.length + stratCats.length ? (
-                    <span className="tabular-nums">{periods.length + skills.length + rarities.length + stratCats.length}</span>
+                  {periods.length + skills.length + rarities.length + stratCats.length + (durOn ? 1 : 0) ? (
+                    <span className="tabular-nums">{periods.length + skills.length + rarities.length + stratCats.length + (durOn ? 1 : 0)}</span>
                   ) : null}
                   {moreFilters ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
                 </button>
@@ -455,6 +463,14 @@ export function ScoutApp() {
               <div className="flex min-h-0 flex-1 flex-col border-t-2 border-faction-ko bg-[#241910]">
                 <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-2 sm:px-6">
                   <div className="flex flex-col gap-1 pb-2">
+                    <DurationRange
+                      min={durMin}
+                      max={durMax}
+                      onChange={(lo, hi) => {
+                        setDurMin(lo);
+                        setDurMax(hi);
+                      }}
+                    />
                     <FilterRule label="時代" />
                     <ChipGrid
                       cols="grid-cols-5"
@@ -934,6 +950,62 @@ function TabBtn({
 
 function toggle<T>(list: T[], value: T, set: (next: T[]) => void) {
   set(list.includes(value) ? list.filter((x) => x !== value) : [...list, value]);
+}
+
+function DurationRange({
+  min,
+  max,
+  onChange,
+}: {
+  min: number;
+  max: number;
+  onChange: (min: number, max: number) => void;
+}) {
+  const [top, setTop] = useState<"min" | "max">("max");
+  const narrowed = min > DUR_LO || max < DUR_HI;
+  const left = (min / DUR_HI) * 100;
+  const width = ((max - min) / DUR_HI) * 100;
+  return (
+    <div className="pb-1">
+      <div className="flex items-center gap-2 pt-1.5">
+        <span className="shrink-0 text-xs text-faint">計略時長</span>
+        <span className="h-px min-w-4 flex-1 bg-border" aria-hidden />
+        <span className="shrink-0 text-xs font-medium tabular-nums text-fg">
+          {narrowed ? `${min}C – ${max}C` : "0C – 99C"}
+        </span>
+      </div>
+      <div className="relative mt-2 h-8">
+        <div className="absolute top-1/2 right-0 left-0 h-1 -translate-y-1/2 rounded-full bg-[#3a2c22]" />
+        <div
+          className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-faction-ko"
+          style={{ left: `${left}%`, width: `${width}%` }}
+        />
+        <input
+          type="range"
+          min={DUR_LO}
+          max={DUR_HI}
+          value={min}
+          aria-label="最短時長"
+          className="dur-range"
+          style={{ zIndex: top === "min" ? 5 : 3 }}
+          onPointerDown={() => setTop("min")}
+          onChange={(e) => onChange(Math.min(Number(e.target.value), max), max)}
+        />
+        <input
+          type="range"
+          min={DUR_LO}
+          max={DUR_HI}
+          value={max}
+          aria-label="最長時長"
+          className="dur-range"
+          style={{ zIndex: top === "max" ? 5 : 3 }}
+          onPointerDown={() => setTop("max")}
+          onChange={(e) => onChange(min, Math.max(Number(e.target.value), min))}
+        />
+      </div>
+      {narrowed ? <p className="text-[11px] text-faint">沒有時長的計略不會列入。</p> : null}
+    </div>
+  );
 }
 
 function FilterRule({ label }: { label: string }) {
