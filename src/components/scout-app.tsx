@@ -437,9 +437,7 @@ export function ScoutApp() {
                 <button
                   type="button"
                   className="flex h-8 shrink-0 items-center gap-0.5 rounded-md bg-faction-ko px-2.5 text-xs font-medium text-white"
-                  onClick={() => {
-                    if (!moreFilters) setMoreFilters(true);
-                  }}
+                  onClick={() => setMoreFilters((open) => !open)}
                   aria-expanded={moreFilters}
                 >
                   更多篩選
@@ -454,7 +452,7 @@ export function ScoutApp() {
                   className="flex h-8 shrink-0 items-center rounded-md bg-faction-hi px-2.5 text-xs font-medium text-white"
                   onClick={clearAll}
                 >
-                  清除
+                  重設
                 </button>
               </div>
             </div>
