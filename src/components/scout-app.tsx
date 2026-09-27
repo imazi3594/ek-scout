@@ -1001,7 +1001,7 @@ function DurationRange({
           onChange={(e) => onChange(min, Math.max(Number(e.target.value), min))}
         />
       </div>
-      {narrowed ? <p className="text-[11px] text-faint">沒有時長的計略不會列入。</p> : null}
+      {narrowed ? <p className="text-[11px] text-faint">只算本計時長。只有短計的當作 0C。</p> : null}
     </div>
   );
 }

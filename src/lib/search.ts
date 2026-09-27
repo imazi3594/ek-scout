@@ -1,4 +1,4 @@
-import { CARDS, type Card, type ColorName } from "@/data/catalog";
+import { CARDS, baseDurationC, type Card, type ColorName } from "@/data/catalog";
 
 const VARIANT: Record<string, string> = {
   戰: "戦",
@@ -123,7 +123,10 @@ export function filterCards(
     if (filters.costs.length && !filters.costs.includes(c.cost)) return false;
     if (filters.skills.length && !filters.skills.some((id) => c.skills.includes(id))) return false;
     if (filters.stratCats?.length && !filters.stratCats.some((cat) => (c.stratCats ?? []).includes(cat))) return false;
-    if (durOn && (c.durC == null || c.durC < filters.durMin! || c.durC > filters.durMax!)) return false;
+    if (durOn) {
+      const dur = baseDurationC(c);
+      if (dur == null || dur < filters.durMin! || dur > filters.durMax!) return false;
+    }
     return true;
   });
 }

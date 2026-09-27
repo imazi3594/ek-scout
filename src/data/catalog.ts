@@ -771,6 +771,19 @@ function pickMainDuration(card: Card): {
   return { durC: card.durC, depC: card.depC, note: card.durNote, cap: false };
 }
 
+/** 篩選用：只算本計時長。附加短計不算。整張都是短計則為 0C。 */
+export function baseDurationC(card: Card): number | null {
+  const desc = (card.stratDesc ?? "").replace(/<br\s*\/?>/gi, "");
+  const onlyShort = /^短計/.test(card.stratName ?? "") || desc.startsWith("【短計】");
+  if (onlyShort) return 0;
+  if (pickMainDurationEffect(card)) {
+    const picked = pickMainDuration(card);
+    if (picked.durC != null) return picked.durC;
+  }
+  if (parseTankenBlocks(card.stratDesc ?? "").blocks.length) return 0;
+  return null;
+}
+
 export function formatStratDuration(card: Card): StratDuration {
   const hint = isKyotenCard(card)
     ? "時長為據點上限。對手破壞據點會提早結束。波紋時長是據點放出的效果，不是計略時長。"
