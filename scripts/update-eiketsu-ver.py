@@ -161,7 +161,7 @@ def parse_dur_fields(effects: list[dict], fallback_time: str) -> tuple[float | N
 def parse_area_cell(cell: str) -> str:
     parts = []
     for m in re.finditer(
-        r'<span class="labelFrame">([\s\S]*?)</span>\s*(?:<span[^>]*>)?([^<]+)',
+        r'<span class="?labelFrame"?>([\s\S]*?)</span>\s*(?:<span[^>]*>)?([^<]+)',
         cell,
     ):
         lab = fw(re.sub(r"<[^>]+>", "", m.group(1)))
@@ -187,7 +187,7 @@ def parse_version_text(version_html: str) -> list[dict]:
     html = re.sub(r"<br\s*/?>", "\n", html, flags=re.I)
     html = re.sub(r"<hr\s*/?>", "\n", html, flags=re.I)
     html = re.sub(
-        r'<span class="labelFrame">([\s\S]*?)</span>',
+        r'<span class="?labelFrame"?>([\s\S]*?)</span>',
         lambda m: f"\n@@{fw(re.sub(r'<[^>]+>', '', m.group(1)))}@@",
         html,
     )
