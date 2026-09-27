@@ -1,4 +1,4 @@
-const CACHE = "ek-scout-v6";
+const CACHE = "ek-scout-v7";
 const NETWORK_TIMEOUT = 2500;
 
 const PRECACHE = [
@@ -129,15 +129,29 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(
     (async () => {
-      const hit = await cached(event.request);
       const navigate = event.request.mode === "navigate";
+      const offline = self.navigator.onLine === false;
 
-      if (hit) {
-        if (navigate && self.navigator.onLine !== false) {
-          event.waitUntil(precacheShell().catch(() => undefined));
+      if (navigate && !offline) {
+        try {
+          const fresh = await timeoutFetch(event.request, 8000);
+          if (fresh && fresh.ok) {
+            const copy = await materialize(fresh);
+            const cache = await caches.open(CACHE);
+            event.waitUntil(cache.put(event.request, copy.clone()).catch(() => undefined));
+            event.waitUntil(precacheShell().catch(() => undefined));
+            return copy;
+          }
+        } catch {
+          /* 網絡失敗才用快取 */
         }
-        return hit;
+        const fallback = (await cached(event.request)) || (await shell());
+        if (fallback) return fallback;
+        return new Response("", { status: 503, statusText: "offline" });
       }
+
+      const hit = await cached(event.request);
+      if (hit) return hit;
 
       if (self.navigator.onLine === false) {
         if (navigate) {
