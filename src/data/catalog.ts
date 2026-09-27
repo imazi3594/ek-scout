@@ -44,6 +44,8 @@ const UNIT_KEY = "騎兵|槍兵|弓兵|剣豪|鉄砲隊";
 export function splitEffectValue(value: string): { note: string; lines: string[] } {
   const intelBands = splitIntelBands(value);
   if (intelBands) return intelBands;
+  const gaugeBands = splitGaugeBands(value);
+  if (gaugeBands) return gaugeBands;
 
   let s = value.replace(/[^\S\n]+/g, " ").trim();
   if (!s) return { note: "", lines: [] };
@@ -56,7 +58,10 @@ export function splitEffectValue(value: string): { note: string; lines: string[]
     s = s.slice(intelNote[0].length).trim();
   }
 
-  let text = s.replace(new RegExp(String.raw`(${STAT_VALUE})\s+(?=\S[^:]{0,48}:\s*(?:${STAT_VALUE}))`, "g"), "$1\n");
+  let text = s.replace(
+    new RegExp(String.raw`(?<=[:：\s])(${STAT_VALUE})\s+(?=\S[^:]{0,48}:\s*(?:${STAT_VALUE}))`, "g"),
+    "$1\n",
+  );
   if ((s.match(new RegExp(`(?:${UNIT_KEY}):`, "g")) ?? []).length >= 2) {
     text = text.replace(new RegExp(String.raw`(?<=\S)\s+(?=(?:${UNIT_KEY})\s*:)`, "g"), "\n");
   }
@@ -89,6 +94,22 @@ export function splitEffectValue(value: string): { note: string; lines: string[]
 
 function tidyPair(line: string): string {
   return line.replace(/\s*:\s*/, " : ").replace(/\s+/g, " ").trim();
+}
+
+/** 黃熾槽0% : +1 黃熾槽約55%: +4 … → one line per gauge step. */
+function splitGaugeBands(value: string): { note: string; lines: string[] } | null {
+  const re = /黃熾槽[^:：]{0,32}[:：]/g;
+  const marks = [...value.matchAll(re)];
+  if (marks.length < 2) return null;
+  const first = marks[0].index ?? 0;
+  const note = value.slice(0, first).trim();
+  const lines = marks.map((mark, i) => {
+    const start = mark.index ?? 0;
+    const end = i + 1 < marks.length ? (marks[i + 1].index ?? value.length) : value.length;
+    return tidyPair(value.slice(start, end));
+  });
+  if (lines.some((line) => !/[:：]/.test(line))) return null;
+  return { note, lines };
 }
 
 /** 知力2~3的敵-3 知力4~5的敵-4 … → one line per enemy-intel band. */
