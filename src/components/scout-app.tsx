@@ -75,10 +75,35 @@ export function ScoutApp() {
   const [costs, setCosts] = useState<number[]>([]);
   const [durMin, setDurMin] = useState(DUR_LO);
   const [durMax, setDurMax] = useState(DUR_HI);
-  const [moreFilters, setMoreFilters] = useState(false);
+  const [morePhase, setMorePhase] = useState<"closed" | "opening" | "open" | "closing">("closed");
   const [guideTopic, setGuideTopic] = useState<GuideTopic | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (morePhase !== "opening") return;
+    let inner = 0;
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => setMorePhase((p) => (p === "opening" ? "open" : p)));
+    });
+    return () => {
+      cancelAnimationFrame(outer);
+      if (inner) cancelAnimationFrame(inner);
+    };
+  }, [morePhase]);
+
+  useEffect(() => {
+    if (morePhase !== "closing") return;
+    const t = window.setTimeout(() => setMorePhase((p) => (p === "closing" ? "closed" : p)), 380);
+    return () => window.clearTimeout(t);
+  }, [morePhase]);
+
+  const moreFilters = morePhase === "opening" || morePhase === "open";
+  function toggleMoreFilters() {
+    setMorePhase((p) => (p === "open" || p === "opening" ? "closing" : "opening"));
+  }
+  function closeMoreFilters() {
+    setMorePhase((p) => (p === "closed" ? p : "closing"));
+  }
   const query = useScout((s) => s.query);
   const setQuery = useScout((s) => s.setQuery);
   const selectedId = useScout((s) => s.selectedId);
@@ -437,7 +462,7 @@ export function ScoutApp() {
                 <button
                   type="button"
                   className="flex h-8 shrink-0 items-center gap-0.5 rounded-md bg-faction-ko px-2.5 text-xs font-medium text-white"
-                  onClick={() => setMoreFilters((open) => !open)}
+                  onClick={toggleMoreFilters}
                   aria-expanded={moreFilters}
                 >
                   更多篩選
@@ -457,80 +482,7 @@ export function ScoutApp() {
               </div>
             </div>
 
-            {moreFilters ? (
-              <div className="flex min-h-0 flex-1 flex-col border-t-2 border-faction-ko bg-[#241910]">
-                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-2 sm:px-6">
-                  <div className="flex flex-col gap-1 pb-2">
-                    <DurationRange
-                      min={durMin}
-                      max={durMax}
-                      onChange={(lo, hi) => {
-                        setDurMin(lo);
-                        setDurMax(hi);
-                      }}
-                    />
-                    <FilterRule label="時代" />
-                    <ChipGrid
-                      cols="grid-cols-5"
-                      items={PERIODS.map((p) => ({
-                        key: p,
-                        label: p,
-                        active: periods.includes(p),
-                        idleClassName: "bg-[#3a2c22] text-muted",
-                        toggle: () => toggle(periods, p, setPeriods),
-                      }))}
-                    />
-                    <FilterRule label="特技" />
-                    <ChipGrid
-                      cols="grid-cols-7"
-                      items={SKILLS.map((s) => ({
-                        key: String(s.id),
-                        label: s.short,
-                        active: skills.includes(s.id),
-                        ariaLabel: s.name,
-                        className: "border border-black bg-black text-cost",
-                        idleClassName: "border border-black bg-cost text-black",
-                        toggle: () => toggle(skills, s.id, setSkills),
-                      }))}
-                    />
-                    <FilterRule label="計略類型" />
-                    <ChipGrid
-                      cols="grid-cols-5"
-                      items={STRAT_CATS.map((cat) => ({
-                        key: cat,
-                        label: translateCat(cat),
-                        active: stratCats.includes(cat),
-                        ariaLabel: `計略 ${translateCat(cat)}`,
-                        idleClassName: "bg-[#3a2c22] text-muted",
-                        toggle: () => toggle(stratCats, cat, setStratCats),
-                      }))}
-                    />
-                    <FilterRule label="稀有" />
-                    <ChipGrid
-                      cols="grid-cols-4"
-                      items={RARITIES.map((r) => ({
-                        key: r,
-                        label: r,
-                        active: rarities.includes(r),
-                        className: RARITY_CHIP[r].active,
-                        idleClassName: RARITY_CHIP[r].idle,
-                        toggle: () => toggle(rarities, r, setRarities),
-                      }))}
-                    />
-                  </div>
-                </div>
-                <div className="border-t border-faction-ko/40 px-4 py-2 sm:px-6">
-                  <button
-                    type="button"
-                    className="flex h-10 w-full items-center justify-center rounded-md bg-faction-ko text-sm font-medium text-white"
-                    onClick={() => setMoreFilters(false)}
-                  >
-                    完成
-                  </button>
-                </div>
-              </div>
-            ) : (
-            <>
+            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
             <div className="shrink-0 border-b border-border bg-bg/60 px-4 pb-2.5 sm:px-6">
               <div className="flex flex-col gap-1">
                 <FilterRule label="勢力" />
@@ -627,8 +579,80 @@ export function ScoutApp() {
                 </ul>
               )}
             </div>
-            </>
-            )}
+            {morePhase !== "closed" ? (
+              <div className={cn("more-sheet absolute inset-0 z-20 flex flex-col border-t-2 border-faction-ko bg-[#241910]", morePhase === "open" && "is-open")}>
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-2 sm:px-6">
+                  <div className="flex flex-col gap-1 pb-2">
+                    <DurationRange
+                      min={durMin}
+                      max={durMax}
+                      onChange={(lo, hi) => {
+                        setDurMin(lo);
+                        setDurMax(hi);
+                      }}
+                    />
+                    <FilterRule label="時代" />
+                    <ChipGrid
+                      cols="grid-cols-5"
+                      items={PERIODS.map((p) => ({
+                        key: p,
+                        label: p,
+                        active: periods.includes(p),
+                        idleClassName: "bg-[#3a2c22] text-muted",
+                        toggle: () => toggle(periods, p, setPeriods),
+                      }))}
+                    />
+                    <FilterRule label="特技" />
+                    <ChipGrid
+                      cols="grid-cols-7"
+                      items={SKILLS.map((s) => ({
+                        key: String(s.id),
+                        label: s.short,
+                        active: skills.includes(s.id),
+                        ariaLabel: s.name,
+                        className: "border border-black bg-black text-cost",
+                        idleClassName: "border border-black bg-cost text-black",
+                        toggle: () => toggle(skills, s.id, setSkills),
+                      }))}
+                    />
+                    <FilterRule label="計略類型" />
+                    <ChipGrid
+                      cols="grid-cols-5"
+                      items={STRAT_CATS.map((cat) => ({
+                        key: cat,
+                        label: translateCat(cat),
+                        active: stratCats.includes(cat),
+                        ariaLabel: `計略 ${translateCat(cat)}`,
+                        idleClassName: "bg-[#3a2c22] text-muted",
+                        toggle: () => toggle(stratCats, cat, setStratCats),
+                      }))}
+                    />
+                    <FilterRule label="稀有" />
+                    <ChipGrid
+                      cols="grid-cols-4"
+                      items={RARITIES.map((r) => ({
+                        key: r,
+                        label: r,
+                        active: rarities.includes(r),
+                        className: RARITY_CHIP[r].active,
+                        idleClassName: RARITY_CHIP[r].idle,
+                        toggle: () => toggle(rarities, r, setRarities),
+                      }))}
+                    />
+                  </div>
+                </div>
+                <div className="border-t border-faction-ko/40 px-4 py-2 sm:px-6">
+                  <button
+                    type="button"
+                    className="flex h-10 w-full items-center justify-center rounded-md bg-faction-ko text-sm font-medium text-white"
+                    onClick={closeMoreFilters}
+                  >
+                    完成
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            </div>
           </div>
           <div className="tab-pane">
             <p className="shrink-0 px-4 pt-3 pb-1 text-xs tabular-nums text-faint sm:px-6">
