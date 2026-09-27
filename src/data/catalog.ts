@@ -1704,6 +1704,15 @@ function splitRepeatingGroups(items: CardEffect[], splitLabel: string): CardEffe
   return groups;
 }
 
+function stripKokouCostMark(value: string): string {
+  const rest = value.replace(/^琥煌ゲージ[0-9０-９]+消費\s*/, "").trim();
+  return rest || value;
+}
+
+function stripKokouMarks(effects: CardEffect[]): CardEffect[] {
+  return effects.map((effect) => ({ ...effect, value: stripKokouCostMark(effect.value) }));
+}
+
 export function kokouTiers(card: Card): KokouTiers | null {
   if (!isKokouCard(card)) return null;
   const items = mainEffects(card).filter((e) => !skipKonshinLabel(e.label));
@@ -1739,16 +1748,16 @@ export function kokouTiers(card: Card): KokouTiers | null {
     return {
       max: 6,
       note: "依發動時所持劍數（並非自行選擇消耗量）。",
-      shared: effectRows(shared),
-      extra: extra ? { title: "無友軍", rows: effectRows(extra) } : null,
+      shared: effectRows(stripKokouMarks(shared)),
+      extra: extra ? { title: "無友軍", rows: effectRows(stripKokouMarks(extra)) } : null,
       cols: [
-        { id: "0-5", title: "0–5劍", swords: null, highlight: false, rows: effectRows(groups[0] ?? []) },
+        { id: "0-5", title: "0–5劍", swords: null, highlight: false, rows: effectRows(stripKokouMarks(groups[0] ?? [])) },
         {
           id: "6",
           title: "6劍",
           swords: 6,
           highlight: true,
-          rows: effectRows(groups.slice(1).flat()),
+          rows: effectRows(stripKokouMarks(groups.slice(1).flat())),
         },
       ],
       specials,
@@ -1758,14 +1767,14 @@ export function kokouTiers(card: Card): KokouTiers | null {
   return {
     max,
     note: `琥煌槽最多 6 劍。發動時消耗 0–${max} 劍，消耗愈多效果愈強。`,
-    shared: effectRows(shared),
-    extra: extra ? { title: "無友軍", rows: effectRows(extra) } : null,
+    shared: effectRows(stripKokouMarks(shared)),
+    extra: extra ? { title: "無友軍", rows: effectRows(stripKokouMarks(extra)) } : null,
     cols: groups.map((group, i) => ({
       id: String(i),
       title: `${i}劍`,
       swords: i,
       highlight: i === groups.length - 1,
-      rows: effectRows(group),
+      rows: effectRows(stripKokouMarks(group)),
     })),
     specials,
   };
