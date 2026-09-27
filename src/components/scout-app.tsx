@@ -428,10 +428,7 @@ export function ScoutApp() {
               <div className="mt-2 flex items-center gap-2">
                 <button
                   type="button"
-                  className={cn(
-                    "flex h-8 shrink-0 items-center gap-0.5 rounded-md px-2.5 text-xs font-medium",
-                    moreFilters ? "bg-faction-ko text-white" : "bg-cost text-black",
-                  )}
+                  className="flex h-8 shrink-0 items-center gap-0.5 rounded-md bg-faction-ko px-2.5 text-xs font-medium text-white"
                   onClick={() => {
                     if (!moreFilters) setMoreFilters(true);
                   }}
