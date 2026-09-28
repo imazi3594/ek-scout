@@ -33,6 +33,9 @@
         }
         if (navigator.onLine) loadFonts();
         else window.addEventListener("online", loadFonts, { once: true });
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.register("./sw.js", { scope: "./" });
+        }
       })();
     </script>
   </head>

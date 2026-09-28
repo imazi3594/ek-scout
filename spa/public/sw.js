@@ -87,8 +87,10 @@ async function precacheShell() {
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
-      await precacheShell().catch(() => false);
-      await self.skipWaiting();
+      const ready = await precacheShell().catch(() => false);
+      const cache = await caches.open(CACHE);
+      const has = await cache.match(new URL("index.html", self.registration.scope).href);
+      if (ready || has) await self.skipWaiting();
     })(),
   );
 });
@@ -97,11 +99,12 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE);
-      const base = self.registration.scope;
-      const hasShell = await cache.match(base);
-      if (!hasShell) return;
-      const keys = await caches.keys();
-      await Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)));
+      const indexUrl = new URL("index.html", self.registration.scope).href;
+      const hasShell = (await cache.match(indexUrl)) || (await cache.match(self.registration.scope));
+      if (hasShell) {
+        const keys = await caches.keys();
+        await Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)));
+      }
       await self.clients.claim();
     })(),
   );
@@ -117,12 +120,36 @@ async function cached(request) {
 
 async function shell() {
   const base = self.registration.scope;
-  return (
-    (await caches.match(base)) ||
-    (await caches.match(new URL("index.html", base).href)) ||
-    (await caches.match(new URL("./", base).href)) ||
-    null
-  );
+  const urls = [
+    new URL("index.html", base).href,
+    base,
+    new URL("./", base).href,
+  ];
+  const names = await caches.keys();
+  for (const name of names) {
+    const cache = await caches.open(name);
+    for (const url of urls) {
+      const hit = (await cache.match(url)) || (await cache.match(url, { ignoreSearch: true }));
+      if (hit) return htmlResponse(hit);
+    }
+    const keys = await cache.keys();
+    for (const req of keys) {
+      if (/index\.html(?:\?|$)/.test(req.url)) {
+        const hit = await cache.match(req);
+        if (hit) return htmlResponse(hit);
+      }
+    }
+  }
+  return null;
+}
+
+async function htmlResponse(response) {
+  const headers = new Headers(response.headers);
+  headers.set("Content-Type", "text/html; charset=utf-8");
+  headers.delete("content-encoding");
+  headers.delete("content-length");
+  const body = await response.clone().blob();
+  return new Response(body, { status: 200, headers });
 }
 
 function revOf(text) {
@@ -191,39 +218,52 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(
     (async () => {
-      const navigate = event.request.mode === "navigate";
-
-      if (navigate) {
-        const fallback = (await cached(event.request)) || (await shell());
-        if (fallback) {
-          event.waitUntil(revalidate());
-          return fallback;
-        }
-        try {
-          const fresh = await timeoutFetch(event.request, REVALIDATE_TIMEOUT);
-          if (fresh && fresh.ok) {
-            event.waitUntil(revalidate());
-            return fresh;
-          }
-        } catch {
-          /* 首次沒有快取，網絡也失敗 */
-        }
-        return new Response("", { status: 503, statusText: "offline" });
-      }
-
-      const hit = await cached(event.request);
-      if (hit) return hit;
-
       try {
-        const fresh = await timeoutFetch(event.request, NETWORK_TIMEOUT);
-        if (fresh && fresh.ok) {
-          const copy = await materialize(fresh);
-          const cache = await caches.open(CACHE);
-          event.waitUntil(cache.put(event.request, copy.clone()).catch(() => undefined));
-          return copy;
+        const navigate = event.request.mode === "navigate";
+        const offline = self.navigator.onLine === false;
+
+        if (navigate) {
+          const fallback = (await cached(event.request).then((hit) => (hit ? htmlResponse(hit) : null))) || (await shell());
+          if (fallback) {
+            if (!offline) event.waitUntil(revalidate());
+            return fallback;
+          }
+          if (!offline) {
+            try {
+              const fresh = await timeoutFetch(event.request, REVALIDATE_TIMEOUT);
+              if (fresh && fresh.ok) {
+                event.waitUntil(revalidate());
+                return htmlResponse(fresh);
+              }
+            } catch {
+              /* 首次沒有快取 */
+            }
+          }
+          return new Response(
+            "<!doctype html><meta charset=utf-8><title>英傑大戦⚡️速查</title><body style=\"margin:0;background:#0c0b0a;color:#f3efe6;font-family:sans-serif;display:grid;min-height:100vh;place-items:center\"><p>尚未有離線資料。請先連線開啟一次。</p>",
+            { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } },
+          );
         }
-        return fresh;
+
+        const hit = await cached(event.request);
+        if (hit) return hit;
+        if (offline) return new Response("", { status: 503, statusText: "offline" });
+
+        try {
+          const fresh = await timeoutFetch(event.request, NETWORK_TIMEOUT);
+          if (fresh && fresh.ok) {
+            const copy = await materialize(fresh);
+            const cache = await caches.open(CACHE);
+            event.waitUntil(cache.put(event.request, copy.clone()).catch(() => undefined));
+            return copy;
+          }
+          return fresh;
+        } catch {
+          return new Response("", { status: 503, statusText: "offline" });
+        }
       } catch {
+        const page = await shell().catch(() => null);
+        if (page) return page;
         return new Response("", { status: 503, statusText: "offline" });
       }
     })(),
