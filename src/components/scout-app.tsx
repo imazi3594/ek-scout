@@ -114,19 +114,50 @@ export function ScoutApp() {
   const lastBack = useRef(0);
   const [exitHint, setExitHint] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [offline, setOffline] = useState(() => typeof navigator !== "undefined" && navigator.onLine === false);
+  const [browserOffline, setBrowserOffline] = useState(() => typeof navigator !== "undefined" && navigator.onLine === false);
+  const [linkDown, setLinkDown] = useState(false);
+  const offline = browserOffline || linkDown;
   const [webBrowse, setWebBrowse] = useState(() => typeof window !== "undefined" && !isStandalone());
   const [installEvent, setInstallEvent] = useState<BeforeInstall | null>(null);
   const [installHint, setInstallHint] = useState("");
 
   useEffect(() => {
-    const sync = () => setOffline(navigator.onLine === false);
+    const sync = () => setBrowserOffline(navigator.onLine === false);
+    const kick = () => {
+      if (!navigator.onLine || !("serviceWorker" in navigator)) return;
+      void navigator.serviceWorker.ready.then((reg) => {
+        reg.active?.postMessage({ type: "revalidate" });
+        void reg.update();
+      });
+    };
+    const onMessage = (event: MessageEvent) => {
+      const type = event.data?.type;
+      if (type === "degraded") setLinkDown(true);
+      if (type === "online" || type === "updated") setLinkDown(false);
+      if (type === "updated") {
+        const rev = String(event.data?.rev || "");
+        if (!rev || sessionStorage.getItem("ek-sw-rev") === rev) return;
+        sessionStorage.setItem("ek-sw-rev", rev);
+        window.location.reload();
+      }
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") kick();
+    };
     window.addEventListener("online", sync);
     window.addEventListener("offline", sync);
+    window.addEventListener("online", kick);
+    window.addEventListener("pageshow", kick);
+    document.addEventListener("visibilitychange", onVisible);
+    navigator.serviceWorker?.addEventListener("message", onMessage);
     sync();
     return () => {
       window.removeEventListener("online", sync);
       window.removeEventListener("offline", sync);
+      window.removeEventListener("online", kick);
+      window.removeEventListener("pageshow", kick);
+      document.removeEventListener("visibilitychange", onVisible);
+      navigator.serviceWorker?.removeEventListener("message", onMessage);
     };
   }, []);
 
@@ -396,7 +427,7 @@ export function ScoutApp() {
     <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-bg text-fg">
       {offline ? (
         <p className="relative z-[80] shrink-0 border-b border-red-950 bg-red-800 px-4 pt-[max(0.35rem,env(safe-area-inset-top))] pb-1.5 text-center text-xs text-white">
-          離線模式　已儲存的資料仍可查閱
+          {browserOffline ? "離線模式　已儲存的資料仍可查閱" : "網絡不穩，已改用離線資料。恢復後會自動更新"}
         </p>
       ) : null}
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">

@@ -1,5 +1,6 @@
 const CACHE = "ek-scout-v7";
 const NETWORK_TIMEOUT = 2500;
+const REVALIDATE_TIMEOUT = 6000;
 
 const PRECACHE = [
   "index.html",
@@ -20,8 +21,10 @@ const PRECACHE = [
 function timeoutFetch(request, ms) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), ms);
+  const init = { signal: ctrl.signal };
+  if (typeof request === "string") init.cache = "reload";
   return Promise.race([
-    fetch(request, { signal: ctrl.signal }),
+    fetch(request, init),
     new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms + 100)),
   ]).finally(() => clearTimeout(timer));
 }
@@ -41,7 +44,7 @@ async function precacheShell() {
   const indexUrl = new URL("index.html", base).href;
   let html = "";
   try {
-    const indexRes = await fetch(indexUrl, { cache: "reload" });
+    const indexRes = await timeoutFetch(indexUrl, REVALIDATE_TIMEOUT);
     if (indexRes.ok) html = await indexRes.text();
   } catch {
     return false;
@@ -64,7 +67,7 @@ async function precacheShell() {
     [...urls].map(async (url) => {
       if (url === indexUrl || url === base) return;
       try {
-        const res = await fetch(url, { cache: "reload" });
+        const res = await timeoutFetch(url, REVALIDATE_TIMEOUT);
         if (res.ok) downloaded.push([url, await materialize(res)]);
       } catch {
         /* skip missing files */
@@ -84,8 +87,8 @@ async function precacheShell() {
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
-      const ready = await precacheShell();
-      if (ready) await self.skipWaiting();
+      await precacheShell().catch(() => false);
+      await self.skipWaiting();
     })(),
   );
 });
@@ -122,6 +125,65 @@ async function shell() {
   );
 }
 
+function revOf(text) {
+  let hash = 2166136261;
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16);
+}
+
+async function notify(data) {
+  const list = await self.clients.matchAll({ includeUncontrolled: true, type: "window" });
+  for (const client of list) client.postMessage(data);
+}
+
+let refreshing = null;
+
+async function doRevalidate() {
+  const indexUrl = new URL("index.html", self.registration.scope).href;
+  const old = await caches.match(indexUrl);
+  const previous = old ? await old.clone().text() : "";
+  let html = "";
+  try {
+    const indexRes = await timeoutFetch(indexUrl, REVALIDATE_TIMEOUT);
+    if (indexRes && indexRes.ok) html = await indexRes.text();
+  } catch {
+    html = "";
+  }
+  if (!html) {
+    await notify({ type: "degraded" });
+    return;
+  }
+  if (previous && html === previous) {
+    await notify({ type: "online" });
+    return;
+  }
+  const ready = await precacheShell().catch(() => false);
+  if (!ready) {
+    await notify({ type: "degraded" });
+    return;
+  }
+  await notify({ type: "online" });
+  const nextRes = await caches.match(indexUrl);
+  const next = nextRes ? await nextRes.clone().text() : "";
+  if (next && next !== previous) await notify({ type: "updated", rev: revOf(next) });
+}
+
+function revalidate() {
+  if (!refreshing) {
+    refreshing = doRevalidate().finally(() => {
+      refreshing = null;
+    });
+  }
+  return refreshing;
+}
+
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "revalidate") event.waitUntil(revalidate());
+});
+
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
@@ -130,36 +192,27 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     (async () => {
       const navigate = event.request.mode === "navigate";
-      const offline = self.navigator.onLine === false;
 
-      if (navigate && !offline) {
+      if (navigate) {
+        const fallback = (await cached(event.request)) || (await shell());
+        if (fallback) {
+          event.waitUntil(revalidate());
+          return fallback;
+        }
         try {
-          const fresh = await timeoutFetch(event.request, 8000);
+          const fresh = await timeoutFetch(event.request, REVALIDATE_TIMEOUT);
           if (fresh && fresh.ok) {
-            const copy = await materialize(fresh);
-            const cache = await caches.open(CACHE);
-            event.waitUntil(cache.put(event.request, copy.clone()).catch(() => undefined));
-            event.waitUntil(precacheShell().catch(() => undefined));
-            return copy;
+            event.waitUntil(revalidate());
+            return fresh;
           }
         } catch {
-          /* 網絡失敗才用快取 */
+          /* 首次沒有快取，網絡也失敗 */
         }
-        const fallback = (await cached(event.request)) || (await shell());
-        if (fallback) return fallback;
         return new Response("", { status: 503, statusText: "offline" });
       }
 
       const hit = await cached(event.request);
       if (hit) return hit;
-
-      if (self.navigator.onLine === false) {
-        if (navigate) {
-          const fallback = await shell();
-          if (fallback) return fallback;
-        }
-        return new Response("", { status: 503, statusText: "offline" });
-      }
 
       try {
         const fresh = await timeoutFetch(event.request, NETWORK_TIMEOUT);
@@ -167,19 +220,10 @@ self.addEventListener("fetch", (event) => {
           const copy = await materialize(fresh);
           const cache = await caches.open(CACHE);
           event.waitUntil(cache.put(event.request, copy.clone()).catch(() => undefined));
-          if (navigate) event.waitUntil(precacheShell().catch(() => undefined));
           return copy;
-        }
-        if (navigate) {
-          const fallback = await shell();
-          if (fallback) return fallback;
         }
         return fresh;
       } catch {
-        if (navigate) {
-          const fallback = await shell();
-          if (fallback) return fallback;
-        }
         return new Response("", { status: 503, statusText: "offline" });
       }
     })(),
