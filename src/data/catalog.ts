@@ -545,9 +545,9 @@ export const CARD_COUNT = payload.count;
 /** 資料對應的遊戲版與擷取日，下次 scrape 記得改。 */
 export const DATA_META = {
   gameVer: "3.5.0H",
-  pack: "第６彈 古幻相剋の八象　『サクラ大戦』コラボ前半",
+  pack: "第６彈 古幻相剋の八象　『サクラ大戦』コラボ後半",
   gameDate: "2026-09-16",
-  dataDate: "2026-09-18",
+  dataDate: "2026-09-30",
 } as const;
 
 export const CARD_BY_ID: Record<string, Card> = Object.fromEntries(CARDS.map((c) => [c.id, c]));
