@@ -414,6 +414,12 @@ function RecastGrid({ cols, href }: { cols: RecastCol[]; href?: string }) {
   );
 }
 
+function rowsWithoutNoteEcho(note: string, rows: StatLine[]): StatLine[] {
+  const key = note.replace(/\s+/g, "");
+  if (!key) return rows;
+  return rows.filter((row) => row.value.replace(/\s+/g, "") !== key);
+}
+
 function leadingSharedRows(cols: SchoolCol[]): StatLine[] {
   if (cols.length < 2) return [];
   const first = cols[0].rows;
@@ -446,13 +452,16 @@ function SchoolGrid({ cols, href, intro }: { cols: SchoolCol[]; href?: string; i
         {intro ?? (byRyuha ? "依所選流派，效果完全不同。" : byTroop ? "依對象部隊數，效果不同。" : "依對象兵種，效果不同。")}
       </p>
       <div className="mt-2 flex flex-col gap-2">
-        {colsShown.map((col) => (
-          <section key={col.id} className="rounded-md bg-surface-2 px-2.5 py-2">
-            <h3 className="font-display text-sm leading-tight text-fg">{col.title}</h3>
-            {col.note ? <p className="mt-0.5 text-xs leading-relaxed text-pretty text-muted">{col.note}</p> : null}
-            <TierRows id={col.id} rows={col.rows} href={href} />
-          </section>
-        ))}
+        {colsShown.map((col) => {
+          const rows = rowsWithoutNoteEcho(col.note, col.rows);
+          return (
+            <section key={col.id} className="rounded-md bg-surface-2 px-2.5 py-2">
+              <h3 className="font-display text-sm leading-tight text-fg">{col.title}</h3>
+              {col.note ? <p className="mt-0.5 text-xs leading-relaxed text-pretty text-muted">{col.note}</p> : null}
+              {rows.length ? <TierRows id={col.id} rows={rows} href={href} /> : null}
+            </section>
+          );
+        })}
       </div>
     </div>
   );

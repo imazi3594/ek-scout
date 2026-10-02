@@ -1539,7 +1539,10 @@ export function schoolTiers(card: Card): SchoolCol[] | null {
     id: titles[i] ?? String(i),
     title: titles[i] ?? "其他",
     note: i < branched.items.length ? translateDesc(branched.items[i].text) : "無追加效果",
-    rows: effectRows(group, keepDur),
+    rows: effectRows(
+      group.map((effect) => ({ ...effect, value: stripBranchTail(effect.value) })),
+      keepDur,
+    ),
   }));
 }
 
@@ -2043,7 +2046,18 @@ export function cardTanken(card: Card): Tanken[] {
 }
 
 export function displayMainStratDesc(card: Card): string {
-  return translateDesc(card.stratDesc ?? "");
+  const desc = card.stratDesc ?? "";
+  const branched = parseSpecialBranches(desc);
+  if (branched.items.length >= 2 && schoolTiers(card)) {
+    const echoed = branched.items.every((item) => {
+      const text = translateDesc(item.text).replace(/\s+/g, "");
+      return (card.effects ?? []).some(
+        (effect) => translateValue(stripBranchTail(effect.value)).replace(/\s+/g, "") === text,
+      );
+    });
+    if (echoed) return translateDesc(branched.main);
+  }
+  return translateDesc(desc);
 }
 
 export function displayCats(card: Card): string[] {
