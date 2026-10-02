@@ -2046,18 +2046,7 @@ export function cardTanken(card: Card): Tanken[] {
 }
 
 export function displayMainStratDesc(card: Card): string {
-  const desc = card.stratDesc ?? "";
-  const branched = parseSpecialBranches(desc);
-  if (branched.items.length >= 2 && schoolTiers(card)) {
-    const echoed = branched.items.every((item) => {
-      const text = translateDesc(item.text).replace(/\s+/g, "");
-      return (card.effects ?? []).some(
-        (effect) => translateValue(stripBranchTail(effect.value)).replace(/\s+/g, "") === text,
-      );
-    });
-    if (echoed) return translateDesc(branched.main);
-  }
-  return translateDesc(desc);
+  return translateDesc(card.stratDesc ?? "");
 }
 
 export function displayCats(card: Card): string[] {
