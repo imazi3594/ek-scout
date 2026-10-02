@@ -113,7 +113,15 @@ export function CardDetail({ card }: { card: Card }) {
           ) : senki ? (
             <SenkiGrid cols={senki} href={card.dbUrl} />
           ) : school ? (
-            <SchoolGrid cols={school} href={card.dbUrl} />
+            <SchoolGrid
+              cols={school}
+              href={card.dbUrl}
+              intro={
+                /敵の兵種/.test(card.stratDesc ?? "")
+                  ? "依場上武力最高的敵軍兵種，只獲得其中一種效果。"
+                  : undefined
+              }
+            />
           ) : recast ? (
             <RecastGrid cols={recast} href={card.dbUrl} />
           ) : spin ? (
@@ -406,13 +414,13 @@ function RecastGrid({ cols, href }: { cols: RecastCol[]; href?: string }) {
   );
 }
 
-function SchoolGrid({ cols, href }: { cols: SchoolCol[]; href?: string }) {
+function SchoolGrid({ cols, href, intro }: { cols: SchoolCol[]; href?: string; intro?: string }) {
   const byRyuha = cols.some((col) => /^(部隊|士氣|城塞|琥煌)$/.test(col.title));
   const byTroop = cols.some((col) => /隊/.test(col.title) && !byRyuha);
   return (
     <div className="mt-4">
       <p className="text-xs leading-relaxed text-pretty text-muted">
-        {byRyuha ? "依所選流派，效果完全不同。" : byTroop ? "依對象部隊數，效果不同。" : "依對象兵種，效果不同。"}
+        {intro ?? (byRyuha ? "依所選流派，效果完全不同。" : byTroop ? "依對象部隊數，效果不同。" : "依對象兵種，效果不同。")}
       </p>
       <div className="mt-2 flex flex-col gap-2">
         {cols.map((col) => (

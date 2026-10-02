@@ -1457,7 +1457,10 @@ function foldAttachedDurations(effects: CardEffect[]): CardEffect[] {
 export function schoolTiers(card: Card): SchoolCol[] | null {
   const branched = parseSpecialBranches(card.stratDesc ?? "");
   if (branched.items.length < 2) return null;
-  if (!branched.items.every((item) => SCHOOL_KEY.test(item.key))) return null;
+  const enemyUnit = /敵の兵種/.test(card.stratDesc ?? "");
+  const keyOk = (key: string) =>
+    SCHOOL_KEY.test(key) || (enemyUnit && /^(?:騎兵|槍兵|弓兵|剣豪|鉄砲隊)/.test(key));
+  if (!branched.items.every((item) => keyOk(item.key))) return null;
 
   if (branched.items.some((item) => item.text === "なし" || item.text === "無し")) return null;
 
