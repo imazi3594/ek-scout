@@ -414,16 +414,39 @@ function RecastGrid({ cols, href }: { cols: RecastCol[]; href?: string }) {
   );
 }
 
+function leadingSharedRows(cols: SchoolCol[]): StatLine[] {
+  if (cols.length < 2) return [];
+  const first = cols[0].rows;
+  let n = 0;
+  while (n < first.length && cols.every((col) => col.rows.length > n + 1)) {
+    const row = first[n];
+    if (!cols.every((col) => col.rows[n]?.label === row.label && col.rows[n]?.value === row.value)) break;
+    n += 1;
+  }
+  return first.slice(0, n);
+}
+
 function SchoolGrid({ cols, href, intro }: { cols: SchoolCol[]; href?: string; intro?: string }) {
-  const byRyuha = cols.some((col) => /^(部隊|士氣|城塞|琥煌)$/.test(col.title));
-  const byTroop = cols.some((col) => /隊/.test(col.title) && !byRyuha);
+  const shared = intro ? leadingSharedRows(cols) : [];
+  const colsShown = shared.length
+    ? cols.map((col) => ({ ...col, rows: col.rows.slice(shared.length) }))
+    : cols;
+  const byRyuha = colsShown.some((col) => /^(部隊|士氣|城塞|琥煌)$/.test(col.title));
+  const byTroop = colsShown.some((col) => /隊/.test(col.title) && !byRyuha);
   return (
     <div className="mt-4">
-      <p className="text-xs leading-relaxed text-pretty text-muted">
+      {shared.length ? (
+        <dl className="grid grid-cols-1 gap-1.5">
+          {shared.map((row) => (
+            <EffectRow key={`${row.label}-${row.value}`} row={row} href={href} />
+          ))}
+        </dl>
+      ) : null}
+      <p className={cn("text-xs leading-relaxed text-pretty text-muted", shared.length && "mt-3")}>
         {intro ?? (byRyuha ? "依所選流派，效果完全不同。" : byTroop ? "依對象部隊數，效果不同。" : "依對象兵種，效果不同。")}
       </p>
       <div className="mt-2 flex flex-col gap-2">
-        {cols.map((col) => (
+        {colsShown.map((col) => (
           <section key={col.id} className="rounded-md bg-surface-2 px-2.5 py-2">
             <h3 className="font-display text-sm leading-tight text-fg">{col.title}</h3>
             {col.note ? <p className="mt-0.5 text-xs leading-relaxed text-pretty text-muted">{col.note}</p> : null}
