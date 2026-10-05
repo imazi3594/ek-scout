@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 const TOPICS: { id: GuideTopic; title: string; blurb: string }[] = [
   { id: "skills", title: "特技", blurb: "武將固有被動。開場、戰鬥、移動與槽類效果。" },
-  { id: "senki", title: "戰器", blurb: "對戰中僅能使用一次的裝備技。主效果與追加條件。" },
+  { id: "senki", title: "戰器", blurb: "對戰中僅能使用一次的裝備技。主效果、追加與時長皆為 Master。" },
   { id: "ryuha", title: "流派", blurb: "壱・弐・参の型。表為永久，裏多為時限。" },
 ];
 
@@ -83,14 +83,14 @@ function toggle<T>(list: T[], value: T, set: (next: T[]) => void) {
 }
 
 function SenkiGuide() {
-  const [rarities, setRarities] = useState<SenkiRarity[]>([]);
+  const [rarities, setRarities] = useState<SenkiRarity[]>(["SR"]);
   const [cats, setCats] = useState<string[]>([]);
   const groups = useMemo(() => {
     return SENKI_GROUPS.flatMap((group) => {
       if (cats.length && !cats.some((c) => group.title.startsWith(c))) return [];
       const items = group.items.filter((item) => {
-        if (!rarities.length) return true;
-        return item.rarity ? rarities.includes(item.rarity) : false;
+        if (!rarities.length || !item.rarity) return true;
+        return rarities.includes(item.rarity);
       });
       if (!items.length) return [];
       return [{ ...group, items }];
@@ -182,7 +182,7 @@ function GuideSection({ group, showRarity, themed }: { group: GuideGroup; showRa
                   <div
                     key={row.label}
                     className={cn(
-                      "flex items-baseline justify-between gap-3 rounded-md px-2.5 py-1.5",
+                      "flex items-start justify-between gap-3 rounded-md px-2.5 py-1.5",
                       !tone && "bg-bg/50",
                     )}
                     style={tone ? { backgroundColor: tone.factBg } : undefined}
@@ -194,7 +194,15 @@ function GuideSection({ group, showRarity, themed }: { group: GuideGroup; showRa
                       className={cn("text-right text-xs leading-relaxed text-pretty", !tone && "text-muted")}
                       style={tone ? { color: tone.factFg } : undefined}
                     >
-                      {row.value}
+                      <span className="block">{row.value}</span>
+                      {row.sub ? (
+                        <span
+                          className={cn("mt-0.5 block", !tone && "text-faint")}
+                          style={tone ? { color: tone.factMuted } : undefined}
+                        >
+                          {row.sub}
+                        </span>
+                      ) : null}
                     </dd>
                   </div>
                 ))}

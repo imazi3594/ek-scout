@@ -9,6 +9,28 @@ const APP_SHORT = "英傑⚡️速查";
 const NOTO =
   "https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
+function LockAppName() {
+  useEffect(() => {
+    const apply = () => {
+      if (document.title !== APP_NAME) document.title = APP_NAME;
+      const meta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+      if (meta && meta.getAttribute("content") !== APP_SHORT) {
+        meta.setAttribute("content", APP_SHORT);
+      }
+    };
+    apply();
+    const obs = new MutationObserver(apply);
+    obs.observe(document.head, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      characterData: true,
+    });
+    return () => obs.disconnect();
+  }, []);
+  return null;
+}
+
 function OnlineFonts() {
   useEffect(() => {
     const load = () => {
@@ -56,6 +78,7 @@ export const Route = createRootRoute({
       </head>
       <body className="antialiased">
         <PreviewHostBridge />
+        <LockAppName />
         <OnlineFonts />
         <div className="flex min-h-0 flex-1 flex-col">
           <AuthProvider>

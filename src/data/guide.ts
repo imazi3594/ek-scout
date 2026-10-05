@@ -1,6 +1,6 @@
 export type GuideTopic = "skills" | "senki" | "ryuha";
 
-export type GuideFact = { label: string; value: string };
+export type GuideFact = { label: string; value: string; sub?: string };
 export type SenkiRarity = "N" | "R" | "SR";
 
 export type GuideItem = {
@@ -306,13 +306,61 @@ export const RYUHA_GROUPS: GuideGroup[] = [
 export const SENKI_INTRO = [
   "戰器為對戰中僅能使用一次的裝備技。開場前選擇戰器，並指定裝備的武將。",
   "戰器效果分為主效果與追加效果；追加效果通常需滿足登錄條件（勢力、時代、成本或剩餘時鐘等）。",
-  "下列主效果為資料庫所見之上限值，實際隨等級而變。細項以官方為準。",
+  "所列主效果、追加效果與時長皆為 Master。N／R 沒有 Master，所示為其最高等級。沒有持續時間的不另列時長。1C＝2.4 秒。",
 ].join("");
+
+const SENKI_MASTER_C: Record<string, string> = {
+  "和氏の璧": "約 9C",
+  "平蜘蛛釜": "約 7C 弱",
+  "無限の魔法石": "約 16C 弱",
+  "黒糸威胴": "7.5C",
+  "朱塗胴": "5C",
+  "ロリカ・スクアマタ": "約 18C 強",
+  "獣面呑頭鎧": "約 10C",
+  "日ノ本一の陣羽織": "約 7C 弱",
+  "天才魔女の草臥れ帽子": "約 18C 強",
+  "唐皮": "約 15C",
+  "楯無": "約 7C 弱",
+  "褄取威大鎧": "約 10.5C",
+  "大典太光世": "約 8C",
+  "三日月宗近": "約 7C 強",
+  "蜻蛉切": "約 8C",
+  "雷上動": "約 9.5C",
+  "髭切": "約 11C 弱",
+  "墨縄": "約 10C 強",
+  "七支刀": "約 6.5C",
+  "天羽々斬": "約 7C 弱",
+  "和泉守兼定": "約 7C 強",
+  "青龍偃月刀": "約 8C",
+  "童子切安綱": "約 6C",
+  "毒匕寒月刃": "約 6C 強",
+  "打神鞭": "約 15C 弱",
+  "輝く太陽と月の双剣": "約 8C 弱",
+  "鬼丸国綱": "約 8C",
+  "金箔采配": "約 26C 強",
+  "羽扇": "約 21C 強",
+  "天下布武": "約 24C",
+  "軍配団扇": "約 26C 強",
+  "軍扇": "15C",
+  "赤兎馬": "約 7C 強",
+  "王庭": "約 6C",
+  "ＺＥＴＳＵ－Ａ－": "14.2C",
+  "五代之軍記": "約 5C 強",
+  "三国志": "約 5C 強",
+  "孫子": "約 14C 強",
+  "金烏玉兎集": "約 5C",
+  "海国兵談": "20C",
+  "進化の系譜": "約 7C 強",
+  "紅玉": "約 8C",
+  "紫石英": "約 5C 強",
+};
 
 function se(name: string, rarity: SenkiRarity, main: string, extra?: string, cond?: string): GuideItem {
   const facts: GuideFact[] = [{ label: "主效果", value: main }];
-  if (extra) facts.push({ label: "追加", value: extra });
-  if (cond) facts.push({ label: "條件", value: cond });
+  if (extra) facts.push({ label: "追加效果", value: extra, sub: cond });
+  else if (cond) facts.push({ label: "追加效果", value: cond });
+  const dur = SENKI_MASTER_C[name];
+  if (dur) facts.push({ label: "時長", value: dur });
   return { name, rarity, facts };
 }
 
