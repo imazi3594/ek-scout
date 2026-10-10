@@ -82,41 +82,25 @@
     cursor: pointer;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
-    transition: scale 90ms ease;
-  }
-
-  button:not(:disabled):active,
-  [role="button"]:not(:disabled):active,
-  button.tap-flash,
-  [role="button"].tap-flash {
-    scale: 0.94;
-    outline: 2px solid #e2c15a;
-    outline-offset: -3px;
-  }
-
-  button.list-row:not(:disabled),
-  [role="button"].list-row:not(:disabled) {
-    transition: none;
-  }
-
-  button.list-row:not(:disabled):active,
-  [role="button"].list-row:not(:disabled):active,
-  button.list-row.tap-flash,
-  [role="button"].list-row.tap-flash {
-    scale: 1;
-    outline: none;
-    animation: row-flash 680ms ease-out;
   }
 }
 
-@keyframes row-flash {
+@keyframes siege-flame {
   0%,
-  40% {
-    box-shadow: inset 0 0 0 999px rgb(226 193 90 / 0.46);
-  }
   100% {
-    box-shadow: inset 0 0 0 999px rgb(226 193 90 / 0);
+    transform: translateX(0);
   }
+  50% {
+    transform: translateX(-18%);
+  }
+}
+
+.siege-flame {
+  animation: siege-flame 18s ease-in-out infinite;
+}
+
+.siege-flame-inner {
+  animation: siege-flame 13s ease-in-out infinite reverse;
 }
 
 @layer components {
@@ -137,12 +121,14 @@
     flex: 1;
     height: 100%;
     min-height: 0;
+    min-width: 0;
     overflow: hidden;
     touch-action: pan-y;
   }
 
   .tab-track {
     display: flex;
+    flex: 1 0 100%;
     height: 100%;
     min-height: 0;
     width: 100%;
@@ -157,11 +143,12 @@
 
   .tab-pane {
     display: flex;
+    flex: 0 0 100%;
     height: 100%;
     min-height: 0;
     width: 100%;
     min-width: 100%;
-    flex-shrink: 0;
+    max-width: 100%;
     flex-direction: column;
     overflow: hidden;
   }

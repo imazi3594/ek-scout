@@ -287,56 +287,26 @@ export function ScoutApp() {
   }
 
   useEffect(() => {
-    let x0 = 0;
-    let y0 = 0;
-    let armed = false;
-    const timers = new WeakMap<Element, number>();
-    const onDown = (e: PointerEvent) => {
-      if (e.pointerType === "mouse" && e.button !== 0) return;
-      x0 = e.clientX;
-      y0 = e.clientY;
-      armed = true;
-    };
-    const onUp = (e: PointerEvent) => {
-      if (!armed) return;
-      armed = false;
-      if (Math.hypot(e.clientX - x0, e.clientY - y0) > 14) return;
-      const btn = (e.target as HTMLElement | null)?.closest?.("button, [role='button']") as HTMLElement | null;
-      if (!btn || btn.matches(":disabled") || btn.getAttribute("aria-disabled") === "true") return;
-      const prev = timers.get(btn);
-      if (prev) window.clearTimeout(prev);
-      btn.classList.remove("tap-flash");
-      void btn.offsetWidth;
-      btn.classList.add("tap-flash");
-      timers.set(
-        btn,
-        window.setTimeout(() => {
-          btn.classList.remove("tap-flash");
-          timers.delete(btn);
-        }, btn.classList.contains("list-row") ? 680 : 360),
-      );
-    };
-    const onCancel = () => {
-      armed = false;
-    };
-    document.addEventListener("pointerdown", onDown, true);
-    document.addEventListener("pointerup", onUp, true);
-    document.addEventListener("pointercancel", onCancel, true);
-    return () => {
-      document.removeEventListener("pointerdown", onDown, true);
-      document.removeEventListener("pointerup", onUp, true);
-      document.removeEventListener("pointercancel", onCancel, true);
-    };
-  }, []);
-
-  useEffect(() => {
     void Promise.resolve(useScout.persist.rehydrate());
 
     history.replaceState({ v: "root" } satisfies Hist, "");
     history.pushState({ v: "home" } satisfies Hist, "");
 
     const onPop = (event: PopStateEvent) => {
-      const s = (event.state ?? { v: "root" }) as Hist;
+      const raw = event.state;
+      const known =
+        raw &&
+        typeof raw === "object" &&
+        "v" in raw &&
+        (raw.v === "root" ||
+          raw.v === "home" ||
+          raw.v === "card" ||
+          raw.v === "skills" ||
+          raw.v === "guide" ||
+          raw.v === "recents" ||
+          raw.v === "about");
+      if (raw != null && !known) return;
+      const s = (known ? raw : { v: "root" }) as Hist;
       if (s.v === "root") {
         const now = Date.now();
         if (now - lastBack.current < 2000) {
@@ -848,7 +818,7 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length !== 1) return;
       const target = e.target as HTMLElement | null;
-      if (target?.closest("input, textarea, select")) {
+      if (target?.closest("button, a, input, textarea, select, [data-no-swipe]")) {
         axis = "v";
         return;
       }

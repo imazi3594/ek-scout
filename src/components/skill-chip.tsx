@@ -55,21 +55,26 @@ export function SkillList({ ids, compact, short }: { ids: number[]; compact?: bo
   );
 }
 
-export function SkillExplain({ id, card }: { id: number; card?: Card }) {
+export function SkillExplain({ id, card, bodyOnly }: { id: number; card?: Card; bodyOnly?: boolean }) {
   const skill = skillById(id);
   const cardFacts = card ? skillCardFacts(card, id) : [];
   const tableFacts = card
     ? skill.facts.filter((row) => !cardFacts.some((c) => c.label === row.label))
     : skill.facts;
   return (
-    <article className="rounded-lg bg-surface-2 p-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <SkillChip id={id} />
-        {skill.durationC ? (
-          <span className="ml-auto text-xs tabular-nums text-fg">{skill.durationC}</span>
-        ) : null}
-      </div>
-      <p className="mt-2 text-sm leading-relaxed text-pretty text-fg">{skill.detail}</p>
+    <article className={bodyOnly ? "pt-3" : "rounded-lg bg-surface-2 p-3"}>
+      {bodyOnly ? null : (
+        <div className="flex flex-wrap items-center gap-2">
+          <SkillChip id={id} />
+          {skill.durationC ? (
+            <span className="ml-auto text-xs tabular-nums text-fg">{skill.durationC}</span>
+          ) : null}
+        </div>
+      )}
+      {bodyOnly && skill.durationC ? (
+        <p className="mb-2 text-right text-xs tabular-nums text-fg">{skill.durationC}</p>
+      ) : null}
+      <p className={cn("text-sm leading-relaxed text-pretty text-fg", !bodyOnly && "mt-2")}>{skill.detail}</p>
       {cardFacts.length ? (
         <dl className="mt-3 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
           {cardFacts.map((row) => (

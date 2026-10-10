@@ -1,4 +1,4 @@
-export type GuideTopic = "skills" | "units" | "senki" | "eikon" | "ryuha";
+export type GuideTopic = "basic" | "skills" | "units" | "siege" | "senki" | "eikon" | "ryuha";
 
 export type GuideFact = { label: string; value: string; sub?: string };
 export type SenkiRarity = "N" | "R" | "SR";
@@ -16,16 +16,105 @@ export type GuideGroup = {
   items: GuideItem[];
 };
 
+export const BASIC_GROUPS: GuideGroup[] = [
+  {
+    title: "計數",
+    items: [
+      {
+        name: "換算",
+        facts: [
+          { label: "1C", value: "2.4 秒" },
+          { label: "5C", value: "12 秒" },
+          { label: "10C", value: "24 秒" },
+          { label: "50C", value: "120 秒" },
+          { label: "全場", value: "99C → 00" },
+          { label: "先陣", value: "約 49C（99C → 50C）" },
+        ],
+      },
+    ],
+  },
+  {
+    title: "卡組",
+    items: [
+      {
+        name: "登錄",
+        facts: [
+          { label: "張數", value: "8 張以內" },
+          { label: "合計成本", value: "9 以內" },
+          { label: "成本檔", value: "1.0–4.0，每 0.5 一檔" },
+        ],
+      },
+    ],
+  },
+  {
+    title: "士氣",
+    blurb: "自然上升。沒有額外士氣時，一場實際能用的少於 24。",
+    items: [
+      {
+        name: "上升",
+        facts: [
+          { label: "速度", value: "每 1 秒 ＋0.1（約 0.4C）" },
+          { label: "每 10 秒", value: "＋1" },
+          { label: "一場自然上限", value: "24" },
+        ],
+      },
+      {
+        name: "最大",
+        note: "士氣流派壱の型再 ＋3，合計不超過 15。",
+        facts: [
+          { label: "1 勢力", value: "12" },
+          { label: "2 勢力", value: "10" },
+          { label: "3 勢力", value: "8" },
+          { label: "4 勢力", value: "6" },
+        ],
+      },
+    ],
+  },
+  {
+    title: "進場",
+    items: [
+      {
+        name: "時間",
+        facts: [
+          { label: "出城", value: "3.5 秒" },
+          { label: "基本復活", value: "30 秒（12.5C）" },
+        ],
+      },
+    ],
+  },
+  {
+    title: "能力",
+    items: [
+      {
+        name: "武力",
+        note: "亦影響攻城。成本愈高，加成果愈大。",
+        facts: [{ label: "作用", value: "攻防、亂戰與兵種動作傷害" }],
+      },
+      {
+        name: "知力",
+        note: "愈高，計略時間愈長、攻城愈快。",
+        facts: [{ label: "作用", value: "計略效果、伏兵、攻城槽長度" }],
+      },
+    ],
+  },
+];
+
 export const SENKI_RARITIES: SenkiRarity[] = ["N", "R", "SR"];
 export const SENKI_CATS = ["宝物", "鎧兜", "武器", "軍配", "馬", "書物", "宝石"] as const;
 
 const RYUHA_INK: Record<string, { deep: string; pale: string; fg: string; muted: string }> = {
   部隊: { deep: "#3d2a52", pale: "#5a4270", fg: "#e6e0d4", muted: "rgb(230 224 212 / 0.7)" },
-  士氣: { deep: "#85762e", pale: "#a99444", fg: "#1a1612", muted: "rgb(26 22 18 / 0.62)" },
+  士氣: { deep: "#5e5324", pale: "#736430", fg: "#e6e0d4", muted: "rgb(230 224 212 / 0.7)" },
   城塞: { deep: "#1e3d2e", pale: "#335c45", fg: "#e6e0d4", muted: "rgb(230 224 212 / 0.7)" },
   兵種: { deep: "#4a2428", pale: "#6a3a3e", fg: "#e6e0d4", muted: "rgb(230 224 212 / 0.7)" },
   琥煌: { deep: "#4a2e14", pale: "#6e4624", fg: "#e6e0d4", muted: "rgb(230 224 212 / 0.7)" },
 };
+
+export function ryuhaChip(kind: string) {
+  const pal = RYUHA_INK[kind];
+  if (!pal) return null;
+  return { bg: pal.pale, fg: pal.fg, dot: pal.pale };
+}
 
 export function ryuhaTheme(title: string) {
   const ura = title.includes("裏");
@@ -43,15 +132,10 @@ export function ryuhaTheme(title: string) {
     factFg: pal.fg,
     muted: pal.muted,
     factMuted: pal.muted,
+    badgeBg: inner,
+    badgeFg: pal.fg,
   };
 }
-
-export const RYUHA_INTRO = [
-  "對戰中蓄積流派槽後，可發動所選流派的型。",
-  "壱の型消耗槽 100%（1 條），弐の型 200%，参の型 300%。同一場中各型僅能發動一次，但可同時存在、不會互相覆蓋。",
-  "槽主要靠兵種動作命中與自城受損蓄積；高成本武將命中時增加較多。上限可超過 300%，最高約 600%（第二圈）。",
-  "表流派多為永久效果；裏流派多為約 12.5C 的時限效果。",
-].join("");
 
 export const RYUHA_GROUPS: GuideGroup[] = [
   {
@@ -526,13 +610,6 @@ export const SENKI_GROUPS: GuideGroup[] = [
   },
 ];
 
-export const UNIT_INTRO = [
-  "兵種決定移速、攻城與固有動作。移速：騎＞弓≒鐵＞劍＞槍。攻城：槍＞劍＞弓＝鐵＞騎。",
-  "攻城力 ≈（兵種基礎 ＋ 武力 × 0.02）× 成本係數。基礎為成本 1.0、不計武力。",
-  "成本係數：1.0＝1、1.5＝2.5、2.0＝3.75、2.5＝4.7、3.0＝5.65、3.5＝6.55、4.0＝7.5。",
-  "自城前觸到敵攻城區的實測：騎約 10 秒、弓／鐵約 15 秒、劍約 17 秒、槍約 18 秒。",
-].join("");
-
 export const UNIT_GROUPS: GuideGroup[] = [
   {
     title: "騎兵",
@@ -542,10 +619,18 @@ export const UNIT_GROUPS: GuideGroup[] = [
         name: "基礎",
         facts: [
           { label: "攻城基礎", value: "0.56" },
-          { label: "動作", value: "移動一段距離後進入突擊可能，接觸敵軍造成大傷害" },
+          { label: "動作", value: "移動一段距離後帶上突擊氣場，接觸敵軍造成大傷害" },
           { label: "突擊中", value: "受到弓、鐵砲的傷害減輕" },
         ],
       },
+      {
+        name: "被槍迎擊",
+        facts: [
+          { label: "有突擊氣場", value: "撞槍即被迎擊" },
+          { label: "未出突擊氣場", value: "加速 ＋10% 起初速也被迎擊" },
+        ],
+      },
+      { name: "自城到敵城需時", facts: [{ label: "需時", value: "約 10 秒（4.2C）" }] },
     ],
   },
   {
@@ -561,6 +646,11 @@ export const UNIT_GROUPS: GuideGroup[] = [
           { label: "迎擊", value: "正面接觸高速部隊時迎擊" },
         ],
       },
+      {
+        name: "被槍迎擊",
+        facts: [{ label: "加速", value: "＋90% 起" }],
+      },
+      { name: "自城到敵城需時", facts: [{ label: "需時", value: "約 18 秒（7.5C）" }] },
     ],
   },
   {
@@ -576,6 +666,14 @@ export const UNIT_GROUPS: GuideGroup[] = [
           { label: "妨礙攻城", value: "命中正在攻城的部隊會削減其攻城槽" },
         ],
       },
+      {
+        name: "被槍迎擊",
+        facts: [
+          { label: "走射", value: "＋25% 起" },
+          { label: "平時", value: "＋45% 起" },
+        ],
+      },
+      { name: "自城到敵城需時", facts: [{ label: "需時", value: "約 15 秒（6.3C）" }] },
     ],
   },
   {
@@ -592,6 +690,11 @@ export const UNIT_GROUPS: GuideGroup[] = [
           { label: "對突擊騎", value: "斬擊命中會大幅降低其移速" },
         ],
       },
+      {
+        name: "被槍迎擊",
+        facts: [{ label: "加速", value: "＋65% 起" }],
+      },
+      { name: "自城到敵城需時", facts: [{ label: "需時", value: "約 17 秒（7.1C）" }] },
     ],
   },
   {
@@ -607,6 +710,11 @@ export const UNIT_GROUPS: GuideGroup[] = [
           { label: "動作", value: "接近後鎖定，沿直線射擊" },
         ],
       },
+      {
+        name: "被槍迎擊",
+        facts: [{ label: "加速", value: "＋45% 起" }],
+      },
+      { name: "自城到敵城需時", facts: [{ label: "需時", value: "約 15 秒（6.3C）" }] },
     ],
   },
 ];
