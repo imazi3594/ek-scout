@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronLeft } from "lucide-react";
 import { RARITY_CHIP, SKILLS } from "@/data/catalog";
 import { CostPips, RarityMark } from "@/components/card-identity";
@@ -44,9 +44,24 @@ const TOPICS: { id: GuideTopic; title: string; blurb: string }[] = [
 ];
 
 export function GuidePage({ topic, onTopic }: { topic: GuideTopic | null; onTopic: (topic: GuideTopic | null) => void }) {
+  const scroller = useRef<HTMLDivElement>(null);
+  const menuScroll = useRef(0);
+
+  useLayoutEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    el.scrollTop = topic ? 0 : menuScroll.current;
+  }, [topic]);
+
   if (!topic) {
     return (
-      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 py-6 sm:px-6">
+      <div
+        ref={scroller}
+        className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 py-6 sm:px-6"
+        onScroll={(event) => {
+          menuScroll.current = event.currentTarget.scrollTop;
+        }}
+      >
         <p className="text-sm leading-relaxed text-pretty text-muted">請選擇要查閱的資料。</p>
         <div className="mt-4 flex flex-col gap-2">
           {TOPICS.map((item) => (
@@ -69,7 +84,7 @@ export function GuidePage({ topic, onTopic }: { topic: GuideTopic | null; onTopi
   }
 
   return (
-    <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-4 py-6 sm:px-6">
+    <div ref={scroller} className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-4 py-6 sm:px-6">
       <button
         type="button"
         onClick={() => onTopic(null)}
