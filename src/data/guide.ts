@@ -1,4 +1,4 @@
-export type GuideTopic = "skills" | "senki" | "ryuha";
+export type GuideTopic = "skills" | "units" | "senki" | "eikon" | "ryuha";
 
 export type GuideFact = { label: string; value: string; sub?: string };
 export type SenkiRarity = "N" | "R" | "SR";
@@ -522,6 +522,147 @@ export const SENKI_GROUPS: GuideGroup[] = [
           { label: "復活", value: "−5 秒" },
         ],
       },
+    ],
+  },
+];
+
+export const UNIT_INTRO = [
+  "兵種決定移速、攻城與固有動作。移速：騎＞弓≒鐵＞劍＞槍。攻城：槍＞劍＞弓＝鐵＞騎。",
+  "攻城力 ≈（兵種基礎 ＋ 武力 × 0.02）× 成本係數。基礎為成本 1.0、不計武力。",
+  "成本係數：1.0＝1、1.5＝2.5、2.0＝3.75、2.5＝4.7、3.0＝5.65、3.5＝6.55、4.0＝7.5。",
+  "自城前觸到敵攻城區的實測：騎約 10 秒、弓／鐵約 15 秒、劍約 17 秒、槍約 18 秒。",
+].join("");
+
+export const UNIT_GROUPS: GuideGroup[] = [
+  {
+    title: "騎兵",
+    blurb: "五兵種中移速最高、攻城最低。",
+    items: [
+      {
+        name: "基礎",
+        facts: [
+          { label: "攻城基礎", value: "0.56" },
+          { label: "動作", value: "移動一段距離後進入突擊可能，接觸敵軍造成大傷害" },
+          { label: "突擊中", value: "受到弓、鐵砲的傷害減輕" },
+        ],
+      },
+    ],
+  },
+  {
+    title: "槍兵",
+    blurb: "五兵種中攻城最高、移速最低。",
+    items: [
+      {
+        name: "基礎",
+        facts: [
+          { label: "攻城基礎", value: "2" },
+          { label: "槍長", value: "0.66 部隊分" },
+          { label: "動作", value: "前進時向前突刺，命中會略降敵移速" },
+          { label: "迎擊", value: "正面接觸高速部隊時迎擊" },
+        ],
+      },
+    ],
+  },
+  {
+    title: "弓兵",
+    blurb: "移速與鐵砲隊相同。",
+    items: [
+      {
+        name: "基礎",
+        facts: [
+          { label: "攻城基礎", value: "1.3" },
+          { label: "動作", value: "射程內自動射擊" },
+          { label: "走射", value: "靜止一段時間後可邊移動邊射，期間移速上升" },
+          { label: "妨礙攻城", value: "命中正在攻城的部隊會削減其攻城槽" },
+        ],
+      },
+    ],
+  },
+  {
+    title: "劍豪",
+    blurb: "攻城高於弓、鐵，低於槍。",
+    items: [
+      {
+        name: "基礎",
+        facts: [
+          { label: "攻城基礎", value: "1.5" },
+          { label: "斬擊發生", value: "0.6 秒" },
+          { label: "再次斬擊", value: "6.07 秒" },
+          { label: "範圍", value: "直徑 2.8 部隊分" },
+          { label: "對突擊騎", value: "斬擊命中會大幅降低其移速" },
+        ],
+      },
+    ],
+  },
+  {
+    title: "鐵砲隊",
+    blurb: "攻城與弓兵相同。",
+    items: [
+      {
+        name: "基礎",
+        facts: [
+          { label: "攻城基礎", value: "1.3" },
+          { label: "彈數", value: "5" },
+          { label: "再裝填", value: "6.2 秒（約 2.5C）" },
+          { label: "動作", value: "接近後鎖定，沿直線射擊" },
+        ],
+      },
+    ],
+  },
+];
+
+export const EIKON_INTRO = [
+  "英魂只作用於裝備該戰器的武將，直到解放戰器為止。N 戰器不能裝英魂。類別與稀有度必須一致。",
+  "一般英魂可重複，效果疊加。寶石英魂不會抽到重複項目；與同類計略重疊時，取較高的一方。",
+  "一般英魂為 Ver.2.0.0D，寶石英魂為 Ver.3.5.0E。",
+].join("");
+
+export const EIKON_GROUPS: GuideGroup[] = [
+  {
+    title: "一般英魂",
+    blurb: "各類戰器都可能抽到。動作類即使兵種不符也會計入；計略臨時賦予的動作同樣生效。",
+    items: [
+      {
+        name: "速度",
+        note: "疊高後可能被槍兵迎擊。騎兵兩層（＋10%）起，初速就會被迎擊。",
+        facts: [{ label: "移速", value: "＋5%" }],
+      },
+      { name: "最大兵力", facts: [{ label: "最大兵力", value: "＋5%" }] },
+      { name: "攻城力", facts: [{ label: "攻城力", value: "＋0.8%" }] },
+      { name: "突擊準備距離", facts: [{ label: "突擊間隔", value: "−10%" }] },
+      { name: "槍長度", facts: [{ label: "槍長", value: "＋15%" }] },
+      { name: "弓射程", facts: [{ label: "射程", value: "＋5%" }] },
+      { name: "斬擊範圍", facts: [{ label: "範圍", value: "＋5%" }] },
+      { name: "鐵砲射程", facts: [{ label: "射程", value: "＋5%" }] },
+    ],
+  },
+  {
+    title: "寶石英魂",
+    blurb: "只出現在寶石戰器。不會抽到重複。",
+    items: [
+      { name: "武力", facts: [{ label: "武力", value: "＋1" }] },
+      { name: "知力", facts: [{ label: "知力", value: "＋2" }] },
+      { name: "速度", facts: [{ label: "移速", value: "＋20%" }] },
+      { name: "復活時間減少", facts: [{ label: "復活", value: "−5 秒" }] },
+      {
+        name: "隱密",
+        note: "與計略的隱密重疊時，取較高的一方。",
+        facts: [{ label: "狀態", value: "隱密" }],
+      },
+      {
+        name: "知力戰鬥傷害",
+        note: "與同類效果重疊時，取較高的一方。",
+        facts: [
+          { label: "倍率", value: "0.1 倍" },
+          { label: "最低", value: "0.3%" },
+        ],
+      },
+      {
+        name: "亂戰時攻城",
+        note: "與同類效果重疊時，取較高的一方。",
+        facts: [{ label: "亂戰中攻城", value: "0.1 倍" }],
+      },
+      { name: "復活時間增加", facts: [{ label: "擊破敵軍", value: "該敵復活 ＋5 秒" }] },
     ],
   },
 ];

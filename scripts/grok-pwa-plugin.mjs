@@ -42,7 +42,7 @@ function sendHtml(res, html) {
   res.end(body);
 }
 
-function serveGrokPwa(middlewares, cwd = process.cwd()) {
+function serveGrokPwa(middlewares) {
   middlewares.use((req, res, next) => {
     const rawUrl = req.url ?? "";
     const pathOnly = rawUrl.split("?", 1)[0] ?? "";
@@ -53,8 +53,7 @@ function serveGrokPwa(middlewares, cwd = process.cwd()) {
     }
 
     if (pathOnly === "/__grok/manifest.webmanifest" || pathOnly === "/__grok/manifest.json") {
-      const site = snapshotOgIdentity(cwd).site;
-      const body = Buffer.from(renderWebManifest(requestHost(req), site), "utf8");
+      const body = Buffer.from(renderWebManifest(requestHost(req)), "utf8");
       res.statusCode = 200;
       res.setHeader("content-type", "application/manifest+json; charset=utf-8");
       res.setHeader("cache-control", "no-cache");
@@ -65,9 +64,7 @@ function serveGrokPwa(middlewares, cwd = process.cwd()) {
 
     if (isInstallQuery(rawUrl) && isDocumentPath(pathOnly) && acceptsHtml(req.headers.accept)) {
       try {
-        const template = readFileSync(INSTALL_PAGE_PATH, "utf8");
-        const site = snapshotOgIdentity(cwd).site;
-        sendHtml(res, renderInstallPageHtml(template, { host: requestHost(req), url: rawUrl, site }));
+        sendHtml(res, renderInstallPage(requestHost(req), rawUrl));
       } catch (err) {
         console.error("[app-builder] install page missing:", err);
         res.statusCode = 500;
@@ -177,11 +174,11 @@ export function grokPwaPlugin() {
     configureServer(server) {
       // Registered directly (not in a returned post-hook) so both run BEFORE
       // TanStack Start's SSR middleware, like the auth-popup plugin.
-      serveGrokPwa(server.middlewares, root);
+      serveGrokPwa(server.middlewares);
       wrapHtmlResponses(server.middlewares, root);
     },
     configurePreviewServer(server) {
-      serveGrokPwa(server.middlewares, root);
+      serveGrokPwa(server.middlewares);
       // Post-hook: preview registers compression between the direct hooks and
       // the post-hooks, and the injector must wrap AFTER compression so it
       // sees plaintext HTML (compression then compresses the injected output).
