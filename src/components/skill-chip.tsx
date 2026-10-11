@@ -78,9 +78,9 @@ export function SkillExplain({ id, card, bodyOnly }: { id: number; card?: Card; 
       {cardFacts.length ? (
         <dl className="mt-3 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
           {cardFacts.map((row) => (
-            <div key={`c-${row.label}`} className="flex items-baseline justify-between gap-3 rounded-md bg-surface-3 px-2.5 py-2">
-              <dt className="shrink-0 text-xs text-fg/60">{row.label}</dt>
-              <dd className="text-right text-sm font-medium tabular-nums text-fg">{row.value}</dd>
+            <div key={`c-${row.label}`} className="flex items-start justify-between gap-3 rounded-md bg-surface-3 px-2.5 py-2">
+              <dt className="flex h-6 shrink-0 items-center text-xs leading-none text-fg/60">{row.label}</dt>
+              <dd className="text-right text-sm font-medium leading-6 tabular-nums text-fg">{row.value}</dd>
             </div>
           ))}
         </dl>
@@ -88,9 +88,9 @@ export function SkillExplain({ id, card, bodyOnly }: { id: number; card?: Card; 
       {tableFacts.length ? (
         <dl className={cn("grid grid-cols-1 gap-1.5 sm:grid-cols-2", cardFacts.length ? "mt-1.5" : "mt-3")}>
           {tableFacts.map((row) => (
-            <div key={row.label} className="flex items-baseline justify-between gap-3 rounded-md bg-surface-3 px-2.5 py-2">
-              <dt className="shrink-0 text-xs text-fg/60">{row.label}</dt>
-              <dd className="text-right text-sm font-medium tabular-nums text-fg">{row.value}</dd>
+            <div key={row.label} className="flex items-start justify-between gap-3 rounded-md bg-surface-3 px-2.5 py-2">
+              <dt className="flex h-6 shrink-0 items-center text-xs leading-none text-fg/60">{row.label}</dt>
+              <dd className="text-right text-sm font-medium leading-6 tabular-nums text-fg">{row.value}</dd>
             </div>
           ))}
         </dl>

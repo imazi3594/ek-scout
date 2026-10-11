@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import {
   cardTanken,
@@ -13,6 +14,7 @@ import {
   officialUrl,
   recastTiers,
   schoolTiers,
+  deckCostView,
   senkiTiers,
   shukuseiTiers,
   spinTiers,
@@ -24,6 +26,7 @@ import {
   type RecastCol,
   type SenkiCol,
   type SchoolCol,
+  type DeckCostView,
   type ShukuseiTier,
   type SpecialBlock,
   type SpinTiers,
@@ -34,6 +37,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { CardIdentity } from "@/components/card-identity";
 import { cn } from "@/lib/utils";
+import charts from "@/data/damage-charts.json";
 
 function MoraleCost({ cost }: { cost: number | string }) {
   return (
@@ -65,16 +69,26 @@ export function CardDetail({ card }: { card: Card }) {
   const useCount = konshin || kokou || shukusei ? null : useCountTiers(card);
   const senki = konshin || kokou || shukusei || useCount ? null : senkiTiers(card);
   const school = konshin || kokou || shukusei || useCount || senki ? null : schoolTiers(card);
-  const recast = konshin || kokou || shukusei || useCount || senki || school ? null : recastTiers(card);
-  const spin = konshin || kokou || shukusei || useCount || senki || school || recast ? null : spinTiers(card);
-  const effects = konshin || kokou || shukusei || useCount || senki || school || recast || spin ? [] : displayEffects(card);
+  const deck = school ? null : deckCostView(card);
+  const recast = konshin || kokou || shukusei || useCount || senki || school || deck ? null : recastTiers(card);
+  const spin = konshin || kokou || shukusei || useCount || senki || school || deck || recast ? null : spinTiers(card);
+  const effects = konshin || kokou || shukusei || useCount || senki || school || deck || recast || spin ? [] : displayEffects(card);
+  const intelChart = DAMAGE_CHARTS[card.no];
+  const oshiGauge = parseOshiGauge(card);
+  const hurtPower = isHurtPowerCard(card);
+  const shownEffects = effects.filter((row) => {
+    if (intelChart && isDamagePlaceholder(row)) return false;
+    if (oshiGauge && /黃熾槽/.test(row.value)) return false;
+    if (hurtPower && row.label === "武力" && /%/.test(row.value)) return false;
+    return true;
+  });
   const formation = formationMorale(card);
   const area = displayArea(card);
   const desc = displayMainStratDesc(card);
   const tankens = cardTanken(card);
-  const special = school || recast ? null : cardSpecial(card);
+  const special = deck || school || recast ? null : cardSpecial(card);
   const meta = [duration.seconds, duration.dep, duration.extra].filter(Boolean);
-  const hasData = Boolean(konshin || kokou || shukusei || useCount || senki || school || recast || spin || effects.length || formation || area || duration.label);
+  const hasData = Boolean(konshin || kokou || shukusei || useCount || senki || school || deck || recast || spin || effects.length || formation || area || duration.label);
 
   return (
     <div className="flex flex-col gap-3 pb-8">
@@ -122,13 +136,18 @@ export function CardDetail({ card }: { card: Card }) {
                   : undefined
               }
             />
+          ) : deck ? (
+            <DeckCostPanel view={deck} />
           ) : recast ? (
             <RecastGrid cols={recast} href={card.dbUrl} />
           ) : spin ? (
             <SpinGrid data={spin} href={card.dbUrl} />
-          ) : effects.length ? (
-            <EffectList rows={effects} href={card.dbUrl} />
+          ) : shownEffects.length ? (
+            <EffectList rows={shownEffects} href={card.dbUrl} />
           ) : null}
+          {oshiGauge ? <OshiGauge tracks={oshiGauge} /> : null}
+          {hurtPower ? <GinchiyoCalc /> : null}
+          {intelChart && !hurtPower && !tankens.some(tankenOwnsChart) ? <IntelDamageTable chart={intelChart} /> : null}
 
           {formation ? <FormationMoraleBox normal={formation.normal} reduced={formation.reduced} /> : null}
 
@@ -144,7 +163,12 @@ export function CardDetail({ card }: { card: Card }) {
       {special ? <SpecialBox block={special} href={card.dbUrl} /> : null}
 
       {tankens.map((tanken) => (
-        <TankenBox key={tanken.name} tanken={tanken} href={card.dbUrl} />
+        <TankenBox
+          key={tanken.name}
+          tanken={tanken}
+          href={card.dbUrl}
+          chart={intelChart && tankenOwnsChart(tanken) ? intelChart : null}
+        />
       ))}
 
       <div className="flex gap-2">
@@ -167,7 +191,12 @@ export function CardDetail({ card }: { card: Card }) {
   );
 }
 
-function TankenBox({ tanken, href }: { tanken: Tanken; href?: string }) {
+function tankenOwnsChart(tanken: Tanken) {
+  return tanken.rows.some((row) => /^(知力傷害|武力傷害|伏兵)/.test(row.label) && /外部|表/.test(row.value));
+}
+
+function TankenBox({ tanken, href, chart }: { tanken: Tanken; href?: string; chart?: DamageChart | null }) {
+  const rows = chart ? tanken.rows.filter((row) => !isDamagePlaceholder(row)) : tanken.rows;
   return (
     <section className="rounded-lg border border-white/10 bg-black/35 p-4">
       <p className="text-xs text-faint">短計</p>
@@ -176,7 +205,8 @@ function TankenBox({ tanken, href }: { tanken: Tanken; href?: string }) {
         {tanken.cost ? <MoraleCost cost={tanken.cost} /> : null}
       </div>
       {tanken.text ? <p className="mt-3 text-sm leading-relaxed text-pretty text-fg">{tanken.text}</p> : null}
-      {tanken.rows.length ? <EffectList rows={tanken.rows} href={href} /> : null}
+      {rows.length ? <EffectList rows={rows} href={href} /> : null}
+      {chart ? <IntelDamageTable chart={chart} /> : null}
     </section>
   );
 }
@@ -210,6 +240,344 @@ function SpecialBox({ block, href }: { block: SpecialBlock; href?: string }) {
         ))}
       </ul>
     </section>
+  );
+}
+
+type DamageRow = { label: string; coef: number; fixed: number; melee?: boolean };
+type DamageChart = { stat: "知力" | "武力"; base: number; rows: DamageRow[] };
+
+const DAMAGE_CHARTS = charts as Record<string, DamageChart>;
+
+function isDamagePlaceholder(row: StatLine) {
+  if (/^(知力傷害|武力傷害|固定傷害|傷害係數)/.test(row.label)) return true;
+  if (/伏兵/.test(row.label) && /外部|表/.test(row.value)) return true;
+  return false;
+}
+
+function intelDamage(self: number, enemy: number, row: DamageRow) {
+  let n = (self / enemy) * row.coef + row.fixed;
+  if (row.melee) n += Math.max(5.2 + (self - enemy) * 0.8, 1);
+  const rounded = Math.round(n * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
+
+function IntelDamageTable({ chart }: { chart: DamageChart }) {
+  const [self, setSelf] = useState(Math.min(20, Math.max(1, chart.base)));
+  const enemies = Array.from({ length: 15 }, (_, index) => index + 1);
+  const stat = chart.stat === "武力" ? "武力" : "知力";
+  return (
+    <div className="mt-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs text-muted">自{stat}</p>
+        <div className="inline-flex h-9 items-center overflow-hidden rounded-md bg-surface-2">
+          <button
+            type="button"
+            className="plain-press h-full w-9 text-base text-fg disabled:opacity-30"
+            aria-label={`自${stat}減少`}
+            disabled={self <= 1}
+            onClick={() => setSelf((current) => Math.max(1, current - 1))}
+          >
+            −
+          </button>
+          <span className="w-10 text-center text-sm tabular-nums text-fg">{self}</span>
+          <button
+            type="button"
+            className="plain-press h-full w-9 text-base text-fg disabled:opacity-30"
+            aria-label={`自${stat}增加`}
+            disabled={self >= 20}
+            onClick={() => setSelf((current) => Math.min(20, current + 1))}
+          >
+            ＋
+          </button>
+        </div>
+      </div>
+      <p className="mt-1.5 text-[11px] text-faint">
+        {chart.rows.length === 1 ? `固定 ${chart.rows[0].fixed}　係數 ${chart.rows[0].coef}　` : ""}
+        可左右滑動
+      </p>
+      <div className="mt-2 overflow-x-auto overscroll-x-contain">
+        <table className="w-max border-separate border-spacing-0 text-center text-sm tabular-nums">
+          <thead>
+            <tr>
+              <th className="sticky left-0 z-10 bg-bg px-2 py-1.5 text-left font-normal text-faint">敵{stat}</th>
+              {enemies.map((enemy) => (
+                <th key={enemy} className="min-w-11 px-2 py-1.5 font-normal text-muted">
+                  {enemy}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {chart.rows.map((row) => (
+              <tr key={row.label}>
+                <th className="sticky left-0 z-10 whitespace-nowrap bg-bg px-2 py-1.5 text-left font-normal text-faint">{row.label}</th>
+                {enemies.map((enemy) => {
+                  const value = intelDamage(self, enemy, row);
+                  const kill = Number(value) >= 100;
+                  return (
+                    <td
+                      key={enemy}
+                      className={cn("min-w-11 px-2 py-1.5", kill ? "bg-[#e07a2f]/30 text-[#f0c9a0]" : "text-fg")}
+                    >
+                      {value}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+type GaugePoint = { at: number; n: number; suffix: string; plus: boolean };
+type GaugeTrack = { label: string; points: GaugePoint[] };
+
+function isHurtPowerCard(card: Card) {
+  return (card.effects ?? []).some((effect) => effect.label === "武力上昇" && /被ダメージに応じて/.test(effect.value));
+}
+
+const INTEL_POWER_BANDS: { min: number; max: number; power: number }[] = [
+  { min: 24, max: 26, power: 6 },
+  { min: 27, max: 33, power: 7 },
+  { min: 34, max: 38, power: 8 },
+  { min: 40, max: 44, power: 9 },
+  { min: 48, max: 48, power: 10 },
+  { min: 60, max: 60, power: 12 },
+  { min: 76, max: 76, power: 14 },
+];
+
+function ginchiyoPower(damage: number): { power: number; estimated: boolean } {
+  const n = Math.floor(damage + 1e-9);
+  const hit = INTEL_POWER_BANDS.find((band) => n >= band.min && n <= band.max);
+  if (hit) return { power: hit.power, estimated: false };
+  const lower = [...INTEL_POWER_BANDS].reverse().find((band) => band.max < n);
+  const upper = INTEL_POWER_BANDS.find((band) => band.min > n);
+  if (lower && upper) {
+    const power = lower.power + ((upper.power - lower.power) * (n - lower.max)) / (upper.min - lower.max);
+    return { power: Math.floor(power + 1e-9), estimated: true };
+  }
+  if (lower) {
+    const prev = INTEL_POWER_BANDS[INTEL_POWER_BANDS.indexOf(lower) - 1];
+    const slope = prev ? (lower.power - prev.power) / (lower.min - prev.max) : 0;
+    return { power: Math.max(0, Math.floor(lower.power + (n - lower.max) * slope + 1e-9)), estimated: true };
+  }
+  const first = INTEL_POWER_BANDS[0];
+  const second = INTEL_POWER_BANDS[1];
+  const slope = (second.power - first.power) / (second.min - first.min);
+  return { power: Math.max(0, Math.floor(first.power + (n - first.min) * slope + 1e-9)), estimated: true };
+}
+
+function GinchiyoCalc() {
+  const [self, setSelf] = useState(5);
+  const enemies = Array.from({ length: 12 }, (_, index) => index + 1);
+  const cells = enemies.map((enemy) => {
+    const damage = (self / enemy) * 8 + 20;
+    const shown = Math.round(damage * 10) / 10;
+    return {
+      enemy,
+      damage: Number.isInteger(shown) ? String(shown) : shown.toFixed(1),
+      power: ginchiyoPower(damage),
+    };
+  });
+  return (
+    <div className="mt-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs text-muted">自知力</p>
+        <div className="inline-flex h-9 items-center overflow-hidden rounded-md bg-surface-2">
+          <button
+            type="button"
+            className="plain-press h-full w-9 text-base text-fg disabled:opacity-30"
+            aria-label="自知力減少"
+            disabled={self <= 1}
+            onClick={() => setSelf((current) => Math.max(1, current - 1))}
+          >
+            −
+          </button>
+          <span className="w-10 text-center text-sm tabular-nums text-fg">{self}</span>
+          <button
+            type="button"
+            className="plain-press h-full w-9 text-base text-fg disabled:opacity-30"
+            aria-label="自知力增加"
+            disabled={self >= 20}
+            onClick={() => setSelf((current) => Math.min(20, current + 1))}
+          >
+            ＋
+          </button>
+        </div>
+      </div>
+      <p className="mt-1.5 text-[11px] text-faint">傷害＝（自知力÷對象知力）×8＋20。推算數據以「?」標示。可左右滑動</p>
+      <div className="mt-2 overflow-x-auto overscroll-x-contain">
+        <table className="w-max border-separate border-spacing-0 text-center text-sm tabular-nums">
+          <thead>
+            <tr>
+              <th className="sticky left-0 z-10 bg-bg px-2 py-1.5 text-left font-normal text-faint">對象知力</th>
+              {cells.map((cell) => (
+                <th key={cell.enemy} className="min-w-11 px-2 py-1.5 font-normal text-muted">
+                  {cell.enemy}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th className="sticky left-0 z-10 whitespace-nowrap bg-bg px-2 py-1.5 text-left font-normal text-faint">傷害</th>
+              {cells.map((cell) => (
+                <td key={cell.enemy} className="min-w-11 px-2 py-1.5 text-fg">
+                  {cell.damage}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <th className="sticky left-0 z-10 whitespace-nowrap bg-bg px-2 py-1.5 text-left font-normal text-faint">武力</th>
+              {cells.map((cell) => (
+                <td
+                  key={cell.enemy}
+                  className={cn(
+                    "min-w-11 whitespace-nowrap px-2 py-1.5",
+                    cell.power.estimated ? "text-[#e0b15a]" : "text-fg",
+                  )}
+                >
+                  {cell.power.estimated ? `+${cell.power.power}?` : `+${cell.power.power}`}
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function parseOshiGauge(card: Card): GaugeTrack[] | null {
+  const labels: Record<string, string> = {
+    武力上昇: "武力",
+    速度上昇: "移速",
+    槍撃ダメージ: "槍擊",
+    射撃ダメージ: "射擊",
+    走射ダメージ: "走射",
+    突撃ダメージ: "突擊",
+    斬撃ダメージ: "斬擊",
+    兵力回復: "兵力",
+  };
+  const tracks: GaugeTrack[] = [];
+  for (const effect of card.effects ?? []) {
+    if (!/黄熾ゲージ/.test(effect.value)) continue;
+    const label = labels[effect.label] ?? effect.label;
+    const re = /黄熾ゲージが?(?:約)?(\d+(?:\.\d+)?)%?(?:[~～〜](?:約)?(\d+(?:\.\d+)?)%?)?\s*[:：]\s*/g;
+    const marks = [...effect.value.matchAll(re)];
+    const points: GaugePoint[] = [];
+    marks.forEach((mark, index) => {
+      const start = (mark.index ?? 0) + mark[0].length;
+      const end = index + 1 < marks.length ? (marks[index + 1].index ?? effect.value.length) : effect.value.length;
+      const raw = effect.value.slice(start, end).replace(/[▲▼]/g, "").trim();
+      const num = raw.match(/[+-]?\d+(?:\.\d+)?/);
+      if (!num) return;
+      const n = Number(num[0]);
+      const point = { at: Number(mark[1]), n, suffix: raw.includes("%") ? "%" : "", plus: n > 0 && !raw.startsWith("-") };
+      points.push(point);
+      if (mark[2]) points.push({ ...point, at: Number(mark[2]) });
+    });
+    points.sort((a, b) => a.at - b.at);
+    if (points.length >= 2) tracks.push({ label, points });
+  }
+  return tracks.length ? tracks : null;
+}
+
+function gaugeText(track: GaugeTrack, pct: number) {
+  const points = track.points;
+  const last = points[points.length - 1];
+  if (pct <= points[0].at) return formatGauge(points[0], false);
+  if (pct >= last.at) return formatGauge(last, false);
+  const next = points.findIndex((point) => point.at >= pct);
+  const b = points[next];
+  const a = points[next - 1];
+  if (Math.abs(pct - a.at) < 0.01) return formatGauge(a, false);
+  if (Math.abs(pct - b.at) < 0.01) return formatGauge(b, false);
+  if (a.n === b.n) return formatGauge(a, false);
+  const raw = a.n + ((b.n - a.n) * (pct - a.at)) / (b.at - a.at);
+  const n = track.label === "武力" ? Math.floor(raw + 1e-9) : Math.round(raw * 10) / 10;
+  return formatGauge({ ...a, n }, true);
+}
+
+function formatGauge(point: GaugePoint, approx: boolean) {
+  const n = Number.isInteger(point.n) ? String(point.n) : point.n.toFixed(1);
+  const body = `${point.plus && point.n > 0 ? "+" : ""}${n}${point.suffix}`;
+  return approx ? `約${body}` : body;
+}
+
+function OshiGauge({ tracks }: { tracks: GaugeTrack[] }) {
+  const [pct, setPct] = useState(50);
+  const bar = useRef<HTMLDivElement>(null);
+  const lit = pct >= 100 / 3;
+  const seek = (clientX: number) => {
+    const el = bar.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    setPct(Math.round(ratio * 100));
+  };
+  return (
+    <div className="mt-4">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-xs text-muted">黃熾槽</p>
+        <p className={cn("font-display text-2xl tabular-nums leading-none", lit ? "text-[#f0d48a]" : "text-[#9a958e]")}>
+          {pct}%
+        </p>
+      </div>
+      <div
+        ref={bar}
+        role="slider"
+        aria-label="黃熾槽"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={pct}
+        tabIndex={0}
+        className="relative mt-2 h-12 touch-none cursor-pointer"
+        data-no-swipe=""
+        onPointerDown={(event) => {
+          event.currentTarget.setPointerCapture(event.pointerId);
+          seek(event.clientX);
+        }}
+        onPointerMove={(event) => {
+          if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+          seek(event.clientX);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowRight" || event.key === "ArrowUp") setPct((current) => Math.min(100, current + 1));
+          if (event.key === "ArrowLeft" || event.key === "ArrowDown") setPct((current) => Math.max(0, current - 1));
+        }}
+      >
+        <div className="absolute inset-x-0 top-1/2 h-7 -translate-y-1/2 overflow-hidden rounded-md border border-[#3a342c] bg-[#1a1816] shadow-[inset_0_3px_6px_rgba(0,0,0,0.65)]">
+          <div
+            className={cn(
+              "h-full shadow-[inset_0_2px_0_rgba(255,255,255,0.28)]",
+              lit ? "bg-gradient-to-b from-[#ffe7a3] to-[#d3922a]" : "bg-gradient-to-b from-[#8d8882] to-[#5c5853]",
+            )}
+            style={{ width: `${pct}%` }}
+          />
+          <div className="pointer-events-none absolute inset-y-0 left-1/3 w-0.5 bg-black/70" />
+        </div>
+        <div
+          className={cn(
+            "pointer-events-none absolute top-1/2 h-11 w-5 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-black/40 shadow-[0_1px_4px_rgba(0,0,0,0.55)]",
+            lit ? "bg-gradient-to-b from-[#fff1c4] to-[#c88820]" : "bg-gradient-to-b from-[#c8c3bc] to-[#6a6560]",
+          )}
+          style={{ left: `${pct}%` }}
+        />
+      </div>
+      <dl className="mt-3 grid grid-cols-1 gap-1.5">
+        {tracks.map((track) => (
+          <div key={track.label} className="flex items-baseline justify-between gap-3">
+            <dt className="text-xs text-muted">{track.label}</dt>
+            <dd className="text-sm tabular-nums text-fg">{gaugeText(track, pct)}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="mt-2 text-[11px] text-faint">樣本之間按直線推算，只供參考</p>
+    </div>
   );
 }
 
@@ -432,6 +800,228 @@ function leadingSharedRows(cols: SchoolCol[]): StatLine[] {
   return first.slice(0, n);
 }
 
+function ladderBonus(bands: { min: number; max: number | null; bonus: string }[], cost: number) {
+  const hit = [...bands]
+    .reverse()
+    .find((band) => cost + 1e-6 >= band.min && (band.max == null || cost <= band.max + 1e-6));
+  return hit?.bonus ?? "未達";
+}
+
+function shiftCosts(
+  fields: { id: string; min: number }[],
+  costs: Record<string, number>,
+  id: string,
+  dir: number,
+) {
+  const round = (n: number) => Math.round(n * 2) / 2;
+  const legal = (n: number) => {
+    if (n < -1e-6 || n > 9 + 1e-6) return false;
+    const snapped = round(n);
+    if (Math.abs(snapped - n) > 1e-6) return false;
+    return snapped === 0 || snapped >= 1;
+  };
+  const ids = fields.map((field) => field.id);
+  const index = ids.indexOf(id);
+  if (index < 0) return costs;
+  const minOf = (fid: string) => fields.find((field) => field.id === fid)?.min ?? 0;
+  const allowed = (fid: string, n: number) => legal(n) && n + 1e-6 >= minOf(fid);
+  const others = [...ids.slice(index + 1), ...ids.slice(0, index)];
+  const self = costs[id] ?? 3;
+  for (const delta of dir > 0 ? [0.5, 1] : [-0.5, -1]) {
+    const nextSelf = round(self + delta);
+    if (!allowed(id, nextSelf)) continue;
+    for (const oid of others) {
+      const nextOther = round((costs[oid] ?? 0) - delta);
+      if (!allowed(oid, nextOther)) continue;
+      return { ...costs, [id]: nextSelf, [oid]: nextOther };
+    }
+  }
+  return costs;
+}
+
+function CostLadderBox({ cols }: { cols: SchoolCol[] }) {
+  const [costs, setCosts] = useState<Record<string, number>>(() =>
+    Object.fromEntries(cols.filter((col) => col.ladder?.length).map((col) => [col.id, 3])),
+  );
+  const valueOf = (pattern: RegExp) => cols.flatMap((col) => col.rows).find((row) => pattern.test(row.label))?.value;
+  const basics = [
+    ["武力", valueOf(/武力/) ?? "+5"],
+    ["移速", valueOf(/移速|速度/) ?? "+30%"],
+  ];
+  const fields = cols
+    .filter((col) => col.ladder?.length)
+    .map((col) => {
+      const cavalry = /騎/.test(col.title);
+      const spear = /槍|劍|剣/.test(col.title);
+      return {
+        id: col.id,
+        label: cavalry ? "騎兵" : spear ? "槍兵・劍豪" : "弓兵・鐵砲隊",
+        kind: cavalry ? "流派槽" : spear ? "兵力回復" : "攻城力",
+        min: cavalry ? 3 : 0,
+        ladder: col.ladder ?? [],
+      };
+    });
+  return (
+    <div className="mt-3 flex flex-col gap-3">
+      <dl className="grid grid-cols-1 gap-1.5">
+        {basics.map(([label, value]) => (
+          <div key={label} className="flex items-baseline justify-between gap-3">
+            <dt className="text-xs text-muted">{label}</dt>
+            <dd className="text-sm tabular-nums text-fg">{value}</dd>
+          </div>
+        ))}
+      </dl>
+      <div className="flex flex-col gap-2">
+        <p className="text-xs leading-relaxed text-pretty text-muted">依對象友軍各兵種成本合計，獲得以下效果</p>
+        {fields.map((field) => {
+          const cost = costs[field.id] ?? 3;
+          const shown = Number.isInteger(cost) ? String(cost) : cost.toFixed(1);
+          const bonus = ladderBonus(field.ladder, cost);
+          const canDown = shiftCosts(fields, costs, field.id, -1) !== costs;
+          const canUp = shiftCosts(fields, costs, field.id, 1) !== costs;
+          return (
+            <div key={field.id} className="flex items-center gap-2">
+              <span className="w-[5.5rem] shrink-0 text-xs leading-tight text-muted">{field.label}</span>
+              <div className="inline-flex h-9 items-center overflow-hidden rounded-md bg-surface-2">
+                <button
+                  type="button"
+                  className="plain-press h-full w-9 text-base text-fg disabled:opacity-30"
+                  aria-label={`${field.label}減少`}
+                  disabled={!canDown}
+                  onClick={() => setCosts((current) => shiftCosts(fields, current, field.id, -1))}
+                >
+                  −
+                </button>
+                <span className="w-10 text-center text-sm tabular-nums text-fg">{shown}</span>
+                <button
+                  type="button"
+                  className="plain-press h-full w-9 text-base text-fg disabled:opacity-30"
+                  aria-label={`${field.label}增加`}
+                  disabled={!canUp}
+                  onClick={() => setCosts((current) => shiftCosts(fields, current, field.id, 1))}
+                >
+                  ＋
+                </button>
+              </div>
+              <span className="min-w-0 flex-1 text-right text-xs tabular-nums text-fg">
+                {bonus === "未達" ? bonus : `${field.kind} ${bonus}`}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function deckBonus(bands: { min: number; max: number | null; bonus: string }[], cost: number) {
+  const hit = bands.filter((band) => cost + 1e-6 >= band.min).sort((a, b) => b.min - a.min)[0];
+  return hit?.bonus ?? "未達";
+}
+
+function openingCosts(fields: { id: string; min: number }[]) {
+  if (fields.length <= 1) return Object.fromEntries(fields.map((field) => [field.id, field.min]));
+  const even = Math.round((9 / fields.length) * 2) / 2;
+  const next: Record<string, number> = {};
+  let used = 0;
+  fields.forEach((field, index) => {
+    if (index === fields.length - 1) {
+      next[field.id] = Math.round((9 - used) * 2) / 2;
+      return;
+    }
+    const value = Math.max(field.min, even);
+    next[field.id] = value;
+    used += value;
+  });
+  return next;
+}
+
+function stepAlone(cost: number, dir: number, min: number) {
+  const round = (n: number) => Math.round(n * 2) / 2;
+  for (const delta of dir > 0 ? [0.5, 1] : [-0.5, -1]) {
+    const next = round(cost + delta);
+    if (next < min - 1e-6 || next > 9 + 1e-6) continue;
+    if (Math.abs(next - 0.5) < 1e-6) continue;
+    if (next !== 0 && next < 1) continue;
+    return next;
+  }
+  return cost;
+}
+
+function DeckCostPanel({ view }: { view: DeckCostView }) {
+  const [costs, setCosts] = useState<Record<string, number>>(() => openingCosts(view.fields));
+  const alone = view.fields.length < 2;
+  return (
+    <div className="mt-3 flex flex-col gap-3">
+      {view.basics.length ? (
+        <dl className="grid grid-cols-1 gap-1.5">
+          {view.basics.map((row) => (
+            <div key={row.label} className="flex items-baseline justify-between gap-3">
+              <dt className="text-xs text-muted">{row.label}</dt>
+              <dd className="text-right text-sm tabular-nums text-fg">{row.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      <div className="flex flex-col gap-2">
+        <p className="text-xs leading-relaxed text-pretty text-muted">{view.intro}</p>
+        {view.fields.map((field) => {
+          const cost = costs[field.id] ?? field.min;
+          const shown = Number.isInteger(cost) ? String(cost) : cost.toFixed(1);
+          const bonus = deckBonus(field.ladder, cost);
+          const canDown = alone
+            ? stepAlone(cost, -1, field.min) !== cost
+            : shiftCosts(view.fields, costs, field.id, -1) !== costs;
+          const canUp = alone
+            ? stepAlone(cost, 1, field.min) !== cost
+            : shiftCosts(view.fields, costs, field.id, 1) !== costs;
+          return (
+            <div key={field.id} className="flex items-center gap-2">
+              <span className="w-[5.5rem] shrink-0 text-xs leading-tight text-muted">{field.label}</span>
+              <div className="inline-flex h-9 items-center overflow-hidden rounded-md bg-surface-2">
+                <button
+                  type="button"
+                  className="plain-press h-full w-9 text-base text-fg disabled:opacity-30"
+                  aria-label={`${field.label}減少`}
+                  disabled={!canDown}
+                  onClick={() =>
+                    setCosts((current) =>
+                      alone
+                        ? { ...current, [field.id]: stepAlone(current[field.id] ?? field.min, -1, field.min) }
+                        : shiftCosts(view.fields, current, field.id, -1),
+                    )
+                  }
+                >
+                  −
+                </button>
+                <span className="w-10 text-center text-sm tabular-nums text-fg">{shown}</span>
+                <button
+                  type="button"
+                  className="plain-press h-full w-9 text-base text-fg disabled:opacity-30"
+                  aria-label={`${field.label}增加`}
+                  disabled={!canUp}
+                  onClick={() =>
+                    setCosts((current) =>
+                      alone
+                        ? { ...current, [field.id]: stepAlone(current[field.id] ?? field.min, 1, field.min) }
+                        : shiftCosts(view.fields, current, field.id, 1),
+                    )
+                  }
+                >
+                  ＋
+                </button>
+              </div>
+              <span className="min-w-0 flex-1 text-right text-xs tabular-nums text-fg">
+                {bonus === "未達" ? bonus : `${field.kind} ${bonus}`}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function SchoolGrid({ cols, href, intro }: { cols: SchoolCol[]; href?: string; intro?: string }) {
   const shared = intro ? leadingSharedRows(cols) : [];
   const colsShown = shared.length
@@ -439,6 +1029,9 @@ function SchoolGrid({ cols, href, intro }: { cols: SchoolCol[]; href?: string; i
     : cols;
   const byRyuha = colsShown.some((col) => /^(部隊|士氣|城塞|琥煌)$/.test(col.title));
   const byTroop = colsShown.some((col) => /隊/.test(col.title) && !byRyuha);
+  if (colsShown.some((col) => col.ladder?.length)) {
+    return <CostLadderBox cols={cols} />;
+  }
   return (
     <div className="mt-4">
       {shared.length ? (

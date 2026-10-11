@@ -1,0 +1,1250 @@
+{
+  "蒼050": {
+    "stat": "知力",
+    "base": 9,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 35.0,
+        "fixed": 25.0,
+        "melee": false
+      }
+    ]
+  },
+  "蒼117": {
+    "stat": "武力",
+    "base": 8,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 20.0,
+        "fixed": 30.0,
+        "melee": false
+      }
+    ]
+  },
+  "蒼109": {
+    "stat": "知力",
+    "base": 7,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 30.0,
+        "fixed": 24.0,
+        "melee": false
+      }
+    ]
+  },
+  "蒼062": {
+    "stat": "知力",
+    "base": 8,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 20.0,
+        "fixed": 18.0,
+        "melee": false
+      }
+    ]
+  },
+  "蒼060": {
+    "stat": "知力",
+    "base": 6,
+    "rows": [
+      {
+        "label": "伏兵減少",
+        "coef": 5.0,
+        "fixed": 0.0,
+        "melee": false
+      },
+      {
+        "label": "伏兵通常",
+        "coef": 30.0,
+        "fixed": 10.0,
+        "melee": false
+      }
+    ]
+  },
+  "蒼072": {
+    "stat": "武力",
+    "base": 11,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 4.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "蒼019": {
+    "stat": "知力",
+    "base": 7,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 30.0,
+        "fixed": 24.0,
+        "melee": false
+      }
+    ]
+  },
+  "蒼018": {
+    "stat": "知力",
+    "base": 11,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 30.0,
+        "fixed": 17.0,
+        "melee": false
+      }
+    ]
+  },
+  "蒼163": {
+    "stat": "武力",
+    "base": 16,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 5.0,
+        "fixed": 7.0,
+        "melee": false
+      }
+    ]
+  },
+  "蒼140": {
+    "stat": "知力",
+    "base": 11,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 10.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "蒼168": {
+    "stat": "武力",
+    "base": 16,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 2.0,
+        "fixed": 10.0,
+        "melee": false
+      }
+    ]
+  },
+  "EX026": {
+    "stat": "武力",
+    "base": 13,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 2.0,
+        "fixed": 25.0,
+        "melee": false
+      }
+    ]
+  },
+  "PL039": {
+    "stat": "武力",
+    "base": 5,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 25.0,
+        "fixed": 15.0,
+        "melee": false
+      }
+    ]
+  },
+  "PL125": {
+    "stat": "武力",
+    "base": 12,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 1.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "PL127": {
+    "stat": "武力",
+    "base": 13,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 1.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "PL084": {
+    "stat": "武力",
+    "base": 11,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 5.0,
+        "fixed": 6.0,
+        "melee": false
+      }
+    ]
+  },
+  "緋127": {
+    "stat": "武力",
+    "base": 12,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 4.0,
+        "fixed": 15.0,
+        "melee": false
+      }
+    ]
+  },
+  "緋074": {
+    "stat": "知力",
+    "base": 10,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 20.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "緋111": {
+    "stat": "知力",
+    "base": 9,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 35.0,
+        "fixed": 25.0,
+        "melee": false
+      }
+    ]
+  },
+  "緋015": {
+    "stat": "知力",
+    "base": 7,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 32.0,
+        "fixed": 18.0,
+        "melee": false
+      }
+    ]
+  },
+  "緋047": {
+    "stat": "知力",
+    "base": 7,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 30.0,
+        "fixed": 15.0,
+        "melee": false
+      }
+    ]
+  },
+  "緋102": {
+    "stat": "武力",
+    "base": 8,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 20.0,
+        "fixed": 10.0,
+        "melee": false
+      }
+    ]
+  },
+  "緋168": {
+    "stat": "知力",
+    "base": 9,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 10.0,
+        "fixed": 10.0,
+        "melee": false
+      }
+    ]
+  },
+  "緋154": {
+    "stat": "知力",
+    "base": 10,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 20.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "PL070": {
+    "stat": "武力",
+    "base": 13,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 4.0,
+        "fixed": 15.0,
+        "melee": false
+      }
+    ]
+  },
+  "PL085": {
+    "stat": "武力",
+    "base": 9,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 10.0,
+        "fixed": 10.0,
+        "melee": false
+      }
+    ]
+  },
+  "碧006": {
+    "stat": "知力",
+    "base": 6,
+    "rows": [
+      {
+        "label": "傷害×1",
+        "coef": 13.0,
+        "fixed": 14.0,
+        "melee": false
+      },
+      {
+        "label": "傷害×3",
+        "coef": 39.0,
+        "fixed": 42.0,
+        "melee": false
+      }
+    ]
+  },
+  "碧173": {
+    "stat": "武力",
+    "base": 17,
+    "rows": [
+      {
+        "label": "砲彈",
+        "coef": 5.0,
+        "fixed": 10.0,
+        "melee": false
+      },
+      {
+        "label": "爆風",
+        "coef": 5.0,
+        "fixed": 15.0,
+        "melee": false
+      }
+    ]
+  },
+  "碧066": {
+    "stat": "武力",
+    "base": 10,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 25.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "碧175": {
+    "stat": "武力",
+    "base": 7,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 5.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "碧039": {
+    "stat": "知力",
+    "base": 7,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 35.0,
+        "fixed": 25.0,
+        "melee": false
+      }
+    ]
+  },
+  "EX072": {
+    "stat": "知力",
+    "base": 7,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 15.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "碧178": {
+    "stat": "知力",
+    "base": 9,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 35.0,
+        "fixed": 25.0,
+        "melee": false
+      }
+    ]
+  },
+  "碧094": {
+    "stat": "武力",
+    "base": 14,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 10.0,
+        "fixed": 15.0,
+        "melee": false
+      }
+    ]
+  },
+  "碧100": {
+    "stat": "武力",
+    "base": 7,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 25.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "EX077": {
+    "stat": "武力",
+    "base": 7,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 25.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "EX142": {
+    "stat": "武力",
+    "base": 13,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 1.0,
+        "fixed": 30.0,
+        "melee": false
+      }
+    ]
+  },
+  "PL120": {
+    "stat": "武力",
+    "base": 16,
+    "rows": [
+      {
+        "label": "跳躍中",
+        "coef": 5.0,
+        "fixed": 7.0,
+        "melee": false
+      },
+      {
+        "label": "着地",
+        "coef": 5.0,
+        "fixed": 10.0,
+        "melee": false
+      },
+      {
+        "label": "合計",
+        "coef": 10.0,
+        "fixed": 17.0,
+        "melee": false
+      }
+    ]
+  },
+  "PL106": {
+    "stat": "知力",
+    "base": 6,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 5.0,
+        "fixed": 10.0,
+        "melee": false
+      }
+    ]
+  },
+  "玄029": {
+    "stat": "知力",
+    "base": 9,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 35.0,
+        "fixed": 25.0,
+        "melee": false
+      }
+    ]
+  },
+  "EX018": {
+    "stat": "知力",
+    "base": 9,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 35.0,
+        "fixed": 25.0,
+        "melee": false
+      }
+    ]
+  },
+  "玄109": {
+    "stat": "知力",
+    "base": 9,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 10.0,
+        "fixed": 40.0,
+        "melee": false
+      }
+    ]
+  },
+  "EX118": {
+    "stat": "知力",
+    "base": 9,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 10.0,
+        "fixed": 40.0,
+        "melee": false
+      }
+    ]
+  },
+  "玄151": {
+    "stat": "知力",
+    "base": 14,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 5.0,
+        "fixed": 10.0,
+        "melee": false
+      }
+    ]
+  },
+  "玄077": {
+    "stat": "武力",
+    "base": 8,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 20.0,
+        "fixed": 30.0,
+        "melee": false
+      }
+    ]
+  },
+  "PL042": {
+    "stat": "武力",
+    "base": 9,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 25.0,
+        "fixed": 10.0,
+        "melee": false
+      }
+    ]
+  },
+  "玄175": {
+    "stat": "武力",
+    "base": 9,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 25.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "玄184": {
+    "stat": "武力",
+    "base": 14,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 5.0,
+        "fixed": 8.0,
+        "melee": false
+      }
+    ]
+  },
+  "EX024": {
+    "stat": "知力",
+    "base": 6,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 30.0,
+        "fixed": 33.0,
+        "melee": false
+      }
+    ]
+  },
+  "EX133": {
+    "stat": "武力",
+    "base": 5,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 20.0,
+        "fixed": 25.0,
+        "melee": false
+      }
+    ]
+  },
+  "EX143": {
+    "stat": "武力",
+    "base": 11,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 20.0,
+        "fixed": 15.0,
+        "melee": false
+      }
+    ]
+  },
+  "EX207": {
+    "stat": "武力",
+    "base": 13,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 15.0,
+        "fixed": 15.0,
+        "melee": false
+      }
+    ]
+  },
+  "PL061": {
+    "stat": "武力",
+    "base": 12,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 7.0,
+        "fixed": 13.0,
+        "melee": false
+      }
+    ]
+  },
+  "PL099": {
+    "stat": "武力",
+    "base": 13,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 15.0,
+        "fixed": 15.0,
+        "melee": false
+      }
+    ]
+  },
+  "PL095": {
+    "stat": "武力",
+    "base": 8,
+    "rows": [
+      {
+        "label": "傷害×1",
+        "coef": 20.0,
+        "fixed": 15.0,
+        "melee": false
+      },
+      {
+        "label": "傷害×2",
+        "coef": 40.0,
+        "fixed": 30.0,
+        "melee": false
+      }
+    ]
+  },
+  "PL124": {
+    "stat": "武力",
+    "base": 27,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 5.0,
+        "fixed": 10.0,
+        "melee": false
+      }
+    ]
+  },
+  "PL116": {
+    "stat": "武力",
+    "base": 12,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 5.0,
+        "fixed": 5.0,
+        "melee": false
+      }
+    ]
+  },
+  "紫016": {
+    "stat": "武力",
+    "base": 9,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 30.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "紫039": {
+    "stat": "知力",
+    "base": 5,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 20.0,
+        "fixed": 25.0,
+        "melee": false
+      }
+    ]
+  },
+  "紫054": {
+    "stat": "知力",
+    "base": 7,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 30.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "EX195": {
+    "stat": "知力",
+    "base": 7,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 30.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "紫048": {
+    "stat": "知力",
+    "base": 8,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 20.0,
+        "fixed": 33.0,
+        "melee": false
+      }
+    ]
+  },
+  "紫087": {
+    "stat": "武力",
+    "base": 15,
+    "rows": [
+      {
+        "label": "弱 砲彈",
+        "coef": 4.0,
+        "fixed": 8.0,
+        "melee": false
+      },
+      {
+        "label": "弱 爆風",
+        "coef": 4.0,
+        "fixed": 13.0,
+        "melee": false
+      },
+      {
+        "label": "強 砲彈",
+        "coef": 5.0,
+        "fixed": 10.0,
+        "melee": false
+      },
+      {
+        "label": "強 爆風",
+        "coef": 5.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "紫095": {
+    "stat": "知力",
+    "base": 15,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 10.0,
+        "fixed": 10.0,
+        "melee": false
+      }
+    ]
+  },
+  "紫137": {
+    "stat": "知力",
+    "base": 7,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 5.0,
+        "fixed": 8.0,
+        "melee": false
+      }
+    ]
+  },
+  "紫142": {
+    "stat": "知力",
+    "base": 15,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 5.0,
+        "fixed": 15.0,
+        "melee": false
+      }
+    ]
+  },
+  "紫144": {
+    "stat": "知力",
+    "base": 8,
+    "rows": [
+      {
+        "label": "伏兵減少",
+        "coef": 5.0,
+        "fixed": 0.0,
+        "melee": false
+      },
+      {
+        "label": "伏兵通常",
+        "coef": 30.0,
+        "fixed": 10.0,
+        "melee": false
+      }
+    ]
+  },
+  "紫145": {
+    "stat": "知力",
+    "base": 8,
+    "rows": [
+      {
+        "label": "弱",
+        "coef": 5.5,
+        "fixed": 10.0,
+        "melee": false
+      },
+      {
+        "label": "強",
+        "coef": 6.0,
+        "fixed": 10.0,
+        "melee": false
+      }
+    ]
+  },
+  "PL109": {
+    "stat": "知力",
+    "base": 10,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 10.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "琥021": {
+    "stat": "武力",
+    "base": 17,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 15.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "琥104": {
+    "stat": "武力",
+    "base": 14,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 9.0,
+        "fixed": 7.0,
+        "melee": false
+      }
+    ]
+  },
+  "琥113": {
+    "stat": "知力",
+    "base": 8,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 10.0,
+        "fixed": 30.0,
+        "melee": false
+      }
+    ]
+  },
+  "EX057": {
+    "stat": "知力",
+    "base": 6,
+    "rows": [
+      {
+        "label": "琥煌0×1",
+        "coef": 7.0,
+        "fixed": 5.0,
+        "melee": false
+      },
+      {
+        "label": "琥煌0×3",
+        "coef": 21.0,
+        "fixed": 15.0,
+        "melee": false
+      },
+      {
+        "label": "琥煌1×1",
+        "coef": 9.0,
+        "fixed": 7.0,
+        "melee": false
+      },
+      {
+        "label": "琥煌1×3",
+        "coef": 27.0,
+        "fixed": 21.0,
+        "melee": false
+      },
+      {
+        "label": "琥煌2×1",
+        "coef": 13.0,
+        "fixed": 9.0,
+        "melee": false
+      },
+      {
+        "label": "琥煌2×3",
+        "coef": 39.0,
+        "fixed": 27.0,
+        "melee": false
+      },
+      {
+        "label": "琥煌3×1",
+        "coef": 17.0,
+        "fixed": 12.0,
+        "melee": false
+      },
+      {
+        "label": "琥煌3×3",
+        "coef": 51.0,
+        "fixed": 36.0,
+        "melee": false
+      }
+    ]
+  },
+  "EX169": {
+    "stat": "知力",
+    "base": 6,
+    "rows": [
+      {
+        "label": "琥煌0",
+        "coef": 15.0,
+        "fixed": 15.0,
+        "melee": false
+      },
+      {
+        "label": "琥煌1",
+        "coef": 25.0,
+        "fixed": 25.0,
+        "melee": false
+      },
+      {
+        "label": "琥煌2",
+        "coef": 35.0,
+        "fixed": 30.0,
+        "melee": false
+      },
+      {
+        "label": "琥煌3",
+        "coef": 40.0,
+        "fixed": 40.0,
+        "melee": false
+      }
+    ]
+  },
+  "PL076": {
+    "stat": "武力",
+    "base": 12,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 15.0,
+        "fixed": 15.0,
+        "melee": false
+      }
+    ]
+  },
+  "PL111": {
+    "stat": "武力",
+    "base": 17,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 10.0,
+        "fixed": 10.0,
+        "melee": false
+      }
+    ]
+  },
+  "黄005": {
+    "stat": "武力",
+    "base": 13,
+    "rows": [
+      {
+        "label": "砲彈",
+        "coef": 5.0,
+        "fixed": 5.0,
+        "melee": false
+      },
+      {
+        "label": "爆風",
+        "coef": 5.0,
+        "fixed": 10.0,
+        "melee": false
+      }
+    ]
+  },
+  "黄021": {
+    "stat": "知力",
+    "base": 5,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 8.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "黄022": {
+    "stat": "知力",
+    "base": 8,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 28.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "黄031": {
+    "stat": "武力",
+    "base": 16,
+    "rows": [
+      {
+        "label": "砲彈",
+        "coef": 5.0,
+        "fixed": 5.0,
+        "melee": false
+      },
+      {
+        "label": "爆風",
+        "coef": 5.0,
+        "fixed": 7.0,
+        "melee": false
+      }
+    ]
+  },
+  "黄043": {
+    "stat": "武力",
+    "base": 11,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 3.5,
+        "fixed": 3.0,
+        "melee": false
+      }
+    ]
+  },
+  "黄046": {
+    "stat": "知力",
+    "base": 7,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 30.0,
+        "fixed": 15.0,
+        "melee": false
+      }
+    ]
+  },
+  "黄050": {
+    "stat": "武力",
+    "base": 14,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 1.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "黄058": {
+    "stat": "武力",
+    "base": 7,
+    "rows": [
+      {
+        "label": "伏兵",
+        "coef": 30.0,
+        "fixed": 10.0,
+        "melee": false
+      }
+    ]
+  },
+  "EX187": {
+    "stat": "武力",
+    "base": 11,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 1.0,
+        "fixed": 15.0,
+        "melee": false
+      }
+    ]
+  },
+  "PL093": {
+    "stat": "武力",
+    "base": 17,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 35.0,
+        "fixed": 50.0,
+        "melee": false
+      },
+      {
+        "label": "含亂戰",
+        "coef": 35.0,
+        "fixed": 50.0,
+        "melee": true
+      }
+    ]
+  },
+  "PL132": {
+    "stat": "武力",
+    "base": 15,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 1.0,
+        "fixed": 20.0,
+        "melee": false
+      }
+    ]
+  },
+  "EX213": {
+    "stat": "武力",
+    "base": 7,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 25,
+        "fixed": 20,
+        "melee": false
+      }
+    ]
+  },
+  "EX211": {
+    "stat": "知力",
+    "base": 11,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 5,
+        "fixed": 10,
+        "melee": false
+      }
+    ]
+  },
+  "EX217": {
+    "stat": "武力",
+    "base": 12,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 5,
+        "fixed": 20,
+        "melee": false
+      }
+    ]
+  },
+  "EX216": {
+    "stat": "知力",
+    "base": 4,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 15,
+        "fixed": 15,
+        "melee": false
+      }
+    ]
+  },
+  "EX212": {
+    "stat": "武力",
+    "base": 12,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 15,
+        "fixed": 10,
+        "melee": false
+      }
+    ]
+  }
+}

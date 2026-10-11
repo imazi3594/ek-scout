@@ -164,6 +164,17 @@
   }
 }
 
+@keyframes result-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.result-marquee {
+  animation-name: result-marquee;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -210,4 +221,11 @@
   border-radius: 999px;
   border: 2px solid #c45a00;
   background: #f3efe6;
+}
+
+.tab-pager,
+.tab-pager button,
+.tab-pager a,
+.tab-pager [role="button"] {
+  touch-action: pan-y;
 }

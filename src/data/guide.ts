@@ -1,4 +1,4 @@
-export type GuideTopic = "basic" | "skills" | "units" | "siege" | "senki" | "eikon" | "ryuha";
+export type GuideTopic = "skills" | "units" | "siege" | "senki" | "eikon" | "ryuha";
 
 export type GuideFact = { label: string; value: string; sub?: string };
 export type SenkiRarity = "N" | "R" | "SR";
@@ -16,104 +16,21 @@ export type GuideGroup = {
   items: GuideItem[];
 };
 
-export const BASIC_GROUPS: GuideGroup[] = [
-  {
-    title: "計數",
-    items: [
-      {
-        name: "換算",
-        facts: [
-          { label: "1C", value: "2.4 秒" },
-          { label: "5C", value: "12 秒" },
-          { label: "10C", value: "24 秒" },
-          { label: "50C", value: "120 秒" },
-          { label: "全場", value: "99C → 00" },
-          { label: "先陣", value: "約 49C（99C → 50C）" },
-        ],
-      },
-    ],
-  },
-  {
-    title: "卡組",
-    items: [
-      {
-        name: "登錄",
-        facts: [
-          { label: "張數", value: "8 張以內" },
-          { label: "合計成本", value: "9 以內" },
-          { label: "成本檔", value: "1.0–4.0，每 0.5 一檔" },
-        ],
-      },
-    ],
-  },
-  {
-    title: "士氣",
-    blurb: "自然上升。沒有額外士氣時，一場實際能用的少於 24。",
-    items: [
-      {
-        name: "上升",
-        facts: [
-          { label: "速度", value: "每 1 秒 ＋0.1（約 0.4C）" },
-          { label: "每 10 秒", value: "＋1" },
-          { label: "一場自然上限", value: "24" },
-        ],
-      },
-      {
-        name: "最大",
-        note: "士氣流派壱の型再 ＋3，合計不超過 15。",
-        facts: [
-          { label: "1 勢力", value: "12" },
-          { label: "2 勢力", value: "10" },
-          { label: "3 勢力", value: "8" },
-          { label: "4 勢力", value: "6" },
-        ],
-      },
-    ],
-  },
-  {
-    title: "進場",
-    items: [
-      {
-        name: "時間",
-        facts: [
-          { label: "出城", value: "3.5 秒" },
-          { label: "基本復活", value: "30 秒（12.5C）" },
-        ],
-      },
-    ],
-  },
-  {
-    title: "能力",
-    items: [
-      {
-        name: "武力",
-        note: "亦影響攻城。成本愈高，加成果愈大。",
-        facts: [{ label: "作用", value: "攻防、亂戰與兵種動作傷害" }],
-      },
-      {
-        name: "知力",
-        note: "愈高，計略時間愈長、攻城愈快。",
-        facts: [{ label: "作用", value: "計略效果、伏兵、攻城槽長度" }],
-      },
-    ],
-  },
-];
-
 export const SENKI_RARITIES: SenkiRarity[] = ["N", "R", "SR"];
 export const SENKI_CATS = ["宝物", "鎧兜", "武器", "軍配", "馬", "書物", "宝石"] as const;
 
-const RYUHA_INK: Record<string, { deep: string; pale: string; fg: string; muted: string }> = {
-  部隊: { deep: "#3d2a52", pale: "#5a4270", fg: "#e6e0d4", muted: "rgb(230 224 212 / 0.7)" },
-  士氣: { deep: "#5e5324", pale: "#736430", fg: "#e6e0d4", muted: "rgb(230 224 212 / 0.7)" },
-  城塞: { deep: "#1e3d2e", pale: "#335c45", fg: "#e6e0d4", muted: "rgb(230 224 212 / 0.7)" },
-  兵種: { deep: "#4a2428", pale: "#6a3a3e", fg: "#e6e0d4", muted: "rgb(230 224 212 / 0.7)" },
-  琥煌: { deep: "#4a2e14", pale: "#6e4624", fg: "#e6e0d4", muted: "rgb(230 224 212 / 0.7)" },
+const RYUHA_INK: Record<string, { shell: string; deep: string; pale: string; fg: string; muted: string }> = {
+  部隊: { shell: "#322848", deep: "#241c38", pale: "#463868", fg: "#e6e0d4", muted: "rgb(230 224 212 / 0.72)" },
+  士氣: { shell: "#3a3420", deep: "#282418", pale: "#4e4630", fg: "#e6e0d4", muted: "rgb(230 224 212 / 0.72)" },
+  城塞: { shell: "#1e4034", deep: "#142c24", pale: "#2c5648", fg: "#e6e0d4", muted: "rgb(230 224 212 / 0.72)" },
+  兵種: { shell: "#402428", deep: "#2c181c", pale: "#563034", fg: "#e6e0d4", muted: "rgb(230 224 212 / 0.72)" },
+  琥煌: { shell: "#402818", deep: "#2c1c10", pale: "#563820", fg: "#e6e0d4", muted: "rgb(230 224 212 / 0.72)" },
 };
 
 export function ryuhaChip(kind: string) {
   const pal = RYUHA_INK[kind];
   if (!pal) return null;
-  return { bg: pal.pale, fg: pal.fg, dot: pal.pale };
+  return { bg: pal.shell, fg: pal.fg, dot: pal.pale };
 }
 
 export function ryuhaTheme(title: string) {
@@ -121,18 +38,16 @@ export function ryuhaTheme(title: string) {
   const kind = (title.split("・")[0] ?? "").replace("気", "氣");
   const pal = RYUHA_INK[kind];
   if (!pal) return null;
-  const outer = ura ? pal.pale : pal.deep;
-  const inner = ura ? pal.deep : pal.pale;
   return {
     ura,
     head: pal.pale,
-    cardBg: outer,
+    cardBg: ura ? pal.pale : pal.deep,
     cardFg: pal.fg,
-    factBg: inner,
+    factBg: ura ? pal.deep : pal.pale,
     factFg: pal.fg,
     muted: pal.muted,
     factMuted: pal.muted,
-    badgeBg: inner,
+    badgeBg: ura ? pal.pale : pal.deep,
     badgeFg: pal.fg,
   };
 }
@@ -388,8 +303,6 @@ export const RYUHA_GROUPS: GuideGroup[] = [
 ];
 
 export const SENKI_INTRO = [
-  "戰器為對戰中僅能使用一次的裝備技。開場前選擇戰器，並指定裝備的武將。",
-  "戰器效果分為主效果與追加效果；追加效果通常需滿足登錄條件（勢力、時代、成本或剩餘時鐘等）。",
   "所列主效果、追加效果與時長皆為 Master。N／R 沒有 Master，所示為其最高等級。沒有持續時間的不另列時長。1C＝2.4 秒。",
 ].join("");
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { BookOpen, ChevronDown, ChevronUp, Clock, Dices, Download, Info, Search, X } from "lucide-react";
 import {
   CARD_BY_ID,
@@ -40,6 +40,17 @@ type Tab = "search" | "skills" | "recents" | "about";
 const TABS: Tab[] = ["search", "recents", "skills", "about"];
 const DUR_LO = 0;
 const DUR_HI = 99;
+const STAT_LO = 1;
+const STAT_HI = 12;
+type SortKey = "power" | "intel" | "cost" | "morale";
+type SortDir = "asc" | "desc";
+type SortRule = { key: SortKey; dir: SortDir };
+const SORTS: { key: SortKey; label: string }[] = [
+  { key: "power", label: "武力" },
+  { key: "intel", label: "知力" },
+  { key: "cost", label: "成本" },
+  { key: "morale", label: "士氣" },
+];
 type Hist =
   | { v: "root" }
   | { v: "home" }
@@ -75,6 +86,14 @@ export function ScoutApp() {
   const [costs, setCosts] = useState<number[]>([]);
   const [durMin, setDurMin] = useState(DUR_LO);
   const [durMax, setDurMax] = useState(DUR_HI);
+  const [powerMin, setPowerMin] = useState(STAT_LO);
+  const [powerMax, setPowerMax] = useState(STAT_HI);
+  const [intelMin, setIntelMin] = useState(STAT_LO);
+  const [intelMax, setIntelMax] = useState(STAT_HI);
+  const [pickPower, setPickPower] = useState<number | null>(null);
+  const [pickIntel, setPickIntel] = useState<number | null>(null);
+  const [statPhase, setStatPhase] = useState<"closed" | "opening" | "open" | "closing">("closed");
+  const [sorts, setSorts] = useState<SortRule[]>([]);
   const [morePhase, setMorePhase] = useState<"closed" | "opening" | "open" | "closing">("closed");
   const [guideTopic, setGuideTopic] = useState<GuideTopic | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -97,8 +116,35 @@ export function ScoutApp() {
     return () => window.clearTimeout(t);
   }, [morePhase]);
 
+  useEffect(() => {
+    if (statPhase !== "opening") return;
+    let inner = 0;
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => setStatPhase((p) => (p === "opening" ? "open" : p)));
+    });
+    return () => {
+      cancelAnimationFrame(outer);
+      if (inner) cancelAnimationFrame(inner);
+    };
+  }, [statPhase]);
+
+  useEffect(() => {
+    if (statPhase !== "closing") return;
+    const t = window.setTimeout(() => setStatPhase((p) => (p === "closing" ? "closed" : p)), 380);
+    return () => window.clearTimeout(t);
+  }, [statPhase]);
+
   const moreFilters = morePhase === "opening" || morePhase === "open";
+  const statOpen = statPhase === "opening" || statPhase === "open";
+  function toggleStat() {
+    closeMoreFilters();
+    setStatPhase((p) => (p === "open" || p === "opening" ? "closing" : "opening"));
+  }
+  function closeStat() {
+    setStatPhase((p) => (p === "closed" ? p : "closing"));
+  }
   function toggleMoreFilters() {
+    closeStat();
     setMorePhase((p) => (p === "open" || p === "opening" ? "closing" : "opening"));
   }
   function closeMoreFilters() {
@@ -337,15 +383,33 @@ export function ScoutApp() {
   }, []);
 
   const durOn = durMin > DUR_LO || durMax < DUR_HI;
-  const layerActive = colors.length + costs.length + units.length + periods.length + skills.length + rarities.length + stratCats.length + (durOn ? 1 : 0);
+  const powerOn = powerMin > STAT_LO || powerMax < STAT_HI;
+  const intelOn = intelMin > STAT_LO || intelMax < STAT_HI;
+  const statOn = pickPower != null || pickIntel != null;
+  const layerActive = colors.length + costs.length + units.length + periods.length + skills.length + rarities.length + stratCats.length + (durOn ? 1 : 0) + (powerOn ? 1 : 0) + (intelOn ? 1 : 0) + (statOn ? 1 : 0) + (sorts.length ? 1 : 0);
 
   const hits = useMemo(() => {
     const q = query.trim();
     if (!q && !layerActive) return [];
     let list = q ? searchCards(q, 200).map((h) => h.card) : CARDS;
     if (layerActive) list = filterCards(list, { colors, periods, units, skills, rarities, costs, stratCats, durMin, durMax });
+    if (powerOn) list = list.filter((card) => card.power >= powerMin && card.power <= powerMax);
+    if (intelOn) list = list.filter((card) => card.intel >= intelMin && card.intel <= intelMax);
+    if (pickPower != null) list = list.filter((card) => card.power === pickPower);
+    if (pickIntel != null) list = list.filter((card) => card.intel === pickIntel);
+    if (sorts.length) {
+      const value = (card: Card, key: SortKey) =>
+        key === "power" ? card.power : key === "intel" ? card.intel : key === "cost" ? card.cost : card.stratCost;
+      list = [...list].sort((a, b) => {
+        for (const rule of sorts) {
+          const diff = value(a, rule.key) - value(b, rule.key);
+          if (diff) return rule.dir === "asc" ? diff : -diff;
+        }
+        return a.no.localeCompare(b.no, "ja");
+      });
+    }
     return list;
-  }, [query, colors, periods, units, skills, rarities, costs, stratCats, durMin, durMax, layerActive]);
+  }, [query, colors, periods, units, skills, rarities, costs, stratCats, durMin, durMax, powerMin, powerMax, intelMin, intelMax, layerActive, pickPower, pickIntel, sorts]);
 
   const recentCards = useMemo(
     () => recents.map((id) => CARD_BY_ID[id]).filter(Boolean),
@@ -358,6 +422,10 @@ export function ScoutApp() {
     units.length ? units.map((u) => UNIT_SHORT[u as keyof typeof UNIT_SHORT] ?? u).join(" ") : null,
     periods.length ? periods.join(" ") : null,
     durOn ? `${durMin}–${durMax}C` : null,
+    powerOn ? `武力 ${powerMin}–${powerMax}` : null,
+    intelOn ? `知力 ${intelMin}–${intelMax}` : null,
+    statOn ? [pickPower != null ? `武力 ${pickPower}` : null, pickIntel != null ? `知力 ${pickIntel}` : null].filter(Boolean).join(" ") : null,
+    sorts.length ? sorts.map((rule) => `${SORTS.find((item) => item.key === rule.key)?.label}${rule.dir === "asc" ? "▲" : "▼"}`).join(" ") : null,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -373,6 +441,14 @@ export function ScoutApp() {
     setStratCats([]);
     setDurMin(DUR_LO);
     setDurMax(DUR_HI);
+    setPowerMin(STAT_LO);
+    setPowerMax(STAT_HI);
+    setIntelMin(STAT_LO);
+    setIntelMax(STAT_HI);
+    setPickPower(null);
+    setPickIntel(null);
+    setStatPhase("closed");
+    setSorts([]);
   };
 
   const resultLabel = query || layerActive ? `${hits.length} 筆${layerSummary ? `　${layerSummary}` : ""}` : "";
@@ -421,7 +497,9 @@ export function ScoutApp() {
           <div ref={pager.trackRef} className="tab-track">
           <div className="tab-pane">
             <div className="shrink-0 border-b border-border bg-bg/60 px-4 py-2.5 backdrop-blur-sm sm:px-6">
-              <div className="relative">
+              <div className="relative z-30">
+              <div className="flex items-center gap-2">
+              <div className="relative min-w-0 flex-1">
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-faint" />
                 <Input
                   ref={inputRef}
@@ -458,21 +536,37 @@ export function ScoutApp() {
                   </button>
                 ) : null}
               </div>
+              <div className="relative shrink-0">
+              <button
+                type="button"
+                aria-expanded={statOpen}
+                aria-label="武知"
+                onClick={toggleStat}
+                className={cn(
+                  "flex h-12 items-center justify-center rounded-md bg-[#3a322c] px-3 text-base font-medium text-[#d4cec4]",
+                  statOpen && "ring-1 ring-white/25",
+                )}
+              >
+                武知
+              </button>
+              </div>
+              </div>
+              </div>
 
               <div className="mt-2 flex items-center gap-2">
                 <button
                   type="button"
-                  className="flex h-8 shrink-0 items-center gap-0.5 rounded-md bg-faction-ko px-2.5 text-xs font-medium text-white"
+                  className="flex h-8 shrink-0 items-center gap-0.5 rounded-md bg-[#3a322c] px-2.5 text-xs font-medium text-[#d4cec4]"
                   onClick={toggleMoreFilters}
                   aria-expanded={moreFilters}
                 >
                   更多篩選
-                  {periods.length + skills.length + rarities.length + stratCats.length + (durOn ? 1 : 0) ? (
-                    <span className="tabular-nums">{periods.length + skills.length + rarities.length + stratCats.length + (durOn ? 1 : 0)}</span>
+                  {periods.length + skills.length + rarities.length + stratCats.length + (durOn ? 1 : 0) + (powerOn ? 1 : 0) + (intelOn ? 1 : 0) + (sorts.length ? 1 : 0) ? (
+                    <span className="tabular-nums">{periods.length + skills.length + rarities.length + stratCats.length + (durOn ? 1 : 0) + (powerOn ? 1 : 0) + (intelOn ? 1 : 0) + (sorts.length ? 1 : 0)}</span>
                   ) : null}
                   {moreFilters ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
                 </button>
-                <p className="min-w-0 flex-1 truncate text-xs tabular-nums text-faint">{resultLabel}</p>
+                <ResultMarquee text={resultLabel} />
                 <button
                   type="button"
                   className="flex h-8 shrink-0 items-center rounded-md bg-faction-hi px-2.5 text-xs font-medium text-white"
@@ -484,6 +578,21 @@ export function ScoutApp() {
             </div>
 
             <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+            {statPhase !== "closed" ? (
+              <div className={cn("more-sheet absolute inset-x-0 top-0 z-30 border-t-2 border-faction-ko bg-[#241910] px-4 pt-1.5 pb-2 shadow-[0_18px_36px_rgb(0_0_0/0.45)] sm:px-6", statPhase === "open" && "is-open")}>
+                <div className="grid grid-cols-2 gap-3">
+                  <StatPick label="武力" tone="power" value={pickPower} onChange={setPickPower} />
+                  <StatPick label="知力" tone="intel" value={pickIntel} onChange={setPickIntel} />
+                </div>
+                <button
+                  type="button"
+                  className="mt-1.5 flex h-8 w-full items-center justify-center rounded-md bg-faction-ko text-sm font-medium text-white"
+                  onClick={closeStat}
+                >
+                  完成
+                </button>
+              </div>
+            ) : null}
             <div className="shrink-0 border-b border-border bg-bg/60 px-4 pb-2.5 sm:px-6">
               <div className="flex flex-col gap-1">
                 <FilterRule label="勢力" />
@@ -533,7 +642,7 @@ export function ScoutApp() {
               {!query.trim() && !layerActive ? (
                 <div className="px-6 pt-10 text-center">
                   <p className="text-sm leading-relaxed text-pretty text-muted">
-                    可使用篩選，或輸入名稱、卡號或計略名的其中一字即可極速搜查。
+                    可使用篩選，或輸入名稱、卡號或計略名的其中一字即可極速搜查。亦可按右上方「武知」，點選武力同知力。
                   </p>
                   <div className="mt-5 flex flex-col items-center">
                     <button
@@ -584,6 +693,43 @@ export function ScoutApp() {
               <div className={cn("more-sheet absolute inset-0 z-20 flex flex-col border-t-2 border-faction-ko bg-[#241910]", morePhase === "open" && "is-open")}>
                 <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-2 sm:px-6">
                   <div className="flex flex-col gap-1 pb-2">
+                    <FilterRule label="排序" />
+                    <ChipGrid
+                      cols="grid-cols-4"
+                      items={SORTS.map((item) => {
+                        const rule = sorts.find((entry) => entry.key === item.key);
+                        const order = sorts.findIndex((entry) => entry.key === item.key);
+                        return {
+                          key: item.key,
+                          label: rule ? `${order + 1}${item.label}${rule.dir === "asc" ? "▲" : "▼"}` : item.label,
+                          active: Boolean(rule),
+                          idleClassName: "bg-[#3a2c22] text-muted",
+                          toggle: () =>
+                            setSorts((current) => {
+                              const index = current.findIndex((entry) => entry.key === item.key);
+                              if (index < 0) return [...current, { key: item.key, dir: "asc" }];
+                              const next = [...current];
+                              next[index] = { ...next[index], dir: next[index].dir === "asc" ? "desc" : "asc" };
+                              return next;
+                            }),
+                        };
+                      })}
+                    />
+                    <FilterRule label="武知範圍" />
+                    <StatBounds
+                      powerMin={powerMin}
+                      powerMax={powerMax}
+                      intelMin={intelMin}
+                      intelMax={intelMax}
+                      onPower={(lo, hi) => {
+                        setPowerMin(lo);
+                        setPowerMax(hi);
+                      }}
+                      onIntel={(lo, hi) => {
+                        setIntelMin(lo);
+                        setIntelMax(hi);
+                      }}
+                    />
                     <DurationRange
                       min={durMin}
                       max={durMax}
@@ -787,6 +933,7 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
     let t0 = 0;
     let dx = 0;
     let snapTimer = 0;
+    let blockClick = false;
 
     const settleTo = (i: number) => {
       busy.current = true;
@@ -818,7 +965,7 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length !== 1) return;
       const target = e.target as HTMLElement | null;
-      if (target?.closest("button, a, input, textarea, select, [data-no-swipe]")) {
+      if (target?.closest("input, textarea, select, [data-no-swipe]")) {
         axis = "v";
         return;
       }
@@ -843,6 +990,7 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
         if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
         axis = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
         if (axis === "v") return;
+        blockClick = true;
         busy.current = true;
         track.style.transition = "none";
       }
@@ -872,10 +1020,18 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
       axis = null;
     };
 
+    const onClick = (e: MouseEvent) => {
+      if (!blockClick) return;
+      blockClick = false;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
     root.addEventListener("touchstart", onTouchStart, { passive: true });
     root.addEventListener("touchmove", onTouchMove, { passive: false, capture: true });
     root.addEventListener("touchend", onTouchEnd);
     root.addEventListener("touchcancel", onTouchEnd);
+    root.addEventListener("click", onClick, true);
     const ro = new ResizeObserver(() => {
       if (busy.current || axis === "h") return;
       w = root.clientWidth || 1;
@@ -887,6 +1043,7 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
       root.removeEventListener("touchmove", onTouchMove, true);
       root.removeEventListener("touchend", onTouchEnd);
       root.removeEventListener("touchcancel", onTouchEnd);
+      root.removeEventListener("click", onClick, true);
       ro.disconnect();
       window.clearTimeout(snapTimer);
     };
@@ -973,6 +1130,189 @@ function TabBtn({
 
 function toggle<T>(list: T[], value: T, set: (next: T[]) => void) {
   set(list.includes(value) ? list.filter((x) => x !== value) : [...list, value]);
+}
+
+function StatPick({
+  label,
+  tone,
+  value,
+  onChange,
+}: {
+  label: string;
+  tone: "power" | "intel";
+  value: number | null;
+  onChange: (next: number | null) => void;
+}) {
+  const power = tone === "power";
+  return (
+    <div className={cn("rounded-md px-1 py-1", power ? "bg-[#3a1818] ring-1 ring-[#b41e22]/50" : "bg-[#152038] ring-1 ring-[#1e3c8a]/70")}>
+      <p className={cn("mb-0.5 text-center text-xs leading-none", power ? "text-[#e07070]" : "text-[#7aa2e3]")}>
+        {label}
+        {value != null ? ` ${value}` : ""}
+      </p>
+      <div className="grid grid-cols-4 gap-1">
+        {Array.from({ length: 12 }, (_, index) => {
+          const n = index + 1;
+          const on = value === n;
+          return (
+            <button
+              key={n}
+              type="button"
+              aria-label={`${label}${n}`}
+              aria-pressed={on}
+              onClick={() => onChange(on ? null : n)}
+              className={cn(
+                "flex h-8 items-center justify-center rounded-sm text-sm tabular-nums",
+                on
+                  ? power
+                    ? "bg-faction-hi text-white"
+                    : "bg-faction-ao text-white"
+                  : power
+                    ? "bg-[#2a1212] text-[#c9a3a3]"
+                    : "bg-[#121a2e] text-[#a9b8d4]",
+              )}
+            >
+              {n}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function StatBounds({
+  powerMin,
+  powerMax,
+  intelMin,
+  intelMax,
+  onPower,
+  onIntel,
+}: {
+  powerMin: number;
+  powerMax: number;
+  intelMin: number;
+  intelMax: number;
+  onPower: (min: number, max: number) => void;
+  onIntel: (min: number, max: number) => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-3 pt-1.5">
+      <StatBound label="武力範圍" tone="power" min={powerMin} max={powerMax} onChange={onPower} />
+      <StatBound label="知力範圍" tone="intel" min={intelMin} max={intelMax} onChange={onIntel} />
+    </div>
+  );
+}
+
+function StatBound({
+  label,
+  tone,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  tone: "power" | "intel";
+  min: number;
+  max: number;
+  onChange: (min: number, max: number) => void;
+}) {
+  const [anchor, setAnchor] = useState<number | null>(null);
+  const narrowed = min > STAT_LO || max < STAT_HI;
+  const power = tone === "power";
+  useEffect(() => {
+    if (!narrowed) setAnchor(null);
+  }, [narrowed]);
+  const pick = (n: number) => {
+    if (anchor == null) {
+      onChange(n, n);
+      setAnchor(n);
+      return;
+    }
+    onChange(Math.min(anchor, n), Math.max(anchor, n));
+    setAnchor(null);
+  };
+  return (
+    <div className={cn("rounded-md px-1.5 py-1.5", power ? "bg-[#3a1818] ring-1 ring-[#b41e22]/50" : "bg-[#152038] ring-1 ring-[#1e3c8a]/70")}>
+      <p className={cn("mb-1 text-center text-xs", power ? "text-[#e07070]" : "text-[#7aa2e3]")}>
+        {label}
+        {narrowed ? ` ${min}–${max}` : ""}
+      </p>
+      <div className="grid grid-cols-4">
+        {Array.from({ length: 12 }, (_, index) => {
+          const n = index + 1;
+          const col = index % 4;
+          const inside = narrowed && n >= min && n <= max;
+          const leftOn = inside && col > 0 && n - 1 >= min;
+          const rightOn = inside && col < 3 && n + 1 <= max;
+          const edge = inside && (n === min || n === max);
+          return (
+            <button
+              key={n}
+              type="button"
+              aria-label={`${label}${n}`}
+              onClick={() => pick(n)}
+              className={cn(
+                "flex h-9 items-center justify-center text-sm tabular-nums",
+                inside
+                  ? cn(
+                      edge
+                        ? power
+                          ? "bg-faction-hi text-white"
+                          : "bg-faction-ao text-white"
+                        : power
+                          ? "bg-faction-hi/45 text-fg"
+                          : "bg-faction-ao/55 text-fg",
+                      !leftOn && !rightOn && "rounded-md",
+                      !leftOn && rightOn && "rounded-l-md",
+                      leftOn && !rightOn && "rounded-r-md",
+                    )
+                  : power
+                    ? "text-[#c9a3a3]"
+                    : "text-[#a9b8d4]",
+              )}
+            >
+              {n}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ResultMarquee({ text }: { text: string }) {
+  const box = useRef<HTMLDivElement>(null);
+  const measure = useRef<HTMLSpanElement>(null);
+  const [run, setRun] = useState(false);
+  useLayoutEffect(() => {
+    const outer = box.current;
+    const inner = measure.current;
+    if (!outer || !inner) return;
+    const tick = () => setRun(inner.scrollWidth > outer.clientWidth + 2);
+    tick();
+    const observer = new ResizeObserver(tick);
+    observer.observe(outer);
+    return () => observer.disconnect();
+  }, [text]);
+  const seconds = Math.max(8, Math.round(text.length * 0.35));
+  return (
+    <div ref={box} className="relative min-w-0 flex-1 overflow-hidden">
+      <span ref={measure} className="pointer-events-none absolute text-xs whitespace-nowrap opacity-0" aria-hidden>
+        {text}
+      </span>
+      {run ? (
+        <div className="result-marquee flex w-max" style={{ animationDuration: `${seconds}s` }}>
+          <span className="pr-10 text-xs tabular-nums whitespace-nowrap text-faint">{text}</span>
+          <span className="pr-10 text-xs tabular-nums whitespace-nowrap text-faint" aria-hidden>
+            {text}
+          </span>
+        </div>
+      ) : (
+        <p className="truncate text-xs tabular-nums whitespace-nowrap text-faint">{text}</p>
+      )}
+    </div>
+  );
 }
 
 function DurationRange({

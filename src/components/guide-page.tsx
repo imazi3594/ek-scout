@@ -5,7 +5,6 @@ import { CostPips, RarityMark } from "@/components/card-identity";
 import {
   EIKON_GROUPS,
   EIKON_INTRO,
-  BASIC_GROUPS,
   RYUHA_GROUPS,
   SENKI_CATS,
   SENKI_GROUPS,
@@ -24,7 +23,6 @@ import { cn } from "@/lib/utils";
 import type { ColorName, UnitName } from "@/data/catalog";
 
 const TOPIC_MARK: Record<GuideTopic, string> = {
-  basic: "bg-faction-gen",
   skills: "bg-faction-ao",
   units: "bg-faction-heki",
   siege: "bg-faction-ko",
@@ -34,10 +32,9 @@ const TOPIC_MARK: Record<GuideTopic, string> = {
 };
 
 const TOPICS: { id: GuideTopic; title: string; blurb: string }[] = [
-  { id: "basic", title: "基本", blurb: "計數、卡組、士氣、出城與復活、武力與知力。" },
   { id: "skills", title: "特技", blurb: "武將固有被動。開場、戰鬥、移動與槽類效果。" },
-  { id: "units", title: "兵種", blurb: "移速、攻城基礎，同槍、弓、斬、鐵砲的動作。" },
-  { id: "siege", title: "攻城", blurb: "攻城力計算器。按兵種、武力、成本同加成，估算城牆同城門傷害。" },
+  { id: "units", title: "兵種", blurb: "移速、攻城基礎，與槍、弓、斬、鐵砲的動作。" },
+  { id: "siege", title: "攻城", blurb: "攻城力計算器。按兵種、武力、成本與加成，估算城牆與城門傷害。" },
   { id: "senki", title: "戰器", blurb: "對戰中僅能使用一次的裝備技。主效果、追加與時長皆為 Master。" },
   { id: "eikon", title: "英魂", blurb: "裝在戰器上，只強化裝備的那名武將。一般可疊，寶石不重複。" },
   { id: "ryuha", title: "流派", blurb: "壱・弐・参の型。表為永久，裏多為時限。" },
@@ -93,7 +90,6 @@ export function GuidePage({ topic, onTopic }: { topic: GuideTopic | null; onTopi
         <ChevronLeft className="size-3.5" />
         返回資料
       </button>
-      {topic === "basic" ? <GroupGuide intro="對戰共通規則。計略的具體 C 數見於武將詳情。" groups={BASIC_GROUPS} mark={TOPIC_MARK.basic} /> : null}
       {topic === "skills" ? <SkillsGuide /> : null}
       {topic === "units" ? <UnitGuide /> : null}
       {topic === "siege" ? <SiegeCalc /> : null}
@@ -243,10 +239,12 @@ function RyuhaIcon({ kind, className }: { kind: string; className?: string }) {
   if (kind === "部隊") {
     return (
       <svg {...pen}>
-        <circle cx="3.2" cy="4.2" r="1.15" fill="currentColor" stroke="none" />
-        <circle cx="8" cy="3.4" r="1.15" fill="currentColor" stroke="none" />
-        <circle cx="12.8" cy="4.2" r="1.15" fill="currentColor" stroke="none" />
-        <path d="M1.4 13.2c.5-2.2 1.3-3.3 1.8-3.3s1.3 1.1 1.8 3.3M6.2 13.2c.5-2.4 1.3-3.6 1.8-3.6s1.3 1.2 1.8 3.6M11 13.2c.5-2.2 1.3-3.3 1.8-3.3s1.3 1.1 1.8 3.3" />
+        <path d="M2.4 14.8V3.2" />
+        <path d="M2.5 4h3.2v6.2H2.5z" fill="currentColor" stroke="none" />
+        <path d="M11.4 14.8V5.2" />
+        <path d="M11.5 6h3.1v5H11.5z" fill="currentColor" stroke="none" />
+        <path d="M6.9 14.8V.8" />
+        <path d="M7 1.5h3.4v8H7z" fill="currentColor" stroke="none" />
       </svg>
     );
   }
@@ -260,18 +258,26 @@ function RyuhaIcon({ kind, className }: { kind: string; className?: string }) {
   if (kind === "城塞") {
     return (
       <svg {...pen}>
-        <path d="M1.6 14.2V7.2h1.8V5h2.1v2.2h2.1V5h2.1v2.2H12V5h2.1v2.2h1.7v7" />
-        <path d="M6.2 14.2v-3.2h3.6v3.2" />
+        <path d="M6.8 1h2.4L8 2.3z" fill="currentColor" stroke="none" />
+        <path d="M3.2 4.15 4.9 5h6.2l1.7-.85L11.3 2.45H4.7z" fill="currentColor" stroke="none" />
+        <path d="M6.1 5h3.8v1.45H6.1z" fill="currentColor" stroke="none" />
+        <path d="M2 8.15 4 9.05h8l2-.9L12.3 6.45H3.7z" fill="currentColor" stroke="none" />
+        <path d="M4.9 9.05h6.2v1.5H4.9z" fill="currentColor" stroke="none" />
+        <path d="M.9 12.05 3.1 13h9.8l2.2-.95-1.6-1.5H2.5z" fill="currentColor" stroke="none" />
+        <path d="M3.5 13h9v1.7h-9z" fill="currentColor" stroke="none" />
       </svg>
     );
   }
   if (kind === "兵種") {
     return (
       <svg {...pen}>
-        <path d="M4.2 14V5.2" />
-        <path d="M4.2 2.4 6.1 5.4H2.3z" fill="currentColor" stroke="none" />
-        <path d="M10.2 3.2c2.3 1.8 2.3 7.8 0 9.6" />
-        <path d="M10.2 3.2v9.6" />
+        <path d="M2.5 13.5 5.9 10.1" />
+        <path d="M9.9 6.1 11.1 4.9" />
+        <path d="M13.4 2.2 11.5 6.2 9.1 4.1z" fill="currentColor" stroke="none" />
+        <path d="M2.5 2.5 10.2 10.2 11.9 8.8z" fill="currentColor" stroke="none" />
+        <path d="M9.4 12.2 12.4 9.2" />
+        <path d="M11 11 13.2 13.2" />
+        <circle cx="13.6" cy="13.6" r="0.75" fill="currentColor" stroke="none" />
       </svg>
     );
   }
@@ -306,7 +312,6 @@ function GuideSection({
   icon?: ReactNode;
 }) {
   const tone = themed ? ryuhaTheme(group.title) : null;
-  const veil = tone && nested ? (tone.cardFg === "#1a1612" ? "rgb(255 255 255 / 0.38)" : "rgb(0 0 0 / 0.28)") : null;
   return (
     <section>
       <h3
@@ -329,7 +334,7 @@ function GuideSection({
             className={cn("rounded-xl border p-3", !tone && "border-border bg-surface-2", nested && "border-transparent")}
             style={
               tone
-                ? { backgroundColor: veil ?? tone.cardBg, color: tone.cardFg }
+                ? { backgroundColor: tone.cardBg, color: tone.cardFg }
                 : undefined
             }
           >
@@ -351,19 +356,22 @@ function GuideSection({
                       "flex items-start justify-between gap-3 rounded-md px-2.5 py-2",
                       !tone && "bg-surface-3",
                     )}
-                    style={tone ? { backgroundColor: veil ? (tone.cardFg === "#1a1612" ? "rgb(255 255 255 / 0.45)" : "rgb(0 0 0 / 0.22)") : tone.factBg } : undefined}
+                    style={tone ? { backgroundColor: tone.factBg } : undefined}
                   >
-                    <dt className={cn("shrink-0 text-xs", !tone && "text-fg/60")} style={tone ? { color: tone.factMuted } : undefined}>
+                    <dt
+                      className={cn("flex h-6 shrink-0 items-center text-xs leading-none", !tone && "text-fg/60")}
+                      style={tone ? { color: tone.factMuted } : undefined}
+                    >
                       {row.label}
                     </dt>
                     <dd
-                      className={cn("text-right text-sm font-medium leading-relaxed text-pretty", !tone && "text-fg")}
+                      className={cn("text-right text-sm font-medium leading-6 text-pretty", !tone && "text-fg")}
                       style={tone ? { color: tone.factFg } : undefined}
                     >
                       <span className="block">{row.value}</span>
                       {row.sub ? (
                         <span
-                          className={cn("mt-0.5 block text-xs font-normal", !tone && "text-fg/60")}
+                          className={cn("mt-0.5 block text-xs font-normal leading-4", !tone && "text-fg/60")}
                           style={tone ? { color: tone.factMuted } : undefined}
                         >
                           {row.sub}
@@ -498,9 +506,7 @@ const SIEGE_STRATS: { id: string; label: string; mul: number; flat: number; kind
   { id: "kaishi", label: "介子推・閃光の進撃　×1.1＋1%", mul: 1.1, flat: 1, kind: "self" },
   { id: "takasugi", label: "高杉晋助・旧態の破壊者　×1.7", mul: 1.7, flat: 0, kind: "order" },
   { id: "katsuyori", label: "武田勝頼・獅吼の采配　×1.3＋1%", mul: 1.3, flat: 1, kind: "order" },
-  { id: "oujou-hi", label: "王翦・三元の戦（弓鐵合計 4.5+）　×1.3＋2%", mul: 1.3, flat: 2, kind: "order" },
-  { id: "oujou-mid", label: "王翦・三元の戦（弓鐵合計 2.5–4）　×1.2＋1.5%", mul: 1.2, flat: 1.5, kind: "order" },
-  { id: "oujou-lo", label: "王翦・三元の戦（弓鐵合計 1–2）　×1.1＋1%", mul: 1.1, flat: 1, kind: "order" },
+  { id: "oujou", label: "王翦・三元の戦", mul: 1, flat: 0, kind: "order" },
   { id: "kouyu", label: "公輸盤・破城の号令　×1.3＋4%", mul: 1.3, flat: 4, kind: "order" },
   { id: "rokkaku", label: "六角義賢・六角の陣　×1.3＋1.6%", mul: 1.3, flat: 1.6, kind: "order" },
   { id: "ouki", label: "王騎・天下の大将軍　×1.3", mul: 1.3, flat: 0, kind: "order" },
@@ -524,9 +530,7 @@ const SIEGE_STRATS: { id: string; label: string; mul: number; flat: number; kind
 
 const STRAT_COLOR: Record<string, ColorName> = {
   koukou: "蒼",
-  "oujou-hi": "蒼",
-  "oujou-mid": "蒼",
-  "oujou-lo": "蒼",
+  oujou: "蒼",
   ouki: "蒼",
   choki: "蒼",
   kibitsu: "緋",
@@ -579,6 +583,13 @@ function cut2(n: number) {
 type SiegeRyuha = "none" | "butai" | "kokou";
 type SiegeSenki = "none" | "tatenashi" | "onimaru";
 
+function oujouSiege(cost: number) {
+  if (cost >= 4.5) return { mul: 1.3, flat: 2, text: "×1.3＋2%" };
+  if (cost >= 2.5) return { mul: 1.2, flat: 1.5, text: "×1.2＋1.5%" };
+  if (cost >= 1) return { mul: 1.1, flat: 1, text: "×1.1＋1%" };
+  return { mul: 1, flat: 0, text: "未達 1" };
+}
+
 function siegeOf(
   unit: UnitName,
   power: number,
@@ -588,15 +599,18 @@ function siegeOf(
   ward: boolean,
   selfId: string,
   orderId: string,
+  bowGun: number,
+  eikon: number,
 ) {
   const coef = SIEGE_COEF[costIndex] ?? 1;
   const self = stratBy(selfId);
   const order = stratBy(orderId);
+  const tier = orderId === "oujou" ? oujouSiege(bowGun) : order;
   const atk = power;
   let value = (SIEGE_BASE[unit] + 0.02 * atk) * coef;
-  value *= self.mul * order.mul;
+  value *= self.mul * tier.mul;
   if (senki !== "none") value *= 1.3;
-  value += self.flat + order.flat;
+  value += self.flat + tier.flat + eikon * 0.8;
   if (ryuha === "butai") value = value * 1.1 + 0.5;
   if (ryuha === "kokou") value *= 1.05;
   if (ward) value *= 0.9;
@@ -720,10 +734,13 @@ function SiegeCalc() {
   const [ward, setWard] = useState(false);
   const [selfStrat, setSelfStrat] = useState("none");
   const [orderStrat, setOrderStrat] = useState("none");
-  const { wall, gate } = siegeOf(unit, power, costIndex, ryuha, senki, ward, selfStrat, orderStrat);
-  const time = SIEGE_TIME[Math.min(20, intel + (ryuha === "butai" ? 2 : 0)) - 1] ?? SIEGE_TIME[0];
+  const [bowGun, setBowGun] = useState(0);
+  const [eikon, setEikon] = useState(0);
+  const { wall, gate } = siegeOf(unit, power, costIndex, ryuha, senki, ward, selfStrat, orderStrat, bowGun, eikon);
+  const time = SIEGE_TIME[Math.min(20, intel) - 1] ?? SIEGE_TIME[0];
   const wallTone = siegeTone(wall);
   const gateTone = siegeTone(gate);
+  const timeTone = time.sec < 4 ? "#e07a2f" : time.sec < 5 ? "#e2c15a" : undefined;
   const reset = () => {
     setUnit("槍兵");
     setCostIndex(3);
@@ -734,6 +751,8 @@ function SiegeCalc() {
     setWard(false);
     setSelfStrat("none");
     setOrderStrat("none");
+    setBowGun(0);
+    setEikon(0);
   };
   return (
     <div className="flex flex-col gap-5">
@@ -760,9 +779,9 @@ function SiegeCalc() {
               </div>
               <div className="min-w-0 px-3 py-2.5">
                 <dt className="text-xs text-[#e7c39a]">需時</dt>
-                <dd className="mt-1 whitespace-nowrap font-display text-xl leading-none tabular-nums text-fg">
+                <dd className="mt-1 whitespace-nowrap font-display text-xl leading-none tabular-nums text-fg" style={{ color: timeTone }}>
                   {time.sec}<span className="text-sm">秒</span>
-                  <span className="ml-1 text-sm text-fg/70">{time.c}C</span>
+                  <span className={cn("ml-1 text-sm", !timeTone && "text-fg/70")}>{time.c}C</span>
                 </dd>
               </div>
             </div>
@@ -874,6 +893,35 @@ function SiegeCalc() {
             </option>
           ))}
         </select>
+        {orderStrat === "oujou" ? (
+          <div className="mt-2">
+            <SiegeRule
+              label="弓鐵合計"
+              extra={<span className="shrink-0 text-[11px] tabular-nums text-fg">{oujouSiege(bowGun).text}</span>}
+            />
+            <div className="inline-flex h-9 items-center overflow-hidden rounded-md bg-surface-2">
+              <button
+                type="button"
+                className="plain-press h-full w-9 text-base text-fg"
+                aria-label="弓鐵合計減少"
+                onClick={() => setBowGun((current) => Math.max(0, Math.round((current - 0.5) * 2) / 2))}
+              >
+                −
+              </button>
+              <span className="w-12 text-center text-sm tabular-nums text-fg">
+                {Number.isInteger(bowGun) ? bowGun : bowGun.toFixed(1)}
+              </span>
+              <button
+                type="button"
+                className="plain-press h-full w-9 text-base text-fg"
+                aria-label="弓鐵合計增加"
+                onClick={() => setBowGun((current) => Math.min(20, Math.round((current + 0.5) * 2) / 2))}
+              >
+                ＋
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
       <div>
         <SiegeRule label="流派加成(我方)" />
@@ -950,6 +998,25 @@ function SiegeCalc() {
         </div>
         <p className="mt-1 text-[11px] leading-relaxed text-faint">鬼丸的武力＋3 請自行加進武力。</p>
       </div>
+      <div>
+        <SiegeRule label="攻城英魂" />
+        <div className="grid grid-cols-4 gap-1">
+          {[0, 1, 2, 3].map((n) => (
+            <button
+              key={n}
+              type="button"
+              aria-pressed={eikon === n}
+              onClick={() => setEikon(n)}
+              className={cn(
+                "plain-press h-9 rounded-md px-1 text-[11px] leading-none",
+                eikon === n ? "bg-accent text-accent-fg" : "bg-surface-2 text-muted",
+              )}
+            >
+              {n === 0 ? "無" : ["一個", "兩個", "三個"][n - 1]}
+            </button>
+          ))}
+        </div>
+      </div>
       </div>
     </div>
   );
@@ -970,7 +1037,12 @@ function UnitGuide() {
   return (
     <>
       {group ? (
-        <FolderBoard tabs={tabs} active={group.title} onPick={setTitle}>
+        <FolderBoard
+          tabs={tabs}
+          active={group.title}
+          onPick={setTitle}
+          icon={(id) => (UNIT_ICON[id] ? <UnitIcon unit={UNIT_ICON[id]} className="size-3.5" title={id} /> : null)}
+        >
           <GuideSection
             group={group}
             icon={UNIT_ICON[group.title] ? <UnitIcon unit={UNIT_ICON[group.title]} className="size-5" title={group.title} /> : undefined}

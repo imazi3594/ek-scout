@@ -1412,11 +1412,105 @@ export function senkiTiers(card: Card): SenkiCol[] | null {
   ];
 }
 
+export type CostBand = { min: number; max: number | null; bonus: string };
+
+export type DeckCostField = {
+  id: string;
+  label: string;
+  kind: string;
+  min: number;
+  ladder: CostBand[];
+};
+
+export type DeckCostView = {
+  intro: string;
+  basics: { label: string; value: string }[];
+  fields: DeckCostField[];
+};
+
+function looseBands(value: string): CostBand[] | null {
+  const re = /(\d+(?:\.\d+)?)(?:\s*[~～〜]\s*(\d+(?:\.\d+)?))?\s*コスト\s*[:：]\s*/g;
+  const marks = [...value.matchAll(re)];
+  if (marks.length < 2) return null;
+  return marks.map((mark, index) => {
+    const start = (mark.index ?? 0) + mark[0].length;
+    const end = index + 1 < marks.length ? (marks[index + 1].index ?? value.length) : value.length;
+    const raw = value.slice(start, end).replace(/[▲▼↑↓]/g, "").replace(/\s+/g, " ").trim();
+    const bonus = raw.match(/^((?:[+＋\-－])?約?[\d.]+(?:%|倍|部隊分)?(?:\s*[+＋]\s*約?[\d.]+%?)?)/)?.[1] ?? raw;
+    const low = Number(mark[1]);
+    const high = mark[2] ? Number(mark[2]) : null;
+    return {
+      min: high == null ? low : Math.min(low, high),
+      max: high == null ? null : Math.max(low, high),
+      bonus: translateValue(bonus),
+    };
+  });
+}
+
+const DECK_COST_SPECS: Record<string, { intro: string; pick: { test: RegExp; id: string; label: string; kind: string; min: number }[] }> = {
+  玄137: {
+    intro: "依對象友軍槍兵與其餘兵種的成本合計，獲得以下效果",
+    pick: [
+      { test: /^槍兵(?!以外)/, id: "spear", label: "槍兵", kind: "移速", min: 2 },
+      { test: /^槍兵以外/, id: "other", label: "其他兵種", kind: "武力", min: 0 },
+    ],
+  },
+  琥090: {
+    intro: "依對象友軍戰國與其餘時代的成本合計，獲得以下效果",
+    pick: [
+      { test: /^戦国(?!以外)/, id: "sengoku", label: "戰國", kind: "兵力回復", min: 2.5 },
+      { test: /^戦国以外/, id: "other", label: "其他時代", kind: "武力", min: 0 },
+    ],
+  },
+  黄039: {
+    intro: "依對象友軍黄熾與其餘武將的成本合計，獲得以下效果",
+    pick: [
+      { test: /黄熾/, id: "oshi", label: "黄熾", kind: "移速", min: 0 },
+      { test: /それ以外/, id: "other", label: "其他武將", kind: "黄熾槽", min: 2 },
+    ],
+  },
+  蒼178: {
+    intro: "依對象友軍 ER 與非 ER 的成本合計，獲得以下效果",
+    pick: [
+      { test: /ＥＲの合計コスト/, id: "er", label: "ＥＲ", kind: "知力傷害", min: 0 },
+      { test: /ＥＲ以外の合計コスト/, id: "other", label: "非ＥＲ", kind: "移速", min: 1 },
+    ],
+  },
+  蒼116: {
+    intro: "依戰場上持有昂揚的友軍成本合計，獲得以下效果",
+    pick: [{ test: /昂揚/, id: "kouyou", label: "昂揚", kind: "槍長", min: 2 }],
+  },
+};
+
+export function deckCostView(card: Card): DeckCostView | null {
+  const spec = DECK_COST_SPECS[card.no];
+  if (!spec) return null;
+  const basics: { label: string; value: string }[] = [];
+  const found = new Map<string, CostBand[]>();
+  for (const effect of card.effects ?? []) {
+    if (effect.label.startsWith("効果時間") || isDurationEffectLabel(effect.label)) continue;
+    const bands = looseBands(effect.value);
+    const rule = bands ? spec.pick.find((item) => item.test.test(effect.value)) : undefined;
+    if (!bands || !rule) {
+      if (!bands) basics.push({ label: translateLabel(effect.label), value: translateValue(effect.value) });
+      continue;
+    }
+    found.set(rule.id, bands);
+  }
+  const fields = spec.pick.flatMap((item) => {
+    const ladder = found.get(item.id);
+    return ladder ? [{ id: item.id, label: item.label, kind: item.kind, min: item.min, ladder }] : [];
+  });
+  if (!fields.length) return null;
+  return { intro: spec.intro, basics, fields };
+}
+
 export type SchoolCol = {
   id: string;
   title: string;
   note: string;
   rows: StatLine[];
+  ladder?: CostBand[];
 };
 
 const SCHOOL_KEY = /^(部隊|士気|城塞|兵種|琥煌|騎兵|槍兵|弓兵|[0-9０-９]+部隊|味方[≧＜]|敵[≧＜])/;
@@ -1452,6 +1546,20 @@ function foldAttachedDurations(effects: CardEffect[]): CardEffect[] {
     out.push(effect);
   }
   return out;
+}
+
+function parseCostLadder(value: string): CostBand[] | null {
+  if (!/コストに応じて/.test(value)) return null;
+  const body = value.replace(/^.*?変動\s*/, "");
+  const re = /(\d+(?:\.\d+)?)(?:\s*[~～〜]\s*(\d+(?:\.\d+)?))?\s*コスト(?:以上)?\s*[:：]\s*/g;
+  const marks = [...body.matchAll(re)];
+  if (marks.length < 2) return null;
+  return marks.map((mark, index) => {
+    const start = (mark.index ?? 0) + mark[0].length;
+    const end = index + 1 < marks.length ? (marks[index + 1].index ?? body.length) : body.length;
+    const bonus = translateValue(body.slice(start, end).replace(/[▲▼↑↓]/g, "").replace(/\s+/g, " ").trim());
+    return { min: Number(mark[1]), max: mark[2] ? Number(mark[2]) : null, bonus };
+  });
 }
 
 export function schoolTiers(card: Card): SchoolCol[] | null {
@@ -1535,15 +1643,20 @@ export function schoolTiers(card: Card): SchoolCol[] | null {
   if (groups.length === titles.length + 1) titles.push("琥煌");
 
   const keepDur: CardEffect = hide ?? { label: "__dur__", value: "__dur__" };
-  return groups.slice(0, titles.length).map((group, i) => ({
-    id: titles[i] ?? String(i),
-    title: titles[i] ?? "其他",
-    note: i < branched.items.length ? translateDesc(branched.items[i].text) : "無追加效果",
-    rows: effectRows(
-      group.map((effect) => ({ ...effect, value: stripBranchTail(effect.value) })),
-      keepDur,
-    ),
-  }));
+  return groups.slice(0, titles.length).map((group, i) => {
+    const ladder = group.map((effect) => parseCostLadder(effect.value)).find((bands) => bands) ?? undefined;
+    const shown = ladder ? group.filter((effect) => !parseCostLadder(effect.value)) : group;
+    return {
+      id: titles[i] ?? String(i),
+      title: titles[i] ?? "其他",
+      note: i < branched.items.length ? translateDesc(branched.items[i].text) : "無追加效果",
+      ladder,
+      rows: effectRows(
+        shown.map((effect) => ({ ...effect, value: stripBranchTail(effect.value) })),
+        keepDur,
+      ),
+    };
+  });
 }
 
 export type RecastCol = {
@@ -2029,6 +2142,12 @@ function tankenRows(effects: CardEffect[]): StatLine[] {
     rows.push({ label, value });
   }
   return rows;
+}
+
+export function tankenNames(card: Card): string[] {
+  return parseTankenBlocks(card.stratDesc ?? "")
+    .blocks.map((block) => block.name)
+    .filter(Boolean);
 }
 
 export function cardTanken(card: Card): Tanken[] {

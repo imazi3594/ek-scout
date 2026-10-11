@@ -1,4 +1,4 @@
-import { CARDS, baseDurationC, type Card, type ColorName } from "@/data/catalog";
+import { CARDS, baseDurationC, tankenNames, type Card, type ColorName } from "@/data/catalog";
 
 const VARIANT: Record<string, string> = {
   戰: "戦",
@@ -239,6 +239,7 @@ type Indexed = {
   foldStrat: string;
   foldStratKana: string;
   foldNo: string;
+  foldTanken: string[];
 };
 
 const INDEX: Indexed[] = CARDS.map((card) => {
@@ -247,7 +248,8 @@ const INDEX: Indexed[] = CARDS.map((card) => {
   const foldStrat = fold(card.stratName);
   const foldStratKana = fold(card.stratKana);
   const foldNo = fold(card.no);
-  return { card, foldName, foldKana, foldStrat, foldStratKana, foldNo };
+  const foldTanken = tankenNames(card).flatMap((name) => [fold(name), fold(`短計${name}`)]);
+  return { card, foldName, foldKana, foldStrat, foldStratKana, foldNo, foldTanken };
 });
 
 export type SearchHit = { card: Card; score: number };
@@ -268,10 +270,11 @@ export function searchCards(query: string, limit = 60): SearchHit[] {
     else if (row.foldName.startsWith(f)) score = 700;
     else if (row.foldKana === f || row.foldKana.startsWith(f)) score = 650;
     else if (row.foldStrat === f || row.foldStrat.startsWith(f)) score = 600;
+    else if (row.foldTanken.some((name) => name === f || name.startsWith(f))) score = 580;
     else if (row.foldNo.includes(f)) score = 500;
     else if (row.foldName.includes(f)) score = 400;
     else if (row.foldKana.includes(f)) score = 360;
-    else if (row.foldStrat.includes(f) || row.foldStratKana.includes(f)) score = 300;
+    else if (row.foldStrat.includes(f) || row.foldStratKana.includes(f) || row.foldTanken.some((name) => name.includes(f))) score = 300;
     if (score > 0) hits.push({ card: row.card, score });
   }
 
