@@ -1,4 +1,4 @@
-const CACHE = "ek-scout-v7";
+const CACHE = "ek-scout-v8";
 const NETWORK_TIMEOUT = 2500;
 const REVALIDATE_TIMEOUT = 6000;
 
