@@ -179,7 +179,7 @@ export const RYUHA_GROUPS: GuideGroup[] = [
   },
   {
     title: "兵種・表",
-    blurb: "強化基本兵種動作。",
+    blurb: "強化基本兵種動作。龍騎馬、調查兵團、象兵、網球選手不受影響。",
     items: [
       {
         name: "壱の型　動作攻城",
@@ -217,7 +217,7 @@ export const RYUHA_GROUPS: GuideGroup[] = [
   },
   {
     title: "兵種・裏",
-    blurb: "時長約 12.5C。各型均附帶兵種動作攻城（傷害同兵種・表壱の型）。射程延長、突擊準備距離、槍擊間隔官方未公布具體數值。",
+    blurb: "時長約 12.5C。各型均附帶兵種動作攻城（傷害同兵種・表壱の型）。特殊兵種不受影響。射程延長、突擊準備距離、槍擊間隔官方未公布具體數值。",
     items: [
       {
         name: "壱の型　兵種攻城＋弓／鐵砲強化",
@@ -628,6 +628,92 @@ export const UNIT_GROUPS: GuideGroup[] = [
         facts: [{ label: "加速", value: "＋45% 起" }],
       },
       { name: "自城到敵城需時", facts: [{ label: "需時", value: "約 15 秒（6.3C）" }] },
+    ],
+  },
+];
+
+export const SPECIAL_UNIT_GROUPS: GuideGroup[] = [
+  {
+    title: "龍騎馬",
+    blurb: "計略中由騎兵變化。龍突、龍射不算基本兵種動作。",
+    items: [
+      {
+        name: "基礎",
+        facts: [
+          { label: "移速", value: "與騎兵相同" },
+          { label: "攻城", value: "與騎兵相同" },
+          { label: "龍突", value: "移動一段距離後帶上龍突氣場" },
+          { label: "龍射", value: "接近後向前方扇形射擊，一次 5 發。出手比鐵砲隊快" },
+        ],
+      },
+      {
+        name: "龍射",
+        facts: [
+          { label: "亂戰", value: "不會被突擊或龍突取消" },
+          { label: "攻城區", value: "碰到攻城區會取消" },
+          { label: "妨礙攻城", value: "命中會削減敵軍攻城槽" },
+        ],
+      },
+      {
+        name: "龍突",
+        facts: [{ label: "鐵砲", value: "命中可取消鐵砲隊射擊" }],
+      },
+    ],
+  },
+  {
+    title: "調查兵團",
+    blurb: "計略中變化。鋼索與斬擊不算基本兵種動作。",
+    items: [
+      {
+        name: "基礎",
+        facts: [
+          { label: "移速", value: "與未出突擊氣場的騎兵相同" },
+          { label: "攻城", value: "與劍豪相同" },
+          { label: "射程", value: "與鐵砲隊相同" },
+          { label: "彈數", value: "1。出手比鐵砲隊快" },
+          { label: "動作", value: "射擊發射鋼索，向命中的敵軍高速移動" },
+        ],
+      },
+      {
+        name: "被槍迎擊",
+        facts: [
+          { label: "平時", value: "不被迎擊" },
+          { label: "移速英魂", value: "兩粒（＋10%）起初速會被迎擊" },
+          { label: "鋼索移動", value: "不會被迎擊" },
+        ],
+      },
+    ],
+  },
+  {
+    title: "象兵",
+    blurb: "計略中變化。突進不算基本兵種動作。移速與攻城尚未確認。",
+    items: [
+      {
+        name: "基礎",
+        facts: [
+          { label: "移速", value: "可能與騎兵相同（待確認）" },
+          { label: "攻城", value: "可能與劍豪相同（待確認）" },
+          { label: "突進", value: "移動一段距離後帶上突進氣場，接觸敵軍並彈開" },
+          { label: "亂戰", value: "亂戰中仍可進入突進" },
+          { label: "鐵砲", value: "突進可取消鐵砲隊射擊" },
+          { label: "解除", value: "被斬擊等彈開時，突進解除" },
+        ],
+      },
+    ],
+  },
+  {
+    title: "網球選手",
+    blurb: "計略中變化。",
+    items: [
+      {
+        name: "基礎",
+        facts: [
+          { label: "移速", value: "與騎兵相同" },
+          { label: "攻城", value: "與劍豪相同" },
+          { label: "動作", value: "持拍打球。亂戰或攻城中球拍消失" },
+          { label: "回球", value: "球碰敵城造成傷害，碰敵部隊造成武力傷害" },
+        ],
+      },
     ],
   },
 ];

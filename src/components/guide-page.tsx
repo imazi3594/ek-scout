@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronLeft } from "lucide-react";
 import { COLORS, RARITY_CHIP, SKILLS } from "@/data/catalog";
 import { CostPips, RarityMark } from "@/components/card-identity";
@@ -11,6 +11,7 @@ import {
   SENKI_INTRO,
   SENKI_RARITIES,
   UNIT_GROUPS,
+  SPECIAL_UNIT_GROUPS,
   type GuideGroup,
   type GuideTopic,
   type SenkiRarity,
@@ -43,11 +44,13 @@ const TOPICS: { id: GuideTopic; title: string; blurb: string }[] = [
 export function GuidePage({ topic, onTopic }: { topic: GuideTopic | null; onTopic: (topic: GuideTopic | null) => void }) {
   const scroller = useRef<HTMLDivElement>(null);
   const menuScroll = useRef(0);
+  const [specialUnits, setSpecialUnits] = useState(false);
 
   useLayoutEffect(() => {
     const el = scroller.current;
     if (!el) return;
     el.scrollTop = topic ? 0 : menuScroll.current;
+    if (topic !== "units") setSpecialUnits(false);
   }, [topic]);
 
   if (!topic) {
@@ -82,16 +85,30 @@ export function GuidePage({ topic, onTopic }: { topic: GuideTopic | null; onTopi
 
   return (
     <div ref={scroller} className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-4 py-6 sm:px-6">
-      <button
-        type="button"
-        onClick={() => onTopic(null)}
-        className="mb-4 inline-flex h-8 items-center gap-1 rounded-md bg-surface-2 px-2.5 text-xs text-fg"
-      >
-        <ChevronLeft className="size-3.5" />
-        返回資料
-      </button>
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => onTopic(null)}
+          className="inline-flex h-8 items-center gap-1 rounded-md bg-surface-2 px-2.5 text-xs text-fg"
+        >
+          <ChevronLeft className="size-3.5" />
+          返回資料
+        </button>
+        {topic === "units" ? (
+          <button
+            type="button"
+            onClick={() => {
+              setSpecialUnits((value) => !value);
+              scroller.current?.scrollTo(0, 0);
+            }}
+            className="inline-flex h-8 items-center rounded-md bg-surface-2 px-2.5 text-xs text-fg"
+          >
+            {specialUnits ? "基本兵種" : "特殊兵種"}
+          </button>
+        ) : null}
+      </div>
       {topic === "skills" ? <SkillsGuide /> : null}
-      {topic === "units" ? <UnitGuide /> : null}
+      {topic === "units" ? <UnitGuide special={specialUnits} /> : null}
       {topic === "siege" ? <SiegeCalc /> : null}
       {topic === "senki" ? <SenkiGuide /> : null}
       {topic === "eikon" ? <GroupGuide intro={EIKON_INTRO} groups={EIKON_GROUPS} mark={TOPIC_MARK.eikon} /> : null}
@@ -724,6 +741,38 @@ function SiegeRule({ label, extra }: { label: string; extra?: ReactNode }) {
   );
 }
 
+function SpecialUnitTip() {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: PointerEvent) => {
+      if (!box.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [open]);
+  return (
+    <div ref={box} className="relative mt-1.5">
+      <button
+        type="button"
+        className="plain-press text-[11px] leading-none text-faint underline decoration-dotted underline-offset-2"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        特殊兵種？
+      </button>
+      {open ? (
+        <div className="absolute left-0 top-full z-30 mt-1.5 max-w-[16rem] rounded-lg bg-[#3a322c] px-3 py-2 text-[11px] leading-snug text-[#e6e0d4] shadow-lg">
+          <p>龍騎馬的攻城力與騎兵相同。</p>
+          <p className="mt-1">調查兵團、網球選手的攻城力與劍豪相同。</p>
+          <p className="mt-1 text-[#b7aea2]">象兵可能相同（待確認）。</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function SiegeCalc() {
   const [unit, setUnit] = useState<UnitName>("槍兵");
   const [costIndex, setCostIndex] = useState(3);
@@ -833,6 +882,7 @@ function SiegeCalc() {
             );
           })}
         </div>
+        <SpecialUnitTip />
       </div>
       <div>
         <SiegeRule label="成本" />
@@ -1022,35 +1072,41 @@ function SiegeCalc() {
   );
 }
 
-function UnitGuide() {
+const SPECIAL_TONE: Record<string, { bg: string; fg: string }> = {
+  龍騎馬: { bg: "#24344a", fg: "#e6e0d4" },
+  調查兵團: { bg: "#343c30", fg: "#e6e0d4" },
+  象兵: { bg: "#463c34", fg: "#e6e0d4" },
+  網球選手: { bg: "#3c3430", fg: "#e6e0d4" },
+};
+
+function UnitGuide({ special }: { special: boolean }) {
   const [title, setTitle] = useState(UNIT_GROUPS[0]?.title ?? "");
-  const group = UNIT_GROUPS.find((item) => item.title === title) ?? UNIT_GROUPS[0];
-  const tabs = UNIT_GROUPS.map((item) => {
-    const tone = UNIT_TONE[item.title] ?? { bg: "#333", fg: "#eee" };
+  const [specialTitle, setSpecialTitle] = useState(SPECIAL_UNIT_GROUPS[0]?.title ?? "");
+  const group = special
+    ? SPECIAL_UNIT_GROUPS.find((item) => item.title === specialTitle) ?? SPECIAL_UNIT_GROUPS[0]
+    : UNIT_GROUPS.find((item) => item.title === title) ?? UNIT_GROUPS[0];
+  const tabs = (special ? SPECIAL_UNIT_GROUPS : UNIT_GROUPS).map((item) => {
+    const tone = special ? SPECIAL_TONE[item.title] : UNIT_TONE[item.title];
     return {
       id: item.title,
-      label: item.title === "鐵砲隊" ? "鐵砲" : item.title,
-      bg: tone.bg,
-      fg: tone.fg,
+      label: !special && item.title === "鐵砲隊" ? "鐵砲" : item.title,
+      bg: tone?.bg ?? "#333",
+      fg: tone?.fg ?? "#eee",
     };
   });
-  return (
-    <>
-      {group ? (
-        <FolderBoard
-          tabs={tabs}
-          active={group.title}
-          onPick={setTitle}
-          icon={(id) => (UNIT_ICON[id] ? <UnitIcon unit={UNIT_ICON[id]} className="size-3.5" title={id} /> : null)}
-        >
-          <GuideSection
-            group={group}
-            icon={UNIT_ICON[group.title] ? <UnitIcon unit={UNIT_ICON[group.title]} className="size-5" title={group.title} /> : undefined}
-          />
-        </FolderBoard>
-      ) : null}
-    </>
-  );
+  return group ? (
+    <FolderBoard
+      tabs={tabs}
+      active={group.title}
+      onPick={special ? setSpecialTitle : setTitle}
+      icon={(id) => (UNIT_ICON[id] ? <UnitIcon unit={UNIT_ICON[id]} className="size-3.5" title={id} /> : null)}
+    >
+      <GuideSection
+        group={group}
+        icon={UNIT_ICON[group.title] ? <UnitIcon unit={UNIT_ICON[group.title]} className="size-5" title={group.title} /> : undefined}
+      />
+    </FolderBoard>
+  ) : null;
 }
 
 const RYUHA_KINDS = ["部隊", "士氣", "城塞", "兵種", "琥煌"];
