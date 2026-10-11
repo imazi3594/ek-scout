@@ -14,7 +14,7 @@ function LockAppName() {
     const apply = () => {
       if (document.title !== APP_NAME) document.title = APP_NAME;
       const meta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
-      if (meta && meta.getAttribute("content") !== APP_SHORT) meta.setAttribute("content", APP_SHORT);
+      if (meta && meta.getAttribute("content") !== APP_NAME) meta.setAttribute("content", APP_NAME);
       document.querySelectorAll('link[rel="apple-touch-icon"]').forEach((node) => {
         const href = node.getAttribute("href") ?? "";
         if (href.includes("/__grok/")) node.remove();
@@ -71,7 +71,7 @@ export const Route = createRootRoute({
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: APP_NAME },
       { name: "theme-color", content: "#0c0b0a" },
-      { name: "apple-mobile-web-app-title", content: APP_SHORT },
+      { name: "apple-mobile-web-app-title", content: APP_NAME },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
