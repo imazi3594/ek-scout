@@ -523,7 +523,8 @@ const SIEGE_STRATS: { id: string; label: string; mul: number; flat: number; kind
   { id: "kaishi", label: "介子推・閃光の進撃　×1.1＋1%", mul: 1.1, flat: 1, kind: "self" },
   { id: "takasugi", label: "高杉晋助・旧態の破壊者　×1.7", mul: 1.7, flat: 0, kind: "order" },
   { id: "katsuyori", label: "武田勝頼・獅吼の采配　×1.3＋1%", mul: 1.3, flat: 1, kind: "order" },
-  { id: "oujou", label: "王翦・三元の戦", mul: 1, flat: 0, kind: "order" },
+  { id: "oujou-hi", label: "王翦・三元の戦（最大）　×1.3＋2%", mul: 1.3, flat: 2, kind: "order" },
+  { id: "oujou-lo", label: "王翦・三元の戦（最少）　×1.1＋1%", mul: 1.1, flat: 1, kind: "order" },
   { id: "kouyu", label: "公輸盤・破城の号令　×1.3＋4%", mul: 1.3, flat: 4, kind: "order" },
   { id: "rokkaku", label: "六角義賢・六角の陣　×1.3＋1.6%", mul: 1.3, flat: 1.6, kind: "order" },
   { id: "ouki", label: "王騎・天下の大将軍　×1.3", mul: 1.3, flat: 0, kind: "order" },
@@ -547,7 +548,8 @@ const SIEGE_STRATS: { id: string; label: string; mul: number; flat: number; kind
 
 const STRAT_COLOR: Record<string, ColorName> = {
   koukou: "蒼",
-  oujou: "蒼",
+  "oujou-hi": "蒼",
+  "oujou-lo": "蒼",
   ouki: "蒼",
   choki: "蒼",
   kibitsu: "緋",
@@ -600,13 +602,6 @@ function cut2(n: number) {
 type SiegeRyuha = "none" | "butai" | "kokou";
 type SiegeSenki = "none" | "tatenashi" | "onimaru";
 
-function oujouSiege(cost: number) {
-  if (cost >= 4.5) return { mul: 1.3, flat: 2, text: "×1.3＋2%" };
-  if (cost >= 2.5) return { mul: 1.2, flat: 1.5, text: "×1.2＋1.5%" };
-  if (cost >= 1) return { mul: 1.1, flat: 1, text: "×1.1＋1%" };
-  return { mul: 1, flat: 0, text: "未達 1" };
-}
-
 function siegeOf(
   unit: UnitName,
   power: number,
@@ -616,18 +611,16 @@ function siegeOf(
   ward: boolean,
   selfId: string,
   orderId: string,
-  bowGun: number,
   eikon: number,
 ) {
   const coef = SIEGE_COEF[costIndex] ?? 1;
   const self = stratBy(selfId);
   const order = stratBy(orderId);
-  const tier = orderId === "oujou" ? oujouSiege(bowGun) : order;
   const atk = power;
   let value = (SIEGE_BASE[unit] + 0.02 * atk) * coef;
-  value *= self.mul * tier.mul;
+  value *= self.mul * order.mul;
   if (senki !== "none") value *= 1.3;
-  value += self.flat + tier.flat + eikon * 0.8;
+  value += self.flat + order.flat + eikon * 0.8;
   if (ryuha === "butai") value = value * 1.1 + 0.5;
   if (ryuha === "kokou") value *= 1.05;
   if (ward) value *= 0.9;
@@ -783,9 +776,8 @@ function SiegeCalc() {
   const [ward, setWard] = useState(false);
   const [selfStrat, setSelfStrat] = useState("none");
   const [orderStrat, setOrderStrat] = useState("none");
-  const [bowGun, setBowGun] = useState(0);
   const [eikon, setEikon] = useState(0);
-  const { wall, gate } = siegeOf(unit, power, costIndex, ryuha, senki, ward, selfStrat, orderStrat, bowGun, eikon);
+  const { wall, gate } = siegeOf(unit, power, costIndex, ryuha, senki, ward, selfStrat, orderStrat, eikon);
   const time = SIEGE_TIME[Math.min(20, intel) - 1] ?? SIEGE_TIME[0];
   const wallTone = siegeTone(wall);
   const gateTone = siegeTone(gate);
@@ -800,7 +792,6 @@ function SiegeCalc() {
     setWard(false);
     setSelfStrat("none");
     setOrderStrat("none");
-    setBowGun(0);
     setEikon(0);
   };
   return (
@@ -943,35 +934,6 @@ function SiegeCalc() {
             </option>
           ))}
         </select>
-        {orderStrat === "oujou" ? (
-          <div className="mt-2">
-            <SiegeRule
-              label="弓鐵合計"
-              extra={<span className="shrink-0 text-[11px] tabular-nums text-fg">{oujouSiege(bowGun).text}</span>}
-            />
-            <div className="inline-flex h-9 items-center overflow-hidden rounded-md bg-surface-2">
-              <button
-                type="button"
-                className="plain-press h-full w-9 text-base text-fg"
-                aria-label="弓鐵合計減少"
-                onClick={() => setBowGun((current) => Math.max(0, Math.round((current - 0.5) * 2) / 2))}
-              >
-                −
-              </button>
-              <span className="w-12 text-center text-sm tabular-nums text-fg">
-                {Number.isInteger(bowGun) ? bowGun : bowGun.toFixed(1)}
-              </span>
-              <button
-                type="button"
-                className="plain-press h-full w-9 text-base text-fg"
-                aria-label="弓鐵合計增加"
-                onClick={() => setBowGun((current) => Math.min(20, Math.round((current + 0.5) * 2) / 2))}
-              >
-                ＋
-              </button>
-            </div>
-          </div>
-        ) : null}
       </div>
       <div>
         <SiegeRule label="流派加成(我方)" />
