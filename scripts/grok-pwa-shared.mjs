@@ -157,31 +157,25 @@ export function renderInstallPageHtml(template, { host, url } = {}) {
     .replaceAll("{{APP_URL}}", escapeHtml(stripInstallParams(url)));
 }
 
-export function renderWebManifest(hostHeader, site = {}) {
-  const brandedName = String(site?.title ?? "").trim();
-  const name = brandedName || appNameFromHost(hostHeader);
-  const short = String(site?.short_name ?? "").trim() || name;
-  const hex = placeholderCardColor(site);
-  const color = hex ? `#${hex}` : "#000000";
-  const icons = brandedName
-    ? [
-        { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-        { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-        { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
-        { src: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
-      ]
-    : [{ src: "/__grok/icon-180.png", sizes: "180x180", type: "image/png" }];
+export function renderWebManifest(hostHeader) {
+  const name = appNameFromHost(hostHeader);
   return JSON.stringify(
     {
       name,
-      short_name: short,
+      short_name: name,
       id: "/",
       start_url: "/",
       scope: "/",
       display: "standalone",
-      background_color: color,
-      theme_color: color,
-      icons,
+      background_color: "#000000",
+      theme_color: "#000000",
+      icons: [
+        {
+          src: "/__grok/icon-180.png",
+          sizes: "180x180",
+          type: "image/png",
+        },
+      ],
     },
     null,
     2,
@@ -457,7 +451,7 @@ export function injectGrokPwaHead(html, ctx = {}) {
   const missing = grokPwaHeadTags(appName)
     .filter(([key]) => {
       if (key === "manifest") return !next.includes('href="/__grok/manifest.webmanifest"');
-      if (key === "apple-touch-icon") return !/rel=["']apple-touch-icon["']/i.test(next);
+      if (key === "apple-touch-icon") return !next.includes('href="/__grok/icon-180.png"');
       return !next.includes(`name="${key}"`);
     })
     .map(([, tag]) => tag);

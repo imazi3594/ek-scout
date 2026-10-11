@@ -1660,7 +1660,10 @@ export function schoolTiers(card: Card): SchoolCol[] | null {
       note: i < branched.items.length ? translateDesc(branched.items[i].text) : "無追加效果",
       ladder,
       rows: effectRows(
-        shown.map((effect) => ({ ...effect, value: stripBranchTail(effect.value) })),
+        shown.map((effect) => ({
+          ...effect,
+          value: stripBranchTail(effect.value).replace(/味方部隊数[≧＜]敵部隊数\s*/g, "").trim(),
+        })),
         keepDur,
       ),
     };
@@ -2056,9 +2059,9 @@ export function cardSpecial(card: Card): SpecialBlock | null {
         const rows = countBranchRows(card, item.key, hide);
         const counted = /[≧＜]/.test(item.key);
         const key = /≧/.test(item.key)
-          ? "友軍部隊數≧敵軍數"
+          ? "友軍≧敵軍"
           : /＜/.test(item.key)
-            ? "友軍部隊數＜敵軍數"
+            ? "友軍＜敵軍"
             : translateLabel(item.key.replace(/[・･]/g, "／"));
         return {
           key,
