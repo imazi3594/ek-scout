@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, ChevronLeft } from "lucide-react";
+import { ChevronDown, ChevronLeft, CircleHelp } from "lucide-react";
 import { COLORS, RARITY_CHIP, SKILLS } from "@/data/catalog";
 import { CostPips, RarityMark } from "@/components/card-identity";
 import {
@@ -483,6 +483,7 @@ const SIEGE_UNITS: { id: UnitName; label: string }[] = [
 ];
 
 const SIEGE_TIME: { sec: number; c: number }[] = [
+  { sec: 5.67, c: 2.36 },
   { sec: 5.53, c: 2.3 },
   { sec: 5.42, c: 2.26 },
   { sec: 5.28, c: 2.2 },
@@ -639,12 +640,14 @@ function Stepper({
   min,
   max,
   onChange,
+  onBlocked,
   label,
 }: {
   value: number;
   min: number;
   max: number;
   onChange: (next: number | ((current: number) => number)) => void;
+  onBlocked?: () => void;
   label: string;
 }) {
   const timer = useRef<number | null>(null);
@@ -703,7 +706,11 @@ function Stepper({
         type="button"
         className="plain-press h-full w-9 text-base text-fg"
         aria-label={`${label}增加`}
-        onPointerDown={() => hold(1)}
+        onPointerDown={() => {
+          if (value >= max) onBlocked?.();
+          hold(1);
+        }}
+        {...(onBlocked ? { "data-intel-plus": "" } : {})}
         onPointerUp={() => {
           if (repeated.current) skipClick.current = true;
           stop();
@@ -715,11 +722,55 @@ function Stepper({
             skipClick.current = false;
             return;
           }
+          if (value >= max) {
+            onBlocked?.();
+            return;
+          }
           onChange((current) => Math.min(max, current + 1));
         }}
       >
         ＋
       </button>
+    </div>
+  );
+}
+
+function NoteTip({ label, text, aria, panel }: { label?: string; text: string; aria: string; panel?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: PointerEvent) => {
+      if (!root.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [open]);
+  return (
+    <div ref={root} className={panel ? "relative mt-1.5" : "relative shrink-0"}>
+      <button
+        type="button"
+        aria-label={aria}
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className={cn(
+          "plain-press inline-flex items-center justify-center text-muted",
+          panel ? "h-7 gap-1 text-[11px]" : "size-7 rounded-full",
+        )}
+      >
+        <CircleHelp className="size-4 shrink-0" />
+        {label}
+      </button>
+      {open ? (
+        <p
+          className={cn(
+            "absolute top-[calc(100%+6px)] z-20 rounded-md border border-white/10 bg-[#2a221c] px-2.5 py-2 text-[11px] leading-snug text-fg",
+            panel ? "inset-x-0" : "right-0 w-40",
+          )}
+        >
+          {text}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -734,43 +785,22 @@ function SiegeRule({ label, extra }: { label: string; extra?: ReactNode }) {
   );
 }
 
-function SpecialUnitTip() {
-  const [open, setOpen] = useState(false);
-  const box = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const close = (event: PointerEvent) => {
-      if (!box.current?.contains(event.target as Node)) setOpen(false);
-    };
-    document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
-  }, [open]);
-  return (
-    <div ref={box} className="relative mt-1.5">
-      <button
-        type="button"
-        className="plain-press text-[11px] leading-none text-faint underline decoration-dotted underline-offset-2"
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
-      >
-        特殊兵種？
-      </button>
-      {open ? (
-        <div className="absolute left-0 top-full z-30 mt-1.5 max-w-[16rem] rounded-lg bg-[#3a322c] px-3 py-2 text-[11px] leading-snug text-[#e6e0d4] shadow-lg">
-          <p>龍騎馬的攻城力與騎兵相同。</p>
-          <p className="mt-1">調查兵團、網球選手的攻城力與劍豪相同。</p>
-          <p className="mt-1 text-[#b7aea2]">象兵可能相同（待確認）。</p>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 function SiegeCalc() {
   const [unit, setUnit] = useState<UnitName>("槍兵");
   const [costIndex, setCostIndex] = useState(3);
   const [power, setPower] = useState(8);
   const [intel, setIntel] = useState(8);
+  const [intelCap, setIntelCap] = useState(false);
+  useEffect(() => {
+    if (!intelCap) return;
+    const close = (event: PointerEvent) => {
+      const node = event.target instanceof Element ? event.target : (event.target as Node).parentElement;
+      if (node?.closest("[data-intel-plus]")) return;
+      setIntelCap(false);
+    };
+    document.addEventListener("pointerdown", close, true);
+    return () => document.removeEventListener("pointerdown", close, true);
+  }, [intelCap]);
   const [ryuha, setRyuha] = useState<SiegeRyuha>("none");
   const [senki, setSenki] = useState<SiegeSenki>("none");
   const [ward, setWard] = useState(false);
@@ -778,7 +808,7 @@ function SiegeCalc() {
   const [orderStrat, setOrderStrat] = useState("none");
   const [eikon, setEikon] = useState(0);
   const { wall, gate } = siegeOf(unit, power, costIndex, ryuha, senki, ward, selfStrat, orderStrat, eikon);
-  const time = SIEGE_TIME[Math.min(20, intel) - 1] ?? SIEGE_TIME[0];
+  const time = SIEGE_TIME[Math.min(20, Math.max(0, intel))] ?? SIEGE_TIME[0];
   const wallTone = siegeTone(wall);
   const gateTone = siegeTone(gate);
   const timeTone = time.sec < 4 ? "#e07a2f" : time.sec < 5 ? "#e2c15a" : undefined;
@@ -787,6 +817,7 @@ function SiegeCalc() {
     setCostIndex(3);
     setPower(8);
     setIntel(8);
+    setIntelCap(false);
     setRyuha("none");
     setSenki("none");
     setWard(false);
@@ -873,7 +904,12 @@ function SiegeCalc() {
             );
           })}
         </div>
-        <SpecialUnitTip />
+        <NoteTip
+          panel
+          label="特殊兵種"
+          aria="特殊兵種"
+          text="龍騎馬攻城與騎兵相同。調查兵團、網球選手攻城與劍豪相同。象兵未確認。"
+        />
       </div>
       <div>
         <SiegeRule label="成本" />
@@ -904,7 +940,21 @@ function SiegeCalc() {
         </div>
         <div>
           <SiegeRule label="知力" />
-          <Stepper label="知力" value={intel} min={1} max={20} onChange={setIntel} />
+          <div className="relative">
+            <Stepper
+              label="知力"
+              value={intel}
+              min={0}
+              max={20}
+              onChange={setIntel}
+              onBlocked={() => setIntelCap(true)}
+            />
+            {intelCap ? (
+              <p className="absolute right-0 top-[calc(100%+6px)] z-20 w-40 rounded-md border border-white/10 bg-[#2a221c] px-2.5 py-2 text-[11px] leading-snug text-fg">
+                知力 20 以上，攻城速度不變。
+              </p>
+            ) : null}
+          </div>
         </div>
       </div>
       <div>

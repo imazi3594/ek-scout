@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { createContext, useContext, useRef, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import {
   cardTanken,
@@ -74,6 +74,9 @@ export function CardDetail({ card }: { card: Card }) {
   const spin = konshin || kokou || shukusei || useCount || senki || school || deck || recast ? null : spinTiers(card);
   const effects = konshin || kokou || shukusei || useCount || senki || school || deck || recast || spin ? [] : displayEffects(card);
   const intelChart = DAMAGE_CHARTS[card.no];
+  const splitKonshin = Boolean(
+    konshin && intelChart?.rows.some((row) => row.label.startsWith("強") || row.label.startsWith("弱")),
+  );
   const oshiGauge = parseOshiGauge(card);
   const hurtPower = isHurtPowerCard(card);
   const shownEffects = effects.filter((row) => {
@@ -91,6 +94,7 @@ export function CardDetail({ card }: { card: Card }) {
   const hasData = Boolean(konshin || kokou || shukusei || useCount || senki || school || deck || recast || spin || effects.length || formation || area || duration.label);
 
   return (
+    <DamageChartContext.Provider value={intelChart ?? null}>
     <div className="flex flex-col gap-3 pb-8">
       <CardIdentity card={card} />
 
@@ -147,7 +151,9 @@ export function CardDetail({ card }: { card: Card }) {
           ) : null}
           {oshiGauge ? <OshiGauge tracks={oshiGauge} /> : null}
           {hurtPower ? <GinchiyoCalc /> : null}
-          {intelChart && !hurtPower && !tankens.some(tankenOwnsChart) ? <IntelDamageTable chart={intelChart} /> : null}
+          {intelChart && !hurtPower && !tankens.some(tankenOwnsChart) && !splitKonshin ? (
+            <IntelDamageTable chart={intelChart} />
+          ) : null}
 
           {formation ? <FormationMoraleBox normal={formation.normal} reduced={formation.reduced} /> : null}
 
@@ -188,6 +194,7 @@ export function CardDetail({ card }: { card: Card }) {
         ) : null}
       </div>
     </div>
+    </DamageChartContext.Provider>
   );
 }
 
@@ -247,6 +254,19 @@ type DamageRow = { label: string; coef: number; fixed: number; melee?: boolean }
 type DamageChart = { stat: "知力" | "武力"; base: number; rows: DamageRow[] };
 
 const DAMAGE_CHARTS = charts as Record<string, DamageChart>;
+const DamageChartContext = createContext<DamageChart | null>(null);
+
+function chartForKonshin(chart: DamageChart, id: "strong" | "weak" | "none") {
+  if (id === "none") return null;
+  const mark = id === "strong" ? "強" : "弱";
+  const rows = chart.rows
+    .filter((row) => row.label.startsWith(mark))
+    .map((row) => {
+      const label = row.label.replace(/^[強弱]\s*/, "");
+      return { ...row, label: label || "傷害" };
+    });
+  return rows.length ? { ...chart, rows } : null;
+}
 
 function isDamagePlaceholder(row: StatLine) {
   if (/^(知力傷害|武力傷害|固定傷害|傷害係數)/.test(row.label)) return true;
@@ -582,9 +602,12 @@ function OshiGauge({ tracks }: { tracks: GaugeTrack[] }) {
 }
 
 function EffectList({ rows, compact, href }: { rows: StatLine[]; compact?: boolean; href?: string }) {
+  const chart = useContext(DamageChartContext);
+  const shown = chart ? rows.filter((row) => !isDamagePlaceholder(row)) : rows;
+  if (!shown.length) return null;
   return (
     <dl className={cn(compact ? "mt-1.5" : "mt-4", "grid grid-cols-1 gap-1.5")}>
-      {rows.map((row) => (
+      {shown.map((row) => (
         <EffectRow key={`${row.label}-${row.value}`} row={row} href={href} />
       ))}
     </dl>
@@ -678,6 +701,7 @@ function KonshinGrid({ tiers, href }: { tiers: KonshinTier[]; href?: string }) {
               <p className="text-xs tabular-nums text-faint">{tier.morale}</p>
             </div>
             <TierRows id={tier.id} rows={tier.rows} href={href} />
+            {tier.id === "strong" || tier.id === "weak" ? <KonshinDamage tier={tier.id} /> : null}
           </section>
         ))}
       </div>
@@ -1182,11 +1206,21 @@ function KokouSwordMark() {
   );
 }
 
+function KonshinDamage({ tier }: { tier: "strong" | "weak" }) {
+  const chart = useContext(DamageChartContext);
+  if (!chart) return null;
+  const sliced = chartForKonshin(chart, tier);
+  if (!sliced) return null;
+  return <IntelDamageTable chart={sliced} />;
+}
+
 function TierRows({ id, rows, href }: { id: string; rows: StatLine[]; href?: string }) {
-  if (!rows.length) return <p className="mt-2 text-xs text-faint">—</p>;
+  const chart = useContext(DamageChartContext);
+  const shown = chart ? rows.filter((row) => !isDamagePlaceholder(row)) : rows;
+  if (!shown.length) return rows.length ? null : <p className="mt-2 text-xs text-faint">—</p>;
   return (
     <dl className="mt-1.5 grid grid-cols-1 gap-1.5">
-      {rows.map((row) => (
+      {shown.map((row) => (
         <EffectRow key={`${id}-${row.label}-${row.value}`} row={row} href={href} />
       ))}
     </dl>
