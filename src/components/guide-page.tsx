@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronLeft } from "lucide-react";
-import { RARITY_CHIP, SKILLS } from "@/data/catalog";
+import { COLORS, RARITY_CHIP, SKILLS } from "@/data/catalog";
 import { CostPips, RarityMark } from "@/components/card-identity";
 import {
   EIKON_GROUPS,
@@ -21,7 +21,7 @@ import {
 import { SkillChip, SkillExplain } from "@/components/skill-chip";
 import { UnitIcon } from "@/components/unit-icon";
 import { cn } from "@/lib/utils";
-import type { UnitName } from "@/data/catalog";
+import type { ColorName, UnitName } from "@/data/catalog";
 
 const TOPIC_MARK: Record<GuideTopic, string> = {
   basic: "bg-faction-gen",
@@ -522,6 +522,52 @@ const SIEGE_STRATS: { id: string; label: string; mul: number; flat: number; kind
   { id: "yasuhira", label: "藤原泰衡・栄枯盛衰　×1.1＋1%", mul: 1.1, flat: 1, kind: "order" },
 ];
 
+const STRAT_COLOR: Record<string, ColorName> = {
+  koukou: "蒼",
+  "oujou-hi": "蒼",
+  "oujou-mid": "蒼",
+  "oujou-lo": "蒼",
+  ouki: "蒼",
+  choki: "蒼",
+  kibitsu: "緋",
+  soukyuu: "緋",
+  houtoku: "緋",
+  takasugi: "緋",
+  katsuyori: "緋",
+  todo: "碧",
+  kanyou: "碧",
+  kanpei: "碧",
+  kouyu: "碧",
+  ito: "碧",
+  katamori: "碧",
+  alan: "碧",
+  esca: "碧",
+  shokatsu: "碧",
+  gaoshun: "玄",
+  yasuda: "玄",
+  houjou: "玄",
+  rokkaku: "玄",
+  dokan: "玄",
+  shika: "玄",
+  kenshin: "玄",
+  jukei: "紫",
+  "ensho-hi": "紫",
+  "ensho-lo": "紫",
+  maki: "琥",
+  kaishi: "琥",
+  saigo: "琥",
+  jia: "琥",
+  song: "琥",
+  yasuhira: "琥",
+};
+
+function stratMenu(kind: "self" | "order") {
+  const rest = SIEGE_STRATS.filter((item) => item.kind === kind).sort(
+    (a, b) => COLORS.indexOf(STRAT_COLOR[a.id]) - COLORS.indexOf(STRAT_COLOR[b.id]),
+  );
+  return [SIEGE_STRATS[0], ...rest];
+}
+
 function stratBy(id: string) {
   return SIEGE_STRATS.find((item) => item.id === id) ?? SIEGE_STRATS[0];
 }
@@ -546,7 +592,7 @@ function siegeOf(
   const coef = SIEGE_COEF[costIndex] ?? 1;
   const self = stratBy(selfId);
   const order = stratBy(orderId);
-  const atk = power + (senki === "onimaru" ? 3 : 0);
+  const atk = power;
   let value = (SIEGE_BASE[unit] + 0.02 * atk) * coef;
   value *= self.mul * order.mul;
   if (senki !== "none") value *= 1.3;
@@ -808,9 +854,9 @@ function SiegeCalc() {
           onChange={(event) => setSelfStrat(event.target.value)}
           className="plain-press h-9 w-full rounded-md bg-surface-2 px-2 text-xs text-fg"
         >
-          {SIEGE_STRATS.filter((item) => item.kind !== "order").map((item) => (
+          {stratMenu("self").map((item) => (
             <option key={item.id} value={item.id}>
-              {item.label}
+              {item.kind === "none" ? item.label : `[${STRAT_COLOR[item.id]}] ${item.label}`}
             </option>
           ))}
         </select>
@@ -822,15 +868,15 @@ function SiegeCalc() {
           onChange={(event) => setOrderStrat(event.target.value)}
           className="plain-press h-9 w-full rounded-md bg-surface-2 px-2 text-xs text-fg"
         >
-          {SIEGE_STRATS.filter((item) => item.kind !== "self").map((item) => (
+          {stratMenu("order").map((item) => (
             <option key={item.id} value={item.id}>
-              {item.label}
+              {item.kind === "none" ? item.label : `[${STRAT_COLOR[item.id]}] ${item.label}`}
             </option>
           ))}
         </select>
       </div>
       <div>
-        <SiegeRule label="流派加成" />
+        <SiegeRule label="流派加成(我方)" />
         <div className="grid grid-cols-3 gap-1">
           {(
             [
@@ -853,21 +899,30 @@ function SiegeCalc() {
             </button>
           ))}
         </div>
-        <p className="mt-1 text-[11px] leading-relaxed text-faint">部隊裏另＋0.5%，並把知力＋2。城塞表、裏都是敵城受傷 ×0.9。</p>
       </div>
       <div>
-        <SiegeRule label="流派減成" />
-        <button
-          type="button"
-          aria-pressed={ward}
-          onClick={() => setWard((on) => !on)}
-          className={cn(
-            "plain-press h-9 rounded-md px-3 text-[11px]",
-            ward ? "bg-accent text-accent-fg" : "bg-surface-2 text-muted",
-          )}
-        >
-          敵城塞 ×0.9
-        </button>
+        <SiegeRule label="流派減成(敵方)" />
+        <div className="grid grid-cols-2 gap-1">
+          {(
+            [
+              [false, "無"],
+              [true, "城塞 ×0.9"],
+            ] as const
+          ).map(([on, label]) => (
+            <button
+              key={label}
+              type="button"
+              aria-pressed={ward === on}
+              onClick={() => setWard(on)}
+              className={cn(
+                "plain-press h-9 rounded-md px-1 text-[11px] leading-none",
+                ward === on ? "bg-accent text-accent-fg" : "bg-surface-2 text-muted",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
       <div>
         <SiegeRule label="戰器" />
@@ -893,7 +948,7 @@ function SiegeCalc() {
             </button>
           ))}
         </div>
-        <p className="mt-1 text-[11px] leading-relaxed text-faint">鬼丸另把武力＋3。兩者都是攻城力＋30%。</p>
+        <p className="mt-1 text-[11px] leading-relaxed text-faint">鬼丸的武力＋3 請自行加進武力。</p>
       </div>
       </div>
     </div>
