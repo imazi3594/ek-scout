@@ -14,9 +14,25 @@ function LockAppName() {
     const apply = () => {
       if (document.title !== APP_NAME) document.title = APP_NAME;
       const meta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
-      if (meta && meta.getAttribute("content") !== APP_SHORT) {
-        meta.setAttribute("content", APP_SHORT);
+      if (meta && meta.getAttribute("content") !== APP_SHORT) meta.setAttribute("content", APP_SHORT);
+      document.querySelectorAll('link[rel="apple-touch-icon"]').forEach((node) => {
+        const href = node.getAttribute("href") ?? "";
+        if (href.includes("/__grok/")) node.remove();
+        else if (!href.endsWith("apple-touch-icon.png")) node.setAttribute("href", "/apple-touch-icon.png");
+      });
+      if (!document.querySelector('link[rel="apple-touch-icon"]')) {
+        const link = document.createElement("link");
+        link.rel = "apple-touch-icon";
+        link.href = "/apple-touch-icon.png";
+        document.head.appendChild(link);
       }
+      document.querySelectorAll('link[rel="icon"]').forEach((node) => {
+        const href = node.getAttribute("href") ?? "";
+        if (href.includes("/__grok/") || !href.includes("favicon")) {
+          node.setAttribute("href", "/favicon.svg");
+          node.setAttribute("type", "image/svg+xml");
+        }
+      });
     };
     apply();
     const obs = new MutationObserver(apply);

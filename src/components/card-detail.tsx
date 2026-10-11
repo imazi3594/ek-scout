@@ -281,35 +281,60 @@ function intelDamage(self: number, enemy: number, row: DamageRow) {
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
 }
 
+const DAMAGE_SELF_MAX = 99;
+
+function StatStepper({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (next: number) => void;
+}) {
+  return (
+    <div className="inline-flex h-9 items-center overflow-hidden rounded-md bg-surface-2">
+      <button
+        type="button"
+        className="plain-press h-full w-9 text-base text-fg disabled:opacity-30"
+        aria-label={`${label}減少`}
+        disabled={value <= 1}
+        onClick={() => onChange(Math.max(1, value - 1))}
+      >
+        −
+      </button>
+      <input
+        inputMode="numeric"
+        aria-label={label}
+        value={value}
+        onChange={(event) => {
+          const digits = event.target.value.replace(/\D/g, "");
+          onChange(digits === "" ? 1 : Math.min(DAMAGE_SELF_MAX, Math.max(1, Number(digits))));
+        }}
+        className="w-10 bg-transparent text-center text-sm tabular-nums text-fg outline-none"
+      />
+      <button
+        type="button"
+        className="plain-press h-full w-9 text-base text-fg disabled:opacity-30"
+        aria-label={`${label}增加`}
+        disabled={value >= DAMAGE_SELF_MAX}
+        onClick={() => onChange(Math.min(DAMAGE_SELF_MAX, value + 1))}
+      >
+        ＋
+      </button>
+    </div>
+  );
+}
+
 function IntelDamageTable({ chart }: { chart: DamageChart }) {
-  const [self, setSelf] = useState(Math.min(20, Math.max(1, chart.base)));
+  const [self, setSelf] = useState(Math.min(DAMAGE_SELF_MAX, Math.max(1, chart.base)));
   const enemies = Array.from({ length: 15 }, (_, index) => index + 1);
   const stat = chart.stat === "武力" ? "武力" : "知力";
   return (
     <div className="mt-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs text-muted">自{stat}</p>
-        <div className="inline-flex h-9 items-center overflow-hidden rounded-md bg-surface-2">
-          <button
-            type="button"
-            className="plain-press h-full w-9 text-base text-fg disabled:opacity-30"
-            aria-label={`自${stat}減少`}
-            disabled={self <= 1}
-            onClick={() => setSelf((current) => Math.max(1, current - 1))}
-          >
-            −
-          </button>
-          <span className="w-10 text-center text-sm tabular-nums text-fg">{self}</span>
-          <button
-            type="button"
-            className="plain-press h-full w-9 text-base text-fg disabled:opacity-30"
-            aria-label={`自${stat}增加`}
-            disabled={self >= 20}
-            onClick={() => setSelf((current) => Math.min(20, current + 1))}
-          >
-            ＋
-          </button>
-        </div>
+        <StatStepper label={`自${stat}`} value={self} onChange={setSelf} />
       </div>
       <p className="mt-1.5 text-[11px] text-faint">
         {chart.rows.length === 1 ? `固定 ${chart.rows[0].fixed}　係數 ${chart.rows[0].coef}　` : ""}
@@ -406,27 +431,7 @@ function GinchiyoCalc() {
     <div className="mt-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs text-muted">自知力</p>
-        <div className="inline-flex h-9 items-center overflow-hidden rounded-md bg-surface-2">
-          <button
-            type="button"
-            className="plain-press h-full w-9 text-base text-fg disabled:opacity-30"
-            aria-label="自知力減少"
-            disabled={self <= 1}
-            onClick={() => setSelf((current) => Math.max(1, current - 1))}
-          >
-            −
-          </button>
-          <span className="w-10 text-center text-sm tabular-nums text-fg">{self}</span>
-          <button
-            type="button"
-            className="plain-press h-full w-9 text-base text-fg disabled:opacity-30"
-            aria-label="自知力增加"
-            disabled={self >= 20}
-            onClick={() => setSelf((current) => Math.min(20, current + 1))}
-          >
-            ＋
-          </button>
-        </div>
+        <StatStepper label="自知力" value={self} onChange={setSelf} />
       </div>
       <p className="mt-1.5 text-[11px] text-faint">傷害＝（自知力÷對象知力）×8＋20。推算數據以「?」標示。可左右滑動</p>
       <div className="mt-2 overflow-x-auto overscroll-x-contain">
