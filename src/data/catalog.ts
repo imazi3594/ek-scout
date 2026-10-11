@@ -966,7 +966,15 @@ export function displayEffects(card: Card): StatLine[] {
   const withoutFormation = formationMorale(card)
     ? filtered.filter((effect) => effect.label !== "計略の必要士気")
     : filtered;
-  return effectRows(retagSecondaryDurations(withoutFormation, hide), hide, rippleIntervalC(card));
+  const branched = parseSpecialBranches(card.stratDesc ?? "");
+  const visible = branched.items.some((item) => /[≧＜]/.test(item.key))
+    ? withoutFormation.filter((effect) => !isCountBranchEffect(effect))
+    : withoutFormation;
+  return effectRows(
+    retagSecondaryDurations(visible.filter((effect) => !isPolarEffect(effect)), hide),
+    hide,
+    rippleIntervalC(card),
+  );
 }
 
 /** 奉武：受到友軍陣形效果時，此計略所需士氣下降。 */
@@ -2042,13 +2050,26 @@ export type SpecialBlock = {
 export function cardSpecial(card: Card): SpecialBlock | null {
   const branched = parseSpecialBranches(card.stratDesc ?? "");
   if (branched.items.length >= 2) {
+    const hide = pickMainDurationEffect(card);
     return {
-      items: branched.items.map((item) => ({
-        key: translateLabel(item.key.replace(/[・･]/g, "／")),
-        text: translateDesc(item.text),
-      })),
+      items: branched.items.map((item) => {
+        const rows = countBranchRows(card, item.key, hide);
+        const counted = /[≧＜]/.test(item.key);
+        const key = /≧/.test(item.key)
+          ? "友軍部隊數≧敵軍數"
+          : /＜/.test(item.key)
+            ? "友軍部隊數＜敵軍數"
+            : translateLabel(item.key.replace(/[・･]/g, "／"));
+        return {
+          key,
+          text: counted && rows?.length ? "" : translateDesc(item.text),
+          rows,
+        };
+      }),
     };
   }
+  const polar = polarBranches(card);
+  if (polar) return polar;
   if (isUseCountCard(card)) return null;
   const { specials } = peelSpecials(card);
   if (!specials.length) return null;
@@ -2072,6 +2093,49 @@ export function cardSpecial(card: Card): SpecialBlock | null {
   });
   if (!items.length) return null;
   return { items };
+}
+
+function isCountBranchEffect(effect: CardEffect): boolean {
+  return /味方部隊数[≧＜]/.test(effect.value) || /の敵には約/.test(effect.value);
+}
+
+const POLAR = [
+  { mark: "自身の武力が知力より高い", key: "自身武力高於知力" },
+  { mark: "自身の知力が武力より高い", key: "自身知力高於武力" },
+] as const;
+
+function isPolarEffect(effect: CardEffect): boolean {
+  return POLAR.some((row) => effect.value.startsWith(row.mark));
+}
+
+function polarBranches(card: Card): SpecialBlock | null {
+  const effects = card.effects ?? [];
+  if (!POLAR.every((row) => effects.some((effect) => effect.value.startsWith(row.mark)))) return null;
+  const hide = pickMainDurationEffect(card);
+  const items = POLAR.map((row) => {
+    const matched = effects
+      .filter((effect) => effect.value.startsWith(row.mark))
+      .map((effect) => ({ ...effect, value: effect.value.slice(row.mark.length).trim() }));
+    return { key: row.key, text: "", rows: effectRows(matched, hide ?? { label: "効果時間", value: "\0" }) };
+  }).filter((item) => item.rows?.length);
+  return items.length >= 2 ? { items } : null;
+}
+
+function countBranchRows(card: Card, key: string, hide: CardEffect | null): StatLine[] | undefined {
+  if (!/[≧＜]/.test(key)) return undefined;
+  const high = /≧/.test(key);
+  const matched = (card.effects ?? [])
+    .filter((effect) => {
+      if (high) return /味方部隊数≧/.test(effect.value);
+      return /味方部隊数＜/.test(effect.value) || /の敵には約/.test(effect.value);
+    })
+    .map((effect) => ({
+      ...effect,
+      value: effect.value.replace(/^味方部隊数[≧＜]敵部隊数\s*/, "").trim(),
+    }));
+  if (!matched.length) return undefined;
+  const rows = effectRows(matched, hide ?? { label: "効果時間", value: "\0" });
+  return rows.length ? rows : undefined;
 }
 
 function parseTankenBlocks(desc: string): { main: string; blocks: { name: string; cost: string | null; text: string }[] } {

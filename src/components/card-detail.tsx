@@ -231,7 +231,7 @@ function SpecialBox({ block, href }: { block: SpecialBlock; href?: string }) {
                 {item.key ? (
                   <>
                     <span className="text-xs text-muted">{item.key}</span>
-                    <span>　{item.text}</span>
+                    {item.text ? <span>　{item.text}</span> : null}
                   </>
                 ) : (
                   item.text
