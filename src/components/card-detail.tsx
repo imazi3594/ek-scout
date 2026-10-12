@@ -534,7 +534,7 @@ function formatGauge(point: GaugePoint, approx: boolean) {
 }
 
 function OshiGauge({ tracks }: { tracks: GaugeTrack[] }) {
-  const [pct, setPct] = useState(50);
+  const [pct, setPct] = useState(80);
   const bar = useRef<HTMLDivElement>(null);
   const lit = pct >= 100 / 3;
   const seek = (clientX: number) => {
@@ -547,7 +547,7 @@ function OshiGauge({ tracks }: { tracks: GaugeTrack[] }) {
   return (
     <div className="mt-4">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="text-xs text-muted">黃熾槽</p>
+        <p className="text-xs text-muted">黃熾槽(可左右滑動)</p>
         <p className={cn("font-display text-2xl tabular-nums leading-none", lit ? "text-[#f0d48a]" : "text-[#9a958e]")}>
           {pct}%
         </p>
@@ -575,7 +575,7 @@ function OshiGauge({ tracks }: { tracks: GaugeTrack[] }) {
           if (event.key === "ArrowLeft" || event.key === "ArrowDown") setPct((current) => Math.max(0, current - 1));
         }}
       >
-        <div className="absolute inset-x-0 top-1/2 h-7 -translate-y-1/2 overflow-hidden rounded-md border border-[#3a342c] bg-[#1a1816] shadow-[inset_0_3px_6px_rgba(0,0,0,0.65)]">
+        <div className="absolute inset-x-0 top-1/2 h-7 -translate-y-1/2 overflow-hidden rounded-[3px] border border-[#3a342c] bg-[#1a1816] shadow-[inset_0_3px_6px_rgba(0,0,0,0.65)]">
           <div
             className={cn(
               "h-full shadow-[inset_0_2px_0_rgba(255,255,255,0.28)]",
@@ -586,12 +586,26 @@ function OshiGauge({ tracks }: { tracks: GaugeTrack[] }) {
           <div className="pointer-events-none absolute inset-y-0 left-1/3 w-0.5 bg-black/70" />
         </div>
         <div
-          className={cn(
-            "pointer-events-none absolute top-1/2 h-11 w-5 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-black/40 shadow-[0_1px_4px_rgba(0,0,0,0.55)]",
-            lit ? "bg-gradient-to-b from-[#fff1c4] to-[#c88820]" : "bg-gradient-to-b from-[#c8c3bc] to-[#6a6560]",
-          )}
+          className="pointer-events-none absolute inset-y-0 z-10 -translate-x-1/2"
           style={{ left: `${pct}%` }}
-        />
+        >
+          <div
+            className={cn("absolute left-1/2 top-0 -translate-x-1/2", lit ? "text-[#ffe7a3]" : "text-[#d5d0c8]")}
+            style={{
+              width: 0,
+              height: 0,
+              borderLeft: "6px solid transparent",
+              borderRight: "6px solid transparent",
+              borderTop: "8px solid currentColor",
+            }}
+          />
+          <div
+            className={cn(
+              "absolute bottom-0 left-1/2 top-2 w-0.5 -translate-x-1/2",
+              lit ? "bg-[#ffe7a3]" : "bg-[#d5d0c8]",
+            )}
+          />
+        </div>
       </div>
       <dl className="mt-3 grid grid-cols-1 gap-1.5">
         {tracks.map((track) => (
