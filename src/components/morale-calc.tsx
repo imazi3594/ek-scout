@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChevronsLeft, ChevronsRight, X } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChevronsLeft, ChevronsRight, CircleHelp, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TOTAL_MS = 99 * 2400;
@@ -189,8 +189,18 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
   const [acts, setActs] = useState<Act[]>([]);
   const [warn, setWarn] = useState<{ text: string; id: number } | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [schoolNote, setSchoolNote] = useState(false);
+  const schoolTip = useRef<HTMLSpanElement>(null);
 
   const clock = displayC(remain);
+  useEffect(() => {
+    if (!schoolNote) return;
+    const close = (event: PointerEvent) => {
+      if (!schoolTip.current?.contains(event.target as Node)) setSchoolNote(false);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [schoolNote]);
   useEffect(() => {
     if (!warn) return;
     const id = window.setTimeout(() => setWarn(null), 1600);
@@ -198,14 +208,6 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
   }, [warn]);
   const view = useMemo(() => simulate(acts, remain, factions, koyo, 0, -1, 0, -1, allies), [acts, remain, factions, koyo, allies]);
   const full = useMemo(() => simulate(acts, 0, factions, koyo, 0, -1, 0, -1, allies), [acts, factions, koyo, allies]);
-  const stratUses = useMemo(
-    () => simulate(acts, 0, factions, koyo, strat, remain, 0, -1, allies).extra,
-    [acts, remain, factions, koyo, strat, allies],
-  );
-  const stratReady = useMemo(() => {
-    const ready = simulate(acts, 0, factions, koyo, 0, -1, strat, remain, allies).ready;
-    return ready == null ? null : displayC(ready);
-  }, [acts, remain, factions, koyo, strat, allies]);
 
   const move = (deltaMs: number) => setRemain((current) => Math.max(0, Math.min(TOTAL_MS, current + deltaMs)));
 
@@ -270,7 +272,7 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
   return (
     <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden" data-no-swipe="">
       <div className="relative shrink-0 bg-[#120e0a]">
-        <div className="flex items-center gap-1 px-2 pt-1">
+        <div className="grid grid-cols-[auto_1fr_auto] items-center px-2 pt-0.5">
           {onBack ? (
             <button
               type="button"
@@ -283,11 +285,11 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
           ) : (
             <span />
           )}
-          <p className="ml-auto pr-1 text-[10px] tracking-widest text-[#c6a15a]/70">只供參考</p>
-        </div>
-        <div className="px-2 pb-1 text-center">
-          <p className="font-display text-4xl leading-none tabular-nums text-[#f4efe4]">{clock}</p>
-          <p className="mt-0.5 text-[10px] tracking-widest text-[#c6a15a]">剩餘時間</p>
+          <div className="text-center">
+            <p className="font-display text-4xl leading-none tabular-nums text-[#f4efe4]">{clock}</p>
+            <p className="mt-1 text-xs leading-none text-[#c6a15a]">剩餘時間</p>
+          </div>
+          <p className="pr-1 text-[10px] tracking-widest text-[#c6a15a]/70">只供參考</p>
         </div>
         <div className="flex items-start gap-1 px-2 pb-1">
           <div className="flex justify-start gap-1">
@@ -335,7 +337,7 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
           {view.overflow > 0 ? <span className="text-[#e5484d]">（溢出 {view.overflow.toFixed(1)}）</span> : null}
         </p>
       </div>
-      <div className="relative flex min-h-0 flex-1 flex-col bg-[#120e0a]">
+      <div className={cn("relative flex flex-col bg-[#120e0a]", expanded ? "min-h-0 flex-1" : "shrink-0")}>
         <ActWindow
           remain={remain}
           acts={listed}
@@ -353,9 +355,10 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
         ) : null}
       </div>
 
-      <div className={cn("flex shrink-0 flex-col gap-2.5 bg-bg px-4 py-3 sm:px-6", expanded && "hidden")}>
+      <div className={cn("min-h-0 flex-1 overflow-y-auto bg-bg px-3 py-1.5 sm:px-6", expanded && "hidden")}>
+        <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between gap-2">
-          <p className="font-display text-2xl tabular-nums leading-none text-fg">
+          <p className="font-display text-xl tabular-nums leading-none text-fg">
             <span className="mr-1.5 text-xs font-normal text-faint">此刻</span>
             {view.morale.toFixed(1)}
             <span className="text-base text-muted">／{view.max}</span>
@@ -375,7 +378,7 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
             aria-label="勢力"
             value={factions}
             onChange={(event) => setFactions(Number(event.target.value))}
-            className="plain-press h-9 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
+            className="plain-press h-8 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
           >
             <option value={1}>1</option>
             <option value={2}>2</option>
@@ -387,7 +390,7 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
             aria-label="昂揚"
             value={koyo}
             onChange={(event) => setKoyo(Number(event.target.value))}
-            className="plain-press h-9 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
+            className="plain-press h-8 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
           >
             {Array.from({ length: 19 }, (_, i) => i / 2).map((n) => (
               <option key={n} value={n}>
@@ -400,7 +403,7 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
             aria-label="同盟"
             value={allies}
             onChange={(event) => setAllies(Number(event.target.value))}
-            className="plain-press h-9 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
+            className="plain-press h-8 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
           >
             {Array.from({ length: 10 }, (_, n) => (
               <option key={n} value={n}>
@@ -410,21 +413,10 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
           </select>
         </div>
 
-        <div className="flex items-center gap-2 pt-1.5">
-          <span className="shrink-0 text-xs text-faint">計略</span>
-          <span className="h-px min-w-4 flex-1 bg-border" aria-hidden />
-        </div>
         <Row label="使用士氣">
           <Stepper value={strat} min={1} max={15} step={1} onChange={setStrat} />
           <Add onClick={() => place("spend", strat, `使用士氣 −${strat}`)}>輸入</Add>
         </Row>
-        <p className="text-[11px] leading-snug text-faint">
-          {view.morale + 1e-9 >= strat
-            ? `此刻可用。此後最多再 ${stratUses} 次。`
-            : stratReady == null
-              ? "直至完場仍不夠。"
-              : `約 ${stratReady}C 可用。此後最多 ${stratUses} 次。`}
-        </p>
 
         <Row label="短計">
           <Stepper value={mini} min={0.5} max={2} step={0.5} onChange={setMini} />
@@ -442,7 +434,7 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
             aria-label="增加上限"
             value={capId}
             onChange={(event) => setCapId(event.target.value)}
-            className="plain-press h-9 min-w-0 flex-1 truncate rounded-md bg-surface-2 px-2 text-xs text-fg"
+            className="plain-press h-8 min-w-0 flex-1 truncate rounded-md bg-surface-2 px-2 text-xs text-fg"
           >
             {CAP_STRATS.map((entry) => (
               <option key={entry.id} value={entry.id}>
@@ -453,17 +445,29 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
           <Add onClick={placeCap}>輸入</Add>
         </div>
 
-        <div className="flex items-center gap-2 pt-1.5">
-          <span className="shrink-0 text-xs text-faint">其他</span>
-          <span className="h-px min-w-4 flex-1 bg-border" aria-hidden />
-        </div>
         <div className="flex items-center gap-2">
-          <span className="w-[4.75rem] shrink-0 whitespace-nowrap text-xs leading-none text-faint">流派</span>
+          <span ref={schoolTip} className="relative flex w-[4.75rem] shrink-0 items-center gap-0.5 whitespace-nowrap text-xs leading-none text-faint">
+            流派
+            <button
+              type="button"
+              aria-label="流派說明"
+              aria-expanded={schoolNote}
+              onClick={() => setSchoolNote((open) => !open)}
+              className="grid size-4 place-items-center text-muted"
+            >
+              <CircleHelp className="size-3.5" />
+            </button>
+            {schoolNote ? (
+              <p className="absolute left-0 top-full z-30 mt-1 w-44 rounded-md border border-white/10 bg-[#2a221c] px-2.5 py-2 text-[11px] font-normal leading-snug text-fg">
+                實際可發動時間以遊戲情況為準
+              </p>
+            ) : null}
+          </span>
           <select
             value={schoolPick?.kind ?? ""}
             disabled={!schoolPick}
             onChange={(event) => setSchool(event.target.value as Kind)}
-            className="plain-press h-9 min-w-0 flex-1 rounded-md bg-surface-2 px-2 text-xs text-fg disabled:opacity-40"
+            className="plain-press h-8 min-w-0 flex-1 rounded-md bg-surface-2 px-2 text-xs text-fg disabled:opacity-40"
           >
             {schoolOptions.map((entry) => (
               <option key={entry.kind} value={entry.kind}>
@@ -479,16 +483,16 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
             輸入
           </Add>
         </div>
-        <p className="text-[11px] leading-snug text-faint">實際可發動時間以遊戲情況為準</p>
 
         <div className="flex items-center gap-2">
           <span className="w-[4.75rem] shrink-0 whitespace-nowrap text-xs leading-none text-faint">戰器</span>
-          <span className={cn("flex h-9 min-w-0 flex-1 items-center rounded-md bg-surface-2 px-2 text-xs text-fg", used("gear") && "opacity-40")}>
+          <span className={cn("flex h-8 min-w-0 flex-1 items-center rounded-md bg-surface-2 px-2 text-xs text-fg", used("gear") && "opacity-40")}>
             {used("gear") ? "已用完" : "＋0.75"}
           </span>
           <Add disabled={used("gear")} onClick={() => place("gear", 0.75, "戰器 ＋0.75")}>
             輸入
           </Add>
+        </div>
         </div>
       </div>
     </div>
@@ -545,7 +549,7 @@ function ActWindow({
   const ticks = Array.from({ length: 100 }, (_, index) => 99 - index);
   const placed: number[] = [];
   return (
-    <div className="flex min-h-0 flex-1 flex-col px-2 pb-1">
+    <div className={cn("flex flex-col px-2 pb-1", expanded ? "min-h-0 flex-1" : "h-32 shrink-0")}>
       <div
         ref={frame}
         className="relative min-h-0 flex-1 touch-none select-none overflow-hidden rounded-md bg-[#1a140c] shadow-[inset_0_0_0_1px_rgba(198,161,90,0.28)]"
@@ -567,12 +571,12 @@ function ActWindow({
           <button
             type="button"
             onClick={onClear}
-            className="absolute right-1.5 top-1.5 z-20 rounded-md bg-[#e5484d] px-2 py-0.5 text-[11px] font-medium text-white"
+            className="absolute right-1.5 top-1.5 z-20 rounded-md bg-[#3d6b8c] px-2 py-0.5 text-[11px] font-medium text-white"
           >
             清空
           </button>
         ) : null}
-        <div className="pointer-events-none absolute left-[3.55rem] top-1/2 z-20 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#e8c56a] ring-2 ring-[#1a140c]" />
+        <div className="pointer-events-none absolute inset-x-2 top-1/2 z-20 h-px -translate-y-1/2 bg-[#e25822]/45" />
         <div className="absolute inset-x-0 top-0" style={{ height: pad * 2 + span, transform: `translateY(${-shift}px)` }}>
           <div className="absolute bottom-0 left-[3.55rem] top-0 w-px bg-[#c6a15a]/40" />
           {ticks.map((c) => {
@@ -706,7 +710,7 @@ function Scrub({
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       <span className="w-[4.75rem] shrink-0 whitespace-nowrap text-xs leading-none text-faint">{label}</span>
       {children}
     </div>
@@ -730,7 +734,7 @@ function Stepper({
 }) {
   const shown = Number.isInteger(step) && Number.isInteger(value) ? String(value) : value.toFixed(1);
   return (
-    <div className="flex h-9 min-w-0 flex-1 items-center rounded-md bg-surface-2">
+    <div className="flex h-8 min-w-0 flex-1 items-center rounded-md bg-surface-2">
       <button
         type="button"
         aria-label="減少"
@@ -758,7 +762,7 @@ function Add({ children, onClick, disabled }: { children: string; onClick: () =>
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="plain-press h-9 shrink-0 rounded-md bg-[#c6a15a] px-3 text-xs font-medium text-[#1a140c] disabled:opacity-40"
+      className="plain-press h-8 shrink-0 rounded-md bg-[#c6a15a] px-3 text-xs font-medium text-[#1a140c] disabled:opacity-40"
     >
       {children}
     </button>
