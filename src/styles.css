@@ -103,6 +103,22 @@
   animation: siege-flame 13s ease-in-out infinite reverse;
 }
 
+@keyframes morale-pip {
+  0%,
+  100% {
+    background-color: #ff6a22;
+    box-shadow: 0 0 4px #ff6a22;
+  }
+  50% {
+    background-color: #ffe0b0;
+    box-shadow: 0 0 8px #ffb060;
+  }
+}
+
+.morale-pip-full {
+  animation: morale-pip 1.1s ease-in-out infinite;
+}
+
 @layer components {
   .rarity-er {
     background-image: linear-gradient(90deg, #ff6b8a, #ffd166, #7ee787, #6ecbff, #c9a0ff);

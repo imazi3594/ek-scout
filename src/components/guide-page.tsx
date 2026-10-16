@@ -20,6 +20,7 @@ import {
 } from "@/data/guide";
 import { SkillChip, SkillExplain } from "@/components/skill-chip";
 import { UnitIcon } from "@/components/unit-icon";
+import { MoraleCalc } from "@/components/morale-calc";
 import { cn } from "@/lib/utils";
 import type { ColorName, UnitName } from "@/data/catalog";
 
@@ -35,11 +36,86 @@ const TOPIC_MARK: Record<GuideTopic, string> = {
 const TOPICS: { id: GuideTopic; title: string; blurb: string }[] = [
   { id: "skills", title: "特技", blurb: "武將固有被動。開場、戰鬥、移動與槽類效果。" },
   { id: "units", title: "兵種", blurb: "移速、攻城基礎，與槍、弓、斬、鐵砲的動作。" },
-  { id: "siege", title: "攻城", blurb: "攻城力計算器。按兵種、武力、成本與加成，估算城牆與城門傷害。" },
   { id: "senki", title: "戰器", blurb: "對戰中僅能使用一次的裝備技。主效果、追加與時長皆為 Master。" },
   { id: "eikon", title: "英魂", blurb: "裝在戰器上，只強化裝備的那名武將。一般可疊，寶石不重複。" },
   { id: "ryuha", title: "流派", blurb: "壱・弐・参の型。表為永久，裏多為時限。" },
 ];
+
+export type ToolId = "siege" | "morale";
+
+export function ToolsPage({
+  page,
+  onPage,
+}: {
+  page: ToolId | null;
+  onPage: (page: ToolId | null) => void;
+}) {
+  const scroller = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    scroller.current?.scrollTo(0, 0);
+  }, [page]);
+
+  if (!page) {
+    return (
+      <div ref={scroller} className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 py-6 sm:px-6">
+        <p className="text-sm leading-relaxed text-pretty text-muted">請選擇工具。</p>
+        <button
+          type="button"
+          onClick={() => onPage("siege")}
+          className="mt-4 block w-full overflow-hidden rounded-xl text-left"
+        >
+          <div className="flex h-2.5 items-end gap-1 bg-[#2a160e] px-1" aria-hidden>
+            {Array.from({ length: 14 }, (_, i) => (
+              <span key={i} className={cn("h-2 flex-1 bg-[#c46a32]", i % 2 ? "opacity-0" : "opacity-90")} />
+            ))}
+          </div>
+          <div className="bg-[linear-gradient(to_bottom,#1a120e_0%,#3a1a12_58%,#6a2a14_100%)] px-4 py-4">
+            <span className="block font-display text-xl text-[#f6e7c1]">攻城力計算器</span>
+            <span className="mt-1 block text-sm leading-relaxed text-pretty text-[#e7c39a]/85">
+              按兵種、武力、成本與加成，估算城牆與城門傷害。
+            </span>
+          </div>
+          <div className="relative h-8 overflow-hidden bg-[#6a2a14]">
+            <svg className="absolute inset-y-0 left-0 h-full w-[130%]" viewBox="0 0 400 48" preserveAspectRatio="none" aria-hidden>
+              <path fill="#ea580c" opacity="0.9" d="M0 48V22C16 28 22 8 40 18C54 26 64 4 82 16C96 26 108 12 126 22C144 10 156 4 174 16C190 26 202 12 220 22C238 10 250 6 268 16C284 26 298 14 316 22C334 10 348 6 366 18C382 26 392 16 400 12V48Z" />
+            </svg>
+            <svg className="absolute inset-y-0 left-0 h-full w-[130%]" viewBox="0 0 400 48" preserveAspectRatio="none" aria-hidden>
+              <path fill="#fbbf24" opacity="0.75" d="M0 48V36C20 36 28 28 46 32C62 36 74 26 92 32C108 38 122 42 140 34C158 28 172 32 190 38C208 42 222 28 240 34C258 40 274 34 292 30C310 26 326 36 344 32C362 28 380 36 400 32V48Z" />
+            </svg>
+          </div>
+        </button>
+        <button
+          type="button"
+          onClick={() => onPage("morale")}
+          className="mt-3 block w-full overflow-hidden rounded-xl text-left"
+        >
+          <div className="flex h-2.5 items-end gap-1 bg-[#2a2114] px-1" aria-hidden>
+            {Array.from({ length: 14 }, (_, i) => (
+              <span key={i} className={cn("h-2 flex-1 bg-[#c6a15a]", i % 2 ? "opacity-0" : "opacity-90")} />
+            ))}
+          </div>
+          <div className="bg-[linear-gradient(to_bottom,#14110c_0%,#2a2114_60%,#4a3820_100%)] px-4 py-4">
+            <span className="block font-display text-xl text-[#f6e7c1]">士氣計算器</span>
+            <span className="mt-1 block text-sm leading-relaxed text-pretty text-[#e7c39a]/85">
+              沿時間安排計略、流派與戰器，看士氣夠不夠、能用幾次。
+            </span>
+          </div>
+          <div className="flex justify-center gap-1 bg-[#1a140c] px-3 py-2" aria-hidden>
+            {Array.from({ length: 10 }, (_, i) => (
+              <span key={i} className={cn("size-3 rounded-full border border-[#c6a15a]", i < 3 ? "bg-[#e25822]" : "bg-transparent")} />
+            ))}
+          </div>
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={scroller} className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
+      {page === "morale" ? <MoraleCalc onBack={() => onPage(null)} /> : <SiegeCalc onBack={() => onPage(null)} />}
+    </div>
+  );
+}
 
 export function GuidePage({ topic, onTopic }: { topic: GuideTopic | null; onTopic: (topic: GuideTopic | null) => void }) {
   const scroller = useRef<HTMLDivElement>(null);
@@ -109,7 +185,6 @@ export function GuidePage({ topic, onTopic }: { topic: GuideTopic | null; onTopi
       </div>
       {topic === "skills" ? <SkillsGuide /> : null}
       {topic === "units" ? <UnitGuide special={specialUnits} /> : null}
-      {topic === "siege" ? <SiegeCalc /> : null}
       {topic === "senki" ? <SenkiGuide /> : null}
       {topic === "eikon" ? <GroupGuide intro={EIKON_INTRO} groups={EIKON_GROUPS} mark={TOPIC_MARK.eikon} /> : null}
       {topic === "ryuha" ? <RyuhaGuide /> : null}
@@ -785,7 +860,7 @@ function SiegeRule({ label, extra }: { label: string; extra?: ReactNode }) {
   );
 }
 
-function SiegeCalc() {
+export function SiegeCalc({ onBack }: { onBack?: () => void }) {
   const [unit, setUnit] = useState<UnitName>("槍兵");
   const [costIndex, setCostIndex] = useState(3);
   const [power, setPower] = useState(8);
@@ -826,8 +901,8 @@ function SiegeCalc() {
     setEikon(0);
   };
   return (
-    <div className="flex flex-col gap-5">
-      <div className="sticky top-0 z-10 -mx-4 bg-[#1c120c] sm:-mx-6">
+    <div className="flex min-h-full w-full flex-1 flex-col">
+      <div className="sticky top-0 z-10 bg-[#1c120c]">
         <dl>
           <div className="flex h-2.5 items-end gap-1 bg-[#2a160e] px-1" aria-hidden>
             {Array.from({ length: 14 }, (_, i) => (
@@ -856,19 +931,31 @@ function SiegeCalc() {
                 </dd>
               </div>
             </div>
-            <div className="relative h-8 overflow-hidden">
+            <div className="relative flex h-10 items-center justify-between overflow-hidden px-2">
               <svg className="siege-flame absolute inset-y-0 left-0 h-full w-[130%]" viewBox="0 0 400 48" preserveAspectRatio="none" aria-hidden>
                 <path fill="#ea580c" opacity="0.9" d="M0 48V22C16 28 22 8 40 18C54 26 64 4 82 16C96 26 108 12 126 22C144 10 156 4 174 16C190 26 202 12 220 22C238 10 250 6 268 16C284 26 298 14 316 22C334 10 348 6 366 18C382 26 392 16 400 12V48Z" />
               </svg>
               <svg className="siege-flame-inner absolute inset-y-0 left-0 h-full w-[130%]" viewBox="0 0 400 48" preserveAspectRatio="none" aria-hidden>
                 <path fill="#fbbf24" opacity="0.75" d="M0 48V36C20 36 28 28 46 32C62 36 74 26 92 32C108 38 122 42 140 34C158 28 172 32 190 38C208 42 222 28 240 34C258 40 274 34 292 30C310 26 326 36 344 32C362 28 380 36 400 32V48Z" />
               </svg>
-              <p className="relative px-3 py-1.5 text-right text-[10px] tracking-widest text-[#f6e7c1]/55">只供參考</p>
+              {onBack ? (
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="relative z-10 inline-flex h-7 items-center gap-0.5 rounded-md bg-black/75 px-2.5 text-xs font-medium text-[#f6e7c1] shadow-[0_0_0_1px_rgba(246,231,193,0.4)]"
+                >
+                  <ChevronLeft className="size-4" />
+                  返回
+                </button>
+              ) : (
+                <span />
+              )}
+              <p className="relative z-10 px-1 text-[10px] tracking-widest text-[#f6e7c1]/55">只供參考</p>
             </div>
           </div>
         </dl>
       </div>
-      <div className="flex flex-col gap-5 rounded-xl bg-surface px-3 py-3">
+      <div className="flex flex-1 flex-col gap-5 bg-bg px-4 py-5 sm:px-6">
       <div>
         <SiegeRule
           label="兵種"

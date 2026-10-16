@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { BookOpen, ChevronDown, ChevronUp, Clock, Dices, Download, Info, Search, X } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronUp, Clock, Dices, Download, Info, Search, Wrench, X } from "lucide-react";
 import {
   CARD_BY_ID,
   CARDS,
@@ -28,7 +28,7 @@ import { CardThemeBackdrop, HomeWash } from "@/components/card-theme";
 import { CostPips, RarityMark } from "@/components/card-identity";
 import { UnitIcon } from "@/components/unit-icon";
 import { AboutPage } from "@/components/about-page";
-import { GuidePage } from "@/components/guide-page";
+import { GuidePage, ToolsPage, type ToolId } from "@/components/guide-page";
 import { SkillList } from "@/components/skill-chip";
 import { cn } from "@/lib/utils";
 import { deviceKind, initInstallCapture, isStandalone, subscribeInstall, type BeforeInstall } from "@/lib/install";
@@ -36,8 +36,8 @@ import type { GuideTopic } from "@/data/guide";
 
 initInstallCapture();
 
-type Tab = "search" | "skills" | "recents" | "about";
-const TABS: Tab[] = ["search", "recents", "skills", "about"];
+type Tab = "search" | "recents" | "tools" | "skills";
+const TABS: Tab[] = ["search", "recents", "tools", "skills"];
 const DUR_LO = 0;
 const DUR_HI = 99;
 const STAT_LO = 1;
@@ -58,11 +58,13 @@ type Hist =
   | { v: "skills" }
   | { v: "guide"; topic: GuideTopic }
   | { v: "recents" }
+  | { v: "tools" }
+  | { v: "tool"; id: ToolId }
   | { v: "about" };
 
-function histOf(tab: Tab, selectedId: string | null, guideTopic: GuideTopic | null): Hist {
-  if (tab === "about") return { v: "about" };
+function histOf(tab: Tab, selectedId: string | null, guideTopic: GuideTopic | null, toolPage: ToolId | null): Hist {
   if (tab === "skills") return guideTopic ? { v: "guide", topic: guideTopic } : { v: "skills" };
+  if (tab === "tools") return toolPage ? { v: "tool", id: toolPage } : { v: "tools" };
   if (tab === "recents") return { v: "recents" };
   if (selectedId) return { v: "card", id: selectedId };
   return { v: "home" };
@@ -72,6 +74,7 @@ function sameHist(a: Hist, b: Hist): boolean {
   if (a.v !== b.v) return false;
   if (a.v === "card" && b.v === "card") return a.id === b.id;
   if (a.v === "guide" && b.v === "guide") return a.topic === b.topic;
+  if (a.v === "tool" && b.v === "tool") return a.id === b.id;
   return true;
 }
 
@@ -96,6 +99,8 @@ export function ScoutApp() {
   const [sorts, setSorts] = useState<SortRule[]>([]);
   const [morePhase, setMorePhase] = useState<"closed" | "opening" | "open" | "closing">("closed");
   const [guideTopic, setGuideTopic] = useState<GuideTopic | null>(null);
+  const [toolPage, setToolPage] = useState<ToolId | null>(null);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -244,11 +249,10 @@ export function ScoutApp() {
 
   function applyHist(state: Hist | null) {
     const s = state ?? { v: "home" as const };
+    setToolPage(s.v === "tool" ? s.id : s.v === "guide" && s.topic === "siege" ? "siege" : null);
+    setAboutOpen(s.v === "about");
     if (s.v === "about") {
-      setTab("about");
-      setGuideTopic(null);
       setSheetOpen(false);
-      select(null);
       return;
     }
     if (s.v === "skills") {
@@ -259,6 +263,13 @@ export function ScoutApp() {
       return;
     }
     if (s.v === "guide") {
+      if (s.topic === "siege") {
+        setTab("tools");
+        setGuideTopic(null);
+        setSheetOpen(false);
+        select(null);
+        return;
+      }
       setTab("skills");
       setGuideTopic(s.topic);
       setSheetOpen(false);
@@ -267,6 +278,13 @@ export function ScoutApp() {
     }
     if (s.v === "recents") {
       setTab("recents");
+      setGuideTopic(null);
+      setSheetOpen(false);
+      select(null);
+      return;
+    }
+    if (s.v === "tools") {
+      setTab("tools");
       setGuideTopic(null);
       setSheetOpen(false);
       select(null);
@@ -287,11 +305,23 @@ export function ScoutApp() {
   applyHistRef.current = applyHist;
 
   function goTab(next: Tab) {
+    if (aboutOpen && next === tab) {
+      const cur = history.state as Hist | null;
+      if (cur?.v === "about") history.back();
+      else setAboutOpen(false);
+      return;
+    }
     if (next === tab) {
       if (next === "skills" && guideTopic) {
         const cur = history.state as Hist | null;
         if (cur?.v === "guide") history.back();
         else setGuideTopic(null);
+        return;
+      }
+      if (next === "tools" && toolPage) {
+        const cur = history.state as Hist | null;
+        if (cur?.v === "tool") history.back();
+        else setToolPage(null);
         return;
       }
       if ((next === "search" || next === "recents") && selectedId) {
@@ -306,16 +336,44 @@ export function ScoutApp() {
       return;
     }
     const cur = history.state as Hist | null;
+    setAboutOpen(false);
     setSheetOpen(false);
     setTab(next);
     if (next !== "skills") setGuideTopic(null);
-    const dest = histOf(next, null, next === "skills" ? guideTopic : null);
-    if (cur?.v === "card") {
-      select(null);
+    if (next !== "tools") setToolPage(null);
+    const dest = histOf(next, null, next === "skills" ? guideTopic : null, next === "tools" ? toolPage : null);
+    if (cur?.v === "card" || cur?.v === "about") {
+      if (cur.v === "card") select(null);
       history.replaceState(dest, "");
       return;
     }
     pushView(dest);
+  }
+
+  function setToolView(next: ToolId | null) {
+    if (next) {
+      setToolPage(next);
+      pushView({ v: "tool", id: next });
+      return;
+    }
+    const cur = history.state as Hist | null;
+    if (cur?.v === "tool") history.back();
+    else {
+      setToolPage(null);
+      pushView({ v: "tools" });
+    }
+  }
+
+  function openAbout() {
+    if (aboutOpen) {
+      const cur = history.state as Hist | null;
+      if (cur?.v === "about") history.back();
+      else setAboutOpen(false);
+      return;
+    }
+    setAboutOpen(true);
+    setSheetOpen(false);
+    pushView({ v: "about" });
   }
 
   function setGuideView(next: GuideTopic | null) {
@@ -350,6 +408,8 @@ export function ScoutApp() {
           raw.v === "skills" ||
           raw.v === "guide" ||
           raw.v === "recents" ||
+          raw.v === "tools" ||
+          raw.v === "tool" ||
           raw.v === "about");
       if (raw != null && !known) return;
       const s = (known ? raw : { v: "root" }) as Hist;
@@ -479,19 +539,38 @@ export function ScoutApp() {
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <HomeWash faded />
       <header className="relative z-10 shrink-0 border-b border-border bg-bg/60 backdrop-blur-sm">
-        <div className="mx-auto max-w-6xl px-4 py-2.5 sm:px-6 sm:pb-3 sm:pt-5">
-          <p className="hidden text-xs tracking-widest text-faint sm:block">EIKETSU TAISEN</p>
-          <h1 className="font-display text-xl tracking-tight text-balance sm:text-3xl">英傑大戦⚡️速查</h1>
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6 sm:pb-3 sm:pt-5">
+          <div className="min-w-0">
+            <p className="hidden text-xs tracking-widest text-faint sm:block">EIKETSU TAISEN</p>
+            <h1 className="font-display text-xl tracking-tight text-balance sm:text-3xl">英傑大戦⚡️速查</h1>
+          </div>
+          <button
+            type="button"
+            onClick={openAbout}
+            aria-label="關於"
+            aria-pressed={aboutOpen}
+            className={cn(
+              "grid size-9 shrink-0 place-items-center rounded-full",
+              aboutOpen ? "bg-surface-3 text-fg" : "text-muted hover:bg-surface-2 hover:text-fg",
+            )}
+          >
+            <Info className="size-5" />
+          </button>
         </div>
         <nav className="mx-auto flex max-w-6xl gap-0 px-2 sm:gap-1 sm:px-6">
           <TabBtn id="search" tab={tab} setTab={goTab} icon={<Search className="size-4" />} label="速查" />
           <TabBtn id="recents" tab={tab} setTab={goTab} icon={<Clock className="size-4" />} label="最近" />
+          <TabBtn id="tools" tab={tab} setTab={goTab} icon={<Wrench className="size-4" />} label="工具" />
           <TabBtn id="skills" tab={tab} setTab={goTab} icon={<BookOpen className="size-4" />} label="資料" />
-          <TabBtn id="about" tab={tab} setTab={goTab} icon={<Info className="size-4" />} label="關於" />
         </nav>
       </header>
 
       <div className="relative z-10 mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_30rem]">
+        {aboutOpen ? (
+          <div className="absolute inset-0 z-40 overflow-y-auto bg-bg px-4 py-6 sm:px-6">
+            <AboutPage />
+          </div>
+        ) : null}
         <section className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-border lg:border-r">
           <div ref={pager.rootRef} className="tab-pager">
           <div ref={pager.trackRef} className="tab-track">
@@ -822,10 +901,10 @@ export function ScoutApp() {
             </ul>
           </div>
           <div className="tab-pane">
-            <GuidePage topic={guideTopic} onTopic={setGuideView} />
+            <ToolsPage page={toolPage} onPage={setToolView} />
           </div>
           <div className="tab-pane">
-            <AboutPage />
+            <GuidePage topic={guideTopic} onTopic={setGuideView} />
           </div>
           </div>
           </div>
