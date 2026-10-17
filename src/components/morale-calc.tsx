@@ -18,8 +18,12 @@ const SCHOOLS: { kind: Kind; group: "士氣" | "琥煌"; side: "表" | "裏"; n:
   { kind: "kokoSpeed", group: "琥煌", side: "裏", n: 1.66, label: "琥煌・裏・弐　速度×1.66／12.5C" },
 ];
 
-function round1(n: number) {
-  return Math.round(n * 10) / 10;
+function round2(n: number) {
+  return Math.round(n * 100) / 100;
+}
+
+function show1(n: number) {
+  return (Math.floor(n * 10 + 1e-6) / 10).toFixed(1);
 }
 
 function displayC(ms: number) {
@@ -96,9 +100,9 @@ function simulate(
 ) {
   const base = BASE_MAX[factions] ?? 10;
   let max = Math.min(15, base + allies);
-  const opened = round1(koyo * 0.2);
+  const opened = round2(koyo * 0.2);
   let morale = Math.min(max, opened);
-  let overflow = round1(Math.max(0, opened - max));
+  let overflow = round2(Math.max(0, opened - max));
   let live = overflow;
   let gained = opened;
   let used = 0;
@@ -119,12 +123,12 @@ function simulate(
   };
 
   const addMorale = (n: number) => {
-    gained = round1(gained + n);
-    const next = round1(morale + n);
+    gained = round2(gained + n);
+    const next = round2(morale + n);
     if (next > max + 1e-9) {
-      const over = round1(next - max);
-      overflow = round1(overflow + over);
-      live = round1(live + over);
+      const over = round2(next - max);
+      overflow = round2(overflow + over);
+      live = round2(live + over);
       morale = max;
       return;
     }
@@ -139,7 +143,7 @@ function simulate(
   const takeAuto = () => {
     if (!autoCost || cursor > autoFrom - 0.5) return;
     while (morale + 1e-9 >= autoCost) {
-      morale = round1(morale - autoCost);
+      morale = round2(morale - autoCost);
       extra += 1;
     }
   };
@@ -187,8 +191,8 @@ function simulate(
     if (act.kind === "spend") {
       if (morale + 1e-9 < act.n) short.add(act.id);
       else {
-        morale = round1(morale - act.n);
-        used = round1(used + act.n);
+        morale = round2(morale - act.n);
+        used = round2(used + act.n);
         live = 0;
         if (act.unlock) max = 15;
       }
@@ -197,7 +201,7 @@ function simulate(
     if (act.kind === "plus") {
       if (act.unlock) max = 15;
       if (act.n < 0) {
-        morale = round1(Math.max(0, morale + act.n));
+        morale = round2(Math.max(0, morale + act.n));
         if (morale + 1e-9 < max) live = 0;
       } else addMorale(act.n);
       return;
@@ -206,7 +210,7 @@ function simulate(
       addMorale(act.n);
       return;
     }
-    if (act.kind === "max3") max = Math.min(15, round1(max + 3));
+    if (act.kind === "max3") max = Math.min(15, round2(max + 3));
     if (act.kind === "speed125") perm125 = true;
     if (act.kind === "speed166" || act.kind === "kokoSpeed") uraFrom = act.at;
   };
@@ -222,7 +226,7 @@ function simulate(
   }
   if (cursor > stop) regen(stop);
   note();
-  return { morale: round1(morale), max, short, extra, ready, overflow: round1(overflow), live: round1(live), used: round1(used), gained: round1(gained) };
+  return { morale: round2(morale), max, short, extra, ready, overflow: round2(overflow), live: round2(live), used: round2(used), gained: round2(gained) };
 }
 
 export function MoraleCalc({ onBack }: { onBack?: () => void }) {
@@ -309,7 +313,7 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
   const placeMorale = () => {
     const shown = amount.toFixed(1);
     if ((mode === "spend" || mode === "mini") && view.morale + 1e-9 < amount) {
-      setWarn({ text: `士氣不足。此刻 ${view.morale.toFixed(1)}，需要 ${shown}。`, id: Date.now() });
+      setWarn({ text: `士氣不足。此刻 ${show1(view.morale)}，需要 ${shown}。`, id: Date.now() });
       return;
     }
     const cap = unlock && mode === "spend" ? "　上限變為15" : "";
@@ -329,7 +333,7 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
 
   const place = (kind: Kind, n: number, label: string) => {
     if (kind === "spend" && view.morale + 1e-9 < n) {
-      setWarn({ text: `士氣不足。此刻 ${view.morale.toFixed(1)}，需要 ${n}。`, id: Date.now() });
+      setWarn({ text: `士氣不足。此刻 ${show1(view.morale)}，需要 ${n}。`, id: Date.now() });
       return;
     }
     setActs((list) => {
@@ -423,8 +427,8 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
           })}
         </div>
         <p className="pb-1 text-center text-[10px] tabular-nums tracking-wide text-[#c6a15a]">
-          已使用 {full.used.toFixed(1)}　總獲得 {full.gained.toFixed(1)}
-          {full.overflow > 0 ? <span className="text-[#e5484d]">（溢出 {full.overflow.toFixed(1)}）</span> : null}
+          已使用 {show1(full.used)}　總獲得 {show1(full.gained)}
+          {full.overflow > 0 ? <span className="text-[#e5484d]">（溢出 {show1(full.overflow)}）</span> : null}
         </p>
       </div>
       <div className="relative flex min-h-0 flex-1 flex-col bg-[#120e0a]">
@@ -450,10 +454,10 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
         <div className="flex items-center justify-between gap-2">
           <p className="font-display text-xl tabular-nums leading-none text-fg">
             <span className="mr-1.5 text-sm font-normal text-faint">此刻</span>
-            {view.morale.toFixed(1)}
+            {show1(view.morale)}
             <span className="text-sm text-muted">／{view.max}</span>
             {view.live > 0 ? (
-              <span className="ml-1.5 text-xs font-normal text-[#e5484d]">（溢出 {view.live.toFixed(1)}）</span>
+              <span className="ml-1.5 text-xs font-normal text-[#e5484d]">（溢出 {show1(view.live)}）</span>
             ) : null}
           </p>
           <button
