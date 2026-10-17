@@ -28,7 +28,7 @@ function show1(n: number) {
 
 function displayC(ms: number) {
   if (ms <= 0) return 0;
-  return Math.min(99, Math.ceil(ms / 2400));
+  return Math.min(99, Math.floor(ms / 2400));
 }
 
 function uid() {
