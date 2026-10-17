@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChevronsLeft, ChevronsRight, CircleHelp, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const TOTAL_MS = 99 * 2400;
+const TOTAL_MS = 240 * 1000;
 const URA_MS = 12.5 * 2400;
 const BASE_MAX = [0, 12, 10, 8, 6];
 
