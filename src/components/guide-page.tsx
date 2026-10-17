@@ -69,13 +69,13 @@ export function ToolsPage({
               <span key={i} className={cn("h-2 flex-1 bg-[#c46a32]", i % 2 ? "opacity-0" : "opacity-90")} />
             ))}
           </div>
-          <div className="bg-[linear-gradient(to_bottom,#1a120e_0%,#3a1a12_58%,#6a2a14_100%)] px-4 py-4">
+          <div className="flex h-[7.25rem] flex-col bg-[linear-gradient(to_bottom,#1a120e_0%,#3a1a12_58%,#6a2a14_100%)] px-4 py-4">
             <span className="block font-display text-xl text-[#f6e7c1]">攻城力計算器</span>
             <span className="mt-1 block text-sm leading-relaxed text-pretty text-[#e7c39a]/85">
               按兵種、武力、成本與加成，估算城牆與城門傷害。
             </span>
           </div>
-          <div className="relative h-8 overflow-hidden bg-[#6a2a14]">
+          <div className="relative h-14 overflow-hidden bg-[#6a2a14]">
             <svg className="absolute inset-y-0 left-0 h-full w-[130%]" viewBox="0 0 400 48" preserveAspectRatio="none" aria-hidden>
               <path fill="#ea580c" opacity="0.9" d="M0 48V22C16 28 22 8 40 18C54 26 64 4 82 16C96 26 108 12 126 22C144 10 156 4 174 16C190 26 202 12 220 22C238 10 250 6 268 16C284 26 298 14 316 22C334 10 348 6 366 18C382 26 392 16 400 12V48Z" />
             </svg>
@@ -89,20 +89,44 @@ export function ToolsPage({
           onClick={() => onPage("morale")}
           className="mt-3 block w-full overflow-hidden rounded-xl text-left"
         >
-          <div className="flex h-2.5 items-end gap-1 bg-[#2a2114] px-1" aria-hidden>
-            {Array.from({ length: 14 }, (_, i) => (
-              <span key={i} className={cn("h-2 flex-1 bg-[#c6a15a]", i % 2 ? "opacity-0" : "opacity-90")} />
+          <div className="flex h-2.5 items-end justify-between bg-[#120e0a] px-2" aria-hidden>
+            {Array.from({ length: 21 }, (_, i) => (
+              <span key={i} className={cn("w-px bg-[#c6a15a]", i % 5 === 0 ? "h-2.5 opacity-90" : "h-1.5 opacity-45")} />
             ))}
           </div>
-          <div className="bg-[linear-gradient(to_bottom,#14110c_0%,#2a2114_60%,#4a3820_100%)] px-4 py-4">
+          <div className="flex h-[7.25rem] flex-col bg-[linear-gradient(to_bottom,#14110c_0%,#241c14_58%,#3a2c1c_100%)] px-4 py-4">
             <span className="block font-display text-xl text-[#f6e7c1]">士氣計算器</span>
-            <span className="mt-1 block text-sm leading-relaxed text-pretty text-[#e7c39a]/85">
-              沿時間安排計略、流派與戰器，看士氣夠不夠、能用幾次。
+            <span className="mt-1 block text-sm leading-relaxed text-pretty text-[#e7d3b0]/85">
+              運用時間軸，預先計劃發動計略、流派和戰器的時機和可發動次數。
             </span>
           </div>
-          <div className="flex justify-center gap-1 bg-[#1a140c] px-3 py-2" aria-hidden>
+          <div className="relative flex h-8 items-center gap-2 bg-[#120e0a] px-3" aria-hidden>
+            <span className="font-display text-2xl leading-none tabular-nums text-[#f4efe4]">99</span>
+            <span className="text-[10px] leading-none text-[#c6a15a]">剩餘</span>
+            <div className="relative h-full min-w-0 flex-1">
+              <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[#c6a15a]/55" />
+              {Array.from({ length: 9 }, (_, i) => (
+                <span
+                  key={i}
+                  className={cn("absolute top-1/2 w-px -translate-y-1/2 bg-[#c6a15a]", i % 2 === 0 ? "h-3 opacity-80" : "h-1.5 opacity-45")}
+                  style={{ left: `${(i / 8) * 100}%` }}
+                />
+              ))}
+              <span className="absolute top-1/2 left-[62%] h-5 w-px -translate-y-1/2 bg-[#f5d84a]/80" />
+              <span className="absolute top-1/2 left-[8%] -translate-y-1/2 rounded bg-[#3d321c] px-1 py-px text-[9px] leading-none text-[#f3dd9a]">
+                計略 −6
+              </span>
+            </div>
+          </div>
+          <div className="flex h-6 items-center justify-center gap-1 bg-[#1a140c]" aria-hidden>
             {Array.from({ length: 10 }, (_, i) => (
-              <span key={i} className={cn("size-3 rounded-full border border-[#c6a15a]", i < 3 ? "bg-[#e25822]" : "bg-transparent")} />
+              <span
+                key={i}
+                className={cn(
+                  "size-3 rounded-full border border-[#c6a15a]",
+                  i < 4 ? "bg-[#ff6a22] shadow-[0_0_4px_#ff6a22]" : "bg-[#120e0a]",
+                )}
+              />
             ))}
           </div>
         </button>

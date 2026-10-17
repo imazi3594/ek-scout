@@ -262,7 +262,6 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
   const [stepFlash, setStepFlash] = useState<{ text: string; id: number } | null>(null);
   const [deckLocked, setDeckLocked] = useState(false);
   const [resetAsk, setResetAsk] = useState(false);
-  const [barHint, setBarHint] = useState(false);
   const [ready, setReady] = useState(false);
   const stratTip = useRef<HTMLSpanElement>(null);
 
@@ -334,7 +333,6 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
     setActs([]);
     setDeckLocked(false);
     setResetAsk(false);
-    setBarHint(false);
     localStorage.removeItem(MORALE_STORE);
   };
 
@@ -462,9 +460,10 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
           onClear={() => setActs([])}
         />
         {warn ? (
-          <p className="pointer-events-none absolute inset-x-4 bottom-2 z-30 rounded-md bg-[#e5484d] px-3 py-2 text-center text-sm font-medium text-white shadow-lg">
-            {warn.text}
-          </p>
+          <div className="pointer-events-none absolute inset-x-3 bottom-1 z-30 rounded-md bg-[#e5484d] px-3 py-1.5 text-center text-white shadow-lg">
+            <p className="text-sm font-medium">{warn.text}</p>
+            <p className="mt-0.5 text-xs leading-snug">請滑動下面捲軸到足夠士氣的時間位置。</p>
+          </div>
         ) : null}
       </div>
       <div className={cn("shrink-0 bg-[#120e0a]", !deckLocked && "pointer-events-none opacity-40")}>
@@ -481,8 +480,6 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
           <TimeBar
             value={TOTAL_MS - remain}
             max={TOTAL_MS}
-            hint={barHint}
-            onHintDone={() => setBarHint(false)}
             onChange={(elapsed) => scrub(TOTAL_MS - elapsed)}
           />
           <div className="flex justify-end gap-1">
@@ -708,10 +705,7 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
             </div>
             <button
               type="button"
-              onClick={() => {
-                setDeckLocked(true);
-                setBarHint(true);
-              }}
+              onClick={() => setDeckLocked(true)}
               className="plain-press mx-auto h-11 w-44 rounded-md bg-[#c6a15a] text-base font-medium text-[#1a140c]"
             >
               開始使用
@@ -828,6 +822,8 @@ function ActWindow({
           </button>
         ) : null}
         <div className="pointer-events-none absolute inset-x-2 top-1/2 z-20 h-px -translate-y-1/2 bg-[#e25822]/45" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-10 bg-gradient-to-b from-[#1a140c] to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-10 bg-gradient-to-t from-[#1a140c] to-transparent" />
         <div className="pointer-events-none absolute bottom-6 right-1.5 top-7 z-20 flex flex-col items-center justify-between text-[#c6a15a]/55">
           <ChevronUp className="size-3.5" />
           <ChevronDown className="size-3.5" />
@@ -906,23 +902,10 @@ function ActWindow({
   );
 }
 
-function TimeBar({
-  value,
-  max,
-  hint,
-  onHintDone,
-  onChange,
-}: {
-  value: number;
-  max: number;
-  hint: boolean;
-  onHintDone: () => void;
-  onChange: (ms: number) => void;
-}) {
+function TimeBar({ value, max, onChange }: { value: number; max: number; onChange: (ms: number) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const ratio = max <= 0 ? 0 : Math.min(1, Math.max(0, value / max));
   const pick = (clientX: number) => {
-    onHintDone();
     const box = ref.current?.getBoundingClientRect();
     if (!box || box.width <= 0) return;
     const next = Math.round(((clientX - box.left) / box.width) * max / 1000) * 1000;
@@ -950,11 +933,6 @@ function TimeBar({
         className="absolute top-1 bottom-1 w-3 -translate-x-1/2 rounded-[2px] bg-[#f4efe4]"
         style={{ left: `${ratio * 100}%` }}
       />
-      {hint ? (
-        <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-[10px] tracking-wide text-[#c6a15a]">
-          左右拖動
-        </span>
-      ) : null}
     </div>
   );
 }

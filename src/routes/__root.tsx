@@ -26,6 +26,16 @@ function LockAppName() {
         link.href = "/apple-touch-icon.png";
         document.head.appendChild(link);
       }
+      document.querySelectorAll('link[rel="manifest"]').forEach((node) => {
+        const href = node.getAttribute("href") ?? "";
+        if (href.includes("/__grok/")) node.setAttribute("href", "/manifest.json");
+      });
+      if (!document.querySelector('link[rel="manifest"]')) {
+        const link = document.createElement("link");
+        link.rel = "manifest";
+        link.href = "/manifest.json";
+        document.head.appendChild(link);
+      }
       document.querySelectorAll('link[rel="icon"]').forEach((node) => {
         const href = node.getAttribute("href") ?? "";
         if (href.includes("/__grok/") || !href.includes("favicon")) {

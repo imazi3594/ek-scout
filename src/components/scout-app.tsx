@@ -40,6 +40,10 @@ type Tab = "search" | "recents" | "tools" | "skills";
 const TABS: Tab[] = ["search", "recents", "tools", "skills"];
 const DUR_LO = 0;
 const DUR_HI = 99;
+const DUR_DEF_LO = 1;
+const DUR_DEF_HI = 10;
+const MORALE_LO = 1;
+const MORALE_HI = 10;
 const STAT_LO = 1;
 const STAT_HI = 12;
 type SortKey = "power" | "intel" | "cost" | "morale";
@@ -87,8 +91,10 @@ export function ScoutApp() {
   const [rarities, setRarities] = useState<string[]>([]);
   const [stratCats, setStratCats] = useState<string[]>([]);
   const [costs, setCosts] = useState<number[]>([]);
-  const [durMin, setDurMin] = useState(DUR_LO);
-  const [durMax, setDurMax] = useState(DUR_HI);
+  const [durMin, setDurMin] = useState(DUR_DEF_LO);
+  const [durMax, setDurMax] = useState(DUR_DEF_HI);
+  const [moraleMin, setMoraleMin] = useState(MORALE_LO);
+  const [moraleMax, setMoraleMax] = useState(MORALE_HI);
   const [powerMin, setPowerMin] = useState(STAT_LO);
   const [powerMax, setPowerMax] = useState(STAT_HI);
   const [intelMin, setIntelMin] = useState(STAT_LO);
@@ -443,16 +449,18 @@ export function ScoutApp() {
   }, []);
 
   const durOn = durMin > DUR_LO || durMax < DUR_HI;
+  const durChanged = durMin !== DUR_DEF_LO || durMax !== DUR_DEF_HI;
+  const moraleOn = moraleMin > MORALE_LO || moraleMax < MORALE_HI;
   const powerOn = powerMin > STAT_LO || powerMax < STAT_HI;
   const intelOn = intelMin > STAT_LO || intelMax < STAT_HI;
   const statOn = pickPower != null || pickIntel != null;
-  const layerActive = colors.length + costs.length + units.length + periods.length + skills.length + rarities.length + stratCats.length + (durOn ? 1 : 0) + (powerOn ? 1 : 0) + (intelOn ? 1 : 0) + (statOn ? 1 : 0) + (sorts.length ? 1 : 0);
+  const layerActive = colors.length + costs.length + units.length + periods.length + skills.length + rarities.length + stratCats.length + (durChanged ? 1 : 0) + (moraleOn ? 1 : 0) + (powerOn ? 1 : 0) + (intelOn ? 1 : 0) + (statOn ? 1 : 0) + (sorts.length ? 1 : 0);
 
   const hits = useMemo(() => {
     const q = query.trim();
     if (!q && !layerActive) return [];
     let list = q ? searchCards(q, 200).map((h) => h.card) : CARDS;
-    if (layerActive) list = filterCards(list, { colors, periods, units, skills, rarities, costs, stratCats, durMin, durMax });
+    if (layerActive || (q && durOn)) list = filterCards(list, { colors, periods, units, skills, rarities, costs, stratCats, durMin, durMax, moraleMin, moraleMax });
     if (powerOn) list = list.filter((card) => card.power >= powerMin && card.power <= powerMax);
     if (intelOn) list = list.filter((card) => card.intel >= intelMin && card.intel <= intelMax);
     if (pickPower != null) list = list.filter((card) => card.power === pickPower);
@@ -469,7 +477,7 @@ export function ScoutApp() {
       });
     }
     return list;
-  }, [query, colors, periods, units, skills, rarities, costs, stratCats, durMin, durMax, powerMin, powerMax, intelMin, intelMax, layerActive, pickPower, pickIntel, sorts]);
+  }, [query, colors, periods, units, skills, rarities, costs, stratCats, durMin, durMax, moraleMin, moraleMax, powerMin, powerMax, intelMin, intelMax, layerActive, pickPower, pickIntel, sorts]);
 
   const recentCards = useMemo(
     () => recents.map((id) => CARD_BY_ID[id]).filter(Boolean),
@@ -481,7 +489,11 @@ export function ScoutApp() {
     costs.length ? costs.map(formatCost).join("/") + " Cost" : null,
     units.length ? units.map((u) => UNIT_SHORT[u as keyof typeof UNIT_SHORT] ?? u).join(" ") : null,
     periods.length ? periods.join(" ") : null,
+    skills.length ? skills.map((id) => SKILLS.find((skill) => skill.id === id)?.name).filter(Boolean).join(" ") : null,
+    stratCats.length ? stratCats.map((cat) => translateCat(cat)).join(" ") : null,
+    rarities.length ? rarities.join(" ") : null,
     durOn ? `${durMin}–${durMax}C` : null,
+    moraleOn ? `士氣 ${moraleMin}–${moraleMax}` : null,
     powerOn ? `武力 ${powerMin}–${powerMax}` : null,
     intelOn ? `知力 ${intelMin}–${intelMax}` : null,
     statOn ? [pickPower != null ? `武力 ${pickPower}` : null, pickIntel != null ? `知力 ${pickIntel}` : null].filter(Boolean).join(" ") : null,
@@ -499,8 +511,10 @@ export function ScoutApp() {
     setSkills([]);
     setRarities([]);
     setStratCats([]);
-    setDurMin(DUR_LO);
-    setDurMax(DUR_HI);
+    setDurMin(DUR_DEF_LO);
+    setDurMax(DUR_DEF_HI);
+    setMoraleMin(MORALE_LO);
+    setMoraleMax(MORALE_HI);
     setPowerMin(STAT_LO);
     setPowerMax(STAT_HI);
     setIntelMin(STAT_LO);
@@ -639,9 +653,9 @@ export function ScoutApp() {
                   onClick={toggleMoreFilters}
                   aria-expanded={moreFilters}
                 >
-                  更多篩選
-                  {periods.length + skills.length + rarities.length + stratCats.length + (durOn ? 1 : 0) + (powerOn ? 1 : 0) + (intelOn ? 1 : 0) + (sorts.length ? 1 : 0) ? (
-                    <span className="tabular-nums">{periods.length + skills.length + rarities.length + stratCats.length + (durOn ? 1 : 0) + (powerOn ? 1 : 0) + (intelOn ? 1 : 0) + (sorts.length ? 1 : 0)}</span>
+                  進階篩選
+                  {periods.length + skills.length + rarities.length + stratCats.length + (durChanged ? 1 : 0) + (moraleOn ? 1 : 0) + (powerOn ? 1 : 0) + (intelOn ? 1 : 0) + (sorts.length ? 1 : 0) ? (
+                    <span className="tabular-nums">{periods.length + skills.length + rarities.length + stratCats.length + (durChanged ? 1 : 0) + (moraleOn ? 1 : 0) + (powerOn ? 1 : 0) + (intelOn ? 1 : 0) + (sorts.length ? 1 : 0)}</span>
                   ) : null}
                   {moreFilters ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
                 </button>
@@ -794,7 +808,6 @@ export function ScoutApp() {
                         };
                       })}
                     />
-                    <FilterRule label="武知範圍" />
                     <StatBounds
                       powerMin={powerMin}
                       powerMax={powerMax}
@@ -809,14 +822,25 @@ export function ScoutApp() {
                         setIntelMax(hi);
                       }}
                     />
-                    <DurationRange
-                      min={durMin}
-                      max={durMax}
-                      onChange={(lo, hi) => {
-                        setDurMin(lo);
-                        setDurMax(hi);
-                      }}
-                    />
+                    <div className="grid grid-cols-2 gap-3 pt-1.5">
+                      <DurationRange
+                        min={durMin}
+                        max={durMax}
+                        onChange={(lo, hi) => {
+                          setDurMin(lo);
+                          setDurMax(hi);
+                        }}
+                      />
+                      <MoraleRange
+                        min={moraleMin}
+                        max={moraleMax}
+                        onChange={(lo, hi) => {
+                          setMoraleMin(lo);
+                          setMoraleMax(hi);
+                        }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-faint">只算本計時長。只有短計的當作 0C。</p>
                     <FilterRule label="時代" />
                     <ChipGrid
                       cols="grid-cols-5"
@@ -1277,84 +1301,62 @@ function StatBounds({
 }) {
   return (
     <div className="grid grid-cols-2 gap-3 pt-1.5">
-      <StatBound label="武力範圍" tone="power" min={powerMin} max={powerMax} onChange={onPower} />
-      <StatBound label="知力範圍" tone="intel" min={intelMin} max={intelMax} onChange={onIntel} />
+      <StatBound label="武力範圍" min={powerMin} max={powerMax} onChange={onPower} />
+      <StatBound label="知力範圍" min={intelMin} max={intelMax} onChange={onIntel} />
     </div>
   );
 }
 
 function StatBound({
   label,
-  tone,
   min,
   max,
   onChange,
 }: {
   label: string;
-  tone: "power" | "intel";
   min: number;
   max: number;
   onChange: (min: number, max: number) => void;
 }) {
-  const [anchor, setAnchor] = useState<number | null>(null);
-  const narrowed = min > STAT_LO || max < STAT_HI;
-  const power = tone === "power";
-  useEffect(() => {
-    if (!narrowed) setAnchor(null);
-  }, [narrowed]);
-  const pick = (n: number) => {
-    if (anchor == null) {
-      onChange(n, n);
-      setAnchor(n);
-      return;
-    }
-    onChange(Math.min(anchor, n), Math.max(anchor, n));
-    setAnchor(null);
-  };
+  const nums = Array.from({ length: STAT_HI - STAT_LO + 1 }, (_, index) => STAT_LO + index);
   return (
-    <div className={cn("rounded-md px-1.5 py-1.5", power ? "bg-[#3a1818] ring-1 ring-[#b41e22]/50" : "bg-[#152038] ring-1 ring-[#1e3c8a]/70")}>
-      <p className={cn("mb-1 text-center text-xs", power ? "text-[#e07070]" : "text-[#7aa2e3]")}>
-        {label}
-        {narrowed ? ` ${min}–${max}` : ""}
-      </p>
-      <div className="grid grid-cols-4">
-        {Array.from({ length: 12 }, (_, index) => {
-          const n = index + 1;
-          const col = index % 4;
-          const inside = narrowed && n >= min && n <= max;
-          const leftOn = inside && col > 0 && n - 1 >= min;
-          const rightOn = inside && col < 3 && n + 1 <= max;
-          const edge = inside && (n === min || n === max);
-          return (
-            <button
-              key={n}
-              type="button"
-              aria-label={`${label}${n}`}
-              onClick={() => pick(n)}
-              className={cn(
-                "flex h-9 items-center justify-center text-sm tabular-nums",
-                inside
-                  ? cn(
-                      edge
-                        ? power
-                          ? "bg-faction-hi text-white"
-                          : "bg-faction-ao text-white"
-                        : power
-                          ? "bg-faction-hi/45 text-fg"
-                          : "bg-faction-ao/55 text-fg",
-                      !leftOn && !rightOn && "rounded-md",
-                      !leftOn && rightOn && "rounded-l-md",
-                      leftOn && !rightOn && "rounded-r-md",
-                    )
-                  : power
-                    ? "text-[#c9a3a3]"
-                    : "text-[#a9b8d4]",
-              )}
-            >
+    <div>
+      <div className="mb-1.5 flex items-center gap-2">
+        <span className="shrink-0 text-xs text-faint">{label}</span>
+        <span className="h-px min-w-4 flex-1 bg-border" aria-hidden />
+      </div>
+      <div className="flex items-center gap-1">
+        <select
+          aria-label={`${label}下限`}
+          value={min}
+          onChange={(event) => {
+            const next = Number(event.target.value);
+            onChange(next, Math.max(next, max));
+          }}
+          className="plain-press h-8 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
+        >
+          {nums.map((n) => (
+            <option key={n} value={n}>
               {n}
-            </button>
-          );
-        })}
+            </option>
+          ))}
+        </select>
+        <span className="shrink-0 text-xs text-faint">至</span>
+        <select
+          aria-label={`${label}上限`}
+          value={max}
+          onChange={(event) => {
+            const next = Number(event.target.value);
+            onChange(Math.min(min, next), next);
+          }}
+          className="plain-press h-8 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
+        >
+          {nums.map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   );
@@ -1403,49 +1405,99 @@ function DurationRange({
   max: number;
   onChange: (min: number, max: number) => void;
 }) {
-  const [top, setTop] = useState<"min" | "max">("max");
-  const narrowed = min > DUR_LO || max < DUR_HI;
-  const left = (min / DUR_HI) * 100;
-  const width = ((max - min) / DUR_HI) * 100;
+  const nums = Array.from({ length: DUR_HI - DUR_LO + 1 }, (_, index) => DUR_LO + index);
   return (
-    <div className="pb-1">
-      <div className="flex items-center gap-2 pt-1.5">
+    <div>
+      <div className="mb-1.5 flex items-center gap-2">
         <span className="shrink-0 text-xs text-faint">計略時長</span>
         <span className="h-px min-w-4 flex-1 bg-border" aria-hidden />
-        <span className="shrink-0 text-xs font-medium tabular-nums text-fg">
-          {narrowed ? `${min}C – ${max}C` : "0C – 99C"}
-        </span>
       </div>
-      <div className="relative mt-2 h-8">
-        <div className="absolute top-1/2 right-0 left-0 h-1 -translate-y-1/2 rounded-full bg-[#3a2c22]" />
-        <div
-          className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-faction-ko"
-          style={{ left: `${left}%`, width: `${width}%` }}
-        />
-        <input
-          type="range"
-          min={DUR_LO}
-          max={DUR_HI}
-          value={min}
+      <div className="flex items-center gap-1">
+        <select
           aria-label="最短時長"
-          className="dur-range"
-          style={{ zIndex: top === "min" ? 5 : 3 }}
-          onPointerDown={() => setTop("min")}
-          onChange={(e) => onChange(Math.min(Number(e.target.value), max), max)}
-        />
-        <input
-          type="range"
-          min={DUR_LO}
-          max={DUR_HI}
-          value={max}
+          value={min}
+          onChange={(event) => {
+            const next = Number(event.target.value);
+            onChange(next, Math.max(next, max));
+          }}
+          className="plain-press h-8 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
+        >
+          {nums.map((n) => (
+            <option key={n} value={n}>
+              {n}C
+            </option>
+          ))}
+        </select>
+        <span className="shrink-0 text-xs text-faint">至</span>
+        <select
           aria-label="最長時長"
-          className="dur-range"
-          style={{ zIndex: top === "max" ? 5 : 3 }}
-          onPointerDown={() => setTop("max")}
-          onChange={(e) => onChange(min, Math.max(Number(e.target.value), min))}
-        />
+          value={max}
+          onChange={(event) => {
+            const next = Number(event.target.value);
+            onChange(Math.min(min, next), next);
+          }}
+          className="plain-press h-8 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
+        >
+          {nums.map((n) => (
+            <option key={n} value={n}>
+              {n}C
+            </option>
+          ))}
+        </select>
       </div>
-      {narrowed ? <p className="text-[11px] text-faint">只算本計時長。只有短計的當作 0C。</p> : null}
+    </div>
+  );
+}
+
+function MoraleRange({
+  min,
+  max,
+  onChange,
+}: {
+  min: number;
+  max: number;
+  onChange: (min: number, max: number) => void;
+}) {
+  const nums = Array.from({ length: MORALE_HI - MORALE_LO + 1 }, (_, index) => MORALE_LO + index);
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center gap-2">
+        <span className="shrink-0 text-xs text-faint">計略士氣</span>
+        <span className="h-px min-w-4 flex-1 bg-border" aria-hidden />
+      </div>
+      <div className="flex items-center gap-1">
+        <select
+          aria-label="最低士氣"
+          value={min}
+          onChange={(event) => {
+            const next = Number(event.target.value);
+            onChange(next, Math.max(next, max));
+          }}
+          className="plain-press h-8 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
+        >
+          {nums.map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+        <span className="shrink-0 text-xs text-faint">至</span>
+        <select
+          aria-label="最高士氣"
+          value={max}
+          onChange={(event) => {
+            const next = Number(event.target.value);
+            onChange(Math.min(min, next), next);
+          }}
+          className="plain-press h-8 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
+        >
+          {nums.map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 }

@@ -294,9 +294,12 @@ export function filterCards(
     stratCats?: string[];
     durMin?: number;
     durMax?: number;
+    moraleMin?: number;
+    moraleMax?: number;
   },
 ): Card[] {
   const durOn = filters.durMin != null && filters.durMax != null && (filters.durMin > 0 || filters.durMax < 99);
+  const moraleOn = filters.moraleMin != null && filters.moraleMax != null && (filters.moraleMin > 1 || filters.moraleMax < 10);
   return cards.filter((c) => {
     if (filters.colors.length && !filters.colors.includes(c.color)) return false;
     if (filters.periods.length && !filters.periods.includes(c.period)) return false;
@@ -309,6 +312,7 @@ export function filterCards(
       const dur = baseDurationC(c);
       if (dur == null || dur < filters.durMin! || dur > filters.durMax!) return false;
     }
+    if (moraleOn && (c.stratCost < filters.moraleMin! || c.stratCost > filters.moraleMax!)) return false;
     return true;
   });
 }
