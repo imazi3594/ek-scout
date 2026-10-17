@@ -111,7 +111,7 @@ export function ToolsPage({
   }
 
   return (
-    <div ref={scroller} className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
+    <div ref={scroller} className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden", page === "morale" ? "overflow-y-hidden" : "overflow-y-auto")}>
       {page === "morale" ? <MoraleCalc onBack={() => onPage(null)} /> : <SiegeCalc onBack={() => onPage(null)} />}
     </div>
   );
@@ -950,7 +950,7 @@ export function SiegeCalc({ onBack }: { onBack?: () => void }) {
               ) : (
                 <span />
               )}
-              <p className="relative z-10 px-1 text-[10px] tracking-widest text-[#f6e7c1]/55">只供參考</p>
+              <p className="relative z-10 px-1 text-[10px] tracking-widest text-[#f6e7c1]/55">僅供參考</p>
             </div>
           </div>
         </dl>

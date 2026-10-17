@@ -6,15 +6,8 @@ const TOTAL_MS = 99 * 2400;
 const URA_MS = 12.5 * 2400;
 const BASE_MAX = [0, 12, 10, 8, 6];
 
-type Kind = "spend" | "plus" | "capStrat" | "gain" | "max3" | "speed125" | "speed166" | "kokoGain" | "kokoSpeed" | "gear";
-type Act = { id: string; at: number; kind: Kind; n: number; label: string; cap?: "set15" | "plus9" };
-
-const CAP_STRATS: { id: string; name: string; cost: number; cap: "set15" | "plus9"; needFactions?: number }[] = [
-  { id: "oogami", name: "快刀乱麻", cost: 6, cap: "set15" },
-  { id: "mouri", name: "西照らす残光", cost: 5, cap: "plus9", needFactions: 2 },
-  { id: "nagi", name: "心眼の撫子", cost: 6, cap: "plus9" },
-  { id: "yoshiaki", name: "信長包囲網", cost: 6, cap: "plus9" },
-];
+type Kind = "spend" | "plus" | "gain" | "max3" | "speed125" | "speed166" | "kokoGain" | "kokoSpeed" | "gear";
+type Act = { id: string; at: number; kind: Kind; n: number; label: string; unlock?: boolean };
 
 const SCHOOLS: { kind: Kind; group: "士氣" | "琥煌"; side: "表" | "裏"; n: number; label: string }[] = [
   { kind: "max3", group: "士氣", side: "表", n: 3, label: "士氣・表・壱　最大＋3" },
@@ -38,6 +31,58 @@ function uid() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
+const MORALE_STORE = "ek-morale-calc";
+const MORALE_KINDS = new Set<Kind>(["spend", "plus", "gain", "max3", "speed125", "speed166", "kokoGain", "kokoSpeed", "gear"]);
+
+type ActionGroup = "spend" | "mini" | "plus" | "minus" | "school" | "gear";
+type MoraleDraft = {
+  remain: number;
+  factions: number;
+  koyo: number;
+  allies: number;
+  spendAmount: number;
+  plusAmount: number;
+  minusAmount: number;
+  mode: ActionGroup;
+  unlock: boolean;
+  mini: number;
+  school: Kind;
+  acts: Act[];
+};
+
+function loadMorale(): MoraleDraft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(MORALE_STORE);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as MoraleDraft;
+    if (!data || !Array.isArray(data.acts)) return null;
+    data.acts = data.acts.filter((act) => act && MORALE_KINDS.has(act.kind) && typeof act.at === "number");
+    const num = (value: unknown, fallback: number) => (typeof value === "number" && Number.isFinite(value) ? value : fallback);
+    data.remain = num(data.remain, TOTAL_MS);
+    data.factions = num(data.factions, 1);
+    data.koyo = num(data.koyo, 0);
+    data.allies = num(data.allies, 0);
+    data.spendAmount = num(data.spendAmount, 6);
+    data.plusAmount = num(data.plusAmount, 1);
+    if (data.plusAmount < 0) data.plusAmount = 1;
+    data.minusAmount = [1, 1.5, 2].includes(num(data.minusAmount, 2)) ? num(data.minusAmount, 2) : 2;
+    data.mini = num(data.mini, 1);
+    data.unlock = Boolean(data.unlock);
+    const savedMode = data.mode as string;
+    if (savedMode === "gear" || savedMode === "spend" || savedMode === "plus" || savedMode === "minus" || savedMode === "mini" || savedMode === "school") {
+      data.mode = savedMode;
+    } else if (SCHOOLS.some((entry) => entry.kind === savedMode)) {
+      data.school = savedMode as Kind;
+      data.mode = "school";
+    } else data.mode = "spend";
+    if (!MORALE_KINDS.has(data.school)) data.school = "max3";
+    return data;
+  } catch {
+    return null;
+  }
+}
+
 function simulate(
   acts: Act[],
   stop: number,
@@ -54,6 +99,7 @@ function simulate(
   const opened = round1(koyo * 0.2);
   let morale = Math.min(max, opened);
   let overflow = round1(Math.max(0, opened - max));
+  let live = overflow;
   let gained = opened;
   let used = 0;
   let real = 0;
@@ -76,7 +122,9 @@ function simulate(
     gained = round1(gained + n);
     const next = round1(morale + n);
     if (next > max + 1e-9) {
-      overflow = round1(overflow + (next - max));
+      const over = round1(next - max);
+      overflow = round1(overflow + over);
+      live = round1(live + over);
       morale = max;
       return;
     }
@@ -141,23 +189,24 @@ function simulate(
       else {
         morale = round1(morale - act.n);
         used = round1(used + act.n);
+        live = 0;
+        if (act.unlock) max = 15;
       }
       return;
     }
-    if (act.kind === "gain" || act.kind === "gear" || act.kind === "kokoGain" || act.kind === "plus") {
+    if (act.kind === "plus") {
+      if (act.unlock) max = 15;
+      if (act.n < 0) {
+        morale = round1(Math.max(0, morale + act.n));
+        if (morale + 1e-9 < max) live = 0;
+      } else addMorale(act.n);
+      return;
+    }
+    if (act.kind === "gain" || act.kind === "gear" || act.kind === "kokoGain") {
       addMorale(act.n);
       return;
     }
     if (act.kind === "max3") max = Math.min(15, round1(max + 3));
-    if (act.kind === "capStrat") {
-      if (morale + 1e-9 < act.n) {
-        short.add(act.id);
-        return;
-      }
-      morale = round1(morale - act.n);
-      used = round1(used + act.n);
-      max = act.cap === "set15" ? Math.max(max, 15) : Math.min(15, round1(max + 9));
-    }
     if (act.kind === "speed125") perm125 = true;
     if (act.kind === "speed166" || act.kind === "kokoSpeed") uraFrom = act.at;
   };
@@ -173,7 +222,7 @@ function simulate(
   }
   if (cursor > stop) regen(stop);
   note();
-  return { morale: round1(morale), max, short, extra, ready, overflow: round1(overflow), used: round1(used), gained: round1(gained) };
+  return { morale: round1(morale), max, short, extra, ready, overflow: round1(overflow), live: round1(live), used: round1(used), gained: round1(gained) };
 }
 
 export function MoraleCalc({ onBack }: { onBack?: () => void }) {
@@ -181,26 +230,53 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
   const [factions, setFactions] = useState(1);
   const [koyo, setKoyo] = useState(0);
   const [allies, setAllies] = useState(0);
-  const [strat, setStrat] = useState(6);
-  const [plus, setPlus] = useState(1);
-  const [capId, setCapId] = useState(CAP_STRATS[0].id);
-  const [mini, setMini] = useState(2);
+  const [spendAmount, setSpendAmount] = useState(6);
+  const [plusAmount, setPlusAmount] = useState(1);
+  const [minusAmount, setMinusAmount] = useState(2);
+  const [mode, setMode] = useState<ActionGroup>("spend");
+  const [unlock, setUnlock] = useState(false);
+  const [mini, setMini] = useState(1);
   const [school, setSchool] = useState<Kind>("max3");
   const [acts, setActs] = useState<Act[]>([]);
   const [warn, setWarn] = useState<{ text: string; id: number } | null>(null);
   const [expanded, setExpanded] = useState(false);
-  const [schoolNote, setSchoolNote] = useState(false);
-  const schoolTip = useRef<HTMLSpanElement>(null);
+  const [stratNote, setStratNote] = useState(false);
+  const [ready, setReady] = useState(false);
+  const stratTip = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const saved = loadMorale();
+    if (saved) {
+      setRemain(saved.remain);
+      setFactions(saved.factions);
+      setKoyo(saved.koyo);
+      setAllies(saved.allies);
+      setSpendAmount(saved.spendAmount);
+      setPlusAmount(saved.plusAmount);
+      setMinusAmount(saved.minusAmount ?? 2);
+      setMode(saved.mode);
+      setUnlock(saved.unlock);
+      setMini(saved.mini);
+      setSchool(saved.school);
+      setActs(saved.acts);
+    }
+    setReady(true);
+  }, []);
+  useEffect(() => {
+    if (!ready) return;
+    const draft: MoraleDraft = { remain, factions, koyo, allies, spendAmount, plusAmount, minusAmount, mode, unlock, mini, school, acts };
+    localStorage.setItem(MORALE_STORE, JSON.stringify(draft));
+  }, [ready, remain, factions, koyo, allies, spendAmount, plusAmount, minusAmount, mode, unlock, mini, school, acts]);
 
   const clock = displayC(remain);
   useEffect(() => {
-    if (!schoolNote) return;
+    if (!stratNote) return;
     const close = (event: PointerEvent) => {
-      if (!schoolTip.current?.contains(event.target as Node)) setSchoolNote(false);
+      if (!stratTip.current?.contains(event.target as Node)) setStratNote(false);
     };
     document.addEventListener("pointerdown", close);
     return () => document.removeEventListener("pointerdown", close);
-  }, [schoolNote]);
+  }, [stratNote]);
   useEffect(() => {
     if (!warn) return;
     const id = window.setTimeout(() => setWarn(null), 1600);
@@ -216,28 +292,39 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
     setFactions(1);
     setKoyo(0);
     setAllies(0);
-    setStrat(6);
-    setPlus(1);
-    setCapId(CAP_STRATS[0].id);
-    setMini(2);
+    setSpendAmount(6);
+    setPlusAmount(1);
+    setMinusAmount(2);
+    setMode("spend");
+    setUnlock(false);
+    setMini(1);
     setSchool("max3");
     setActs([]);
+    localStorage.removeItem(MORALE_STORE);
   };
 
-  const placeCap = () => {
-    const item = CAP_STRATS.find((entry) => entry.id === capId) ?? CAP_STRATS[0];
-    if (item.needFactions && factions < item.needFactions) {
-      setWarn({ text: `${item.name} 需要 ${item.needFactions} 勢力以上。`, id: Date.now() });
+  const amount = mode === "spend" ? spendAmount : mode === "mini" ? mini : mode === "minus" ? minusAmount : plusAmount;
+  const setAmount = mode === "spend" ? setSpendAmount : mode === "mini" ? setMini : mode === "minus" ? setMinusAmount : setPlusAmount;
+
+  const placeMorale = () => {
+    const shown = amount.toFixed(1);
+    if ((mode === "spend" || mode === "mini") && view.morale + 1e-9 < amount) {
+      setWarn({ text: `士氣不足。此刻 ${view.morale.toFixed(1)}，需要 ${shown}。`, id: Date.now() });
       return;
     }
-    if (view.morale + 1e-9 < item.cost) {
-      setWarn({ text: `士氣不足。此刻 ${view.morale.toFixed(1)}，需要 ${item.cost}。`, id: Date.now() });
-      return;
-    }
+    const cap = unlock && mode === "spend" ? "　上限變為15" : "";
+    const signed = mode === "minus" ? -amount : amount;
+    const label =
+      mode === "spend"
+        ? `使用計略 −${shown}${cap}`
+        : mode === "mini"
+          ? `短計 −${shown}`
+          : `效果 ${signed < 0 ? "－" : "＋"}${shown}${cap}`;
     setActs((list) => [
       ...list,
-      { id: uid(), at: remain, kind: "capStrat", n: item.cost, label: `${item.name}　士氣−${item.cost}`, cap: item.cap },
+      { id: uid(), at: remain, kind: mode === "plus" || mode === "minus" ? "plus" : "spend", n: signed, label, unlock: Boolean(cap) },
     ]);
+    setUnlock(false);
   };
 
   const place = (kind: Kind, n: number, label: string) => {
@@ -263,21 +350,17 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
 
   const used = (kind: Kind) => acts.some((act) => act.kind === kind);
   const pickedSchool = SCHOOLS.find((entry) => used(entry.kind));
-  const schoolOptions = SCHOOLS.filter(
-    (entry) => !used(entry.kind) && (!pickedSchool || (entry.group === pickedSchool.group && entry.side === pickedSchool.side)),
-  );
-  const schoolPick = schoolOptions.find((entry) => entry.kind === school) ?? schoolOptions[0];
   const listed = [...acts].sort((a, b) => b.at - a.at || a.id.localeCompare(b.id));
 
   return (
     <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden" data-no-swipe="">
       <div className="relative shrink-0 bg-[#120e0a]">
-        <div className="grid grid-cols-[auto_1fr_auto] items-center px-2 pt-0.5">
+        <div className="relative flex min-h-14 items-center px-2">
           {onBack ? (
             <button
               type="button"
               onClick={onBack}
-              className="inline-flex h-8 items-center gap-0.5 rounded-md bg-black/70 px-2.5 text-xs font-medium text-[#f6e7c1] shadow-[0_0_0_1px_rgba(198,161,90,0.45)]"
+              className="relative z-10 inline-flex h-8 items-center gap-0.5 rounded-md bg-black/70 px-2.5 text-xs font-medium text-[#f6e7c1] shadow-[0_0_0_1px_rgba(198,161,90,0.45)]"
             >
               <ChevronLeft className="size-4" />
               返回
@@ -285,11 +368,18 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
           ) : (
             <span />
           )}
-          <div className="text-center">
-            <p className="font-display text-4xl leading-none tabular-nums text-[#f4efe4]">{clock}</p>
-            <p className="mt-1 text-xs leading-none text-[#c6a15a]">剩餘時間</p>
+          <div className="pointer-events-none absolute inset-x-0 text-center">
+            <p
+              className={cn(
+                "font-display text-4xl leading-none tabular-nums",
+                clock <= 10 ? "morale-clock-late" : clock <= 20 ? "text-[#f5d84a]" : "text-[#f4efe4]",
+              )}
+            >
+              {clock < 10 ? `0${clock}` : clock}
+            </p>
+            <p className="mt-1 text-[10px] leading-none text-[#c6a15a]">剩餘時間</p>
           </div>
-          <p className="pr-1 text-[10px] tracking-widest text-[#c6a15a]/70">只供參考</p>
+          <p className="relative z-10 ml-auto pr-1 text-[10px] tracking-widest text-[#c6a15a]/70">僅供參考</p>
         </div>
         <div className="flex items-start gap-1 px-2 pb-1">
           <div className="flex justify-start gap-1">
@@ -333,11 +423,11 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
           })}
         </div>
         <p className="pb-1 text-center text-[10px] tabular-nums tracking-wide text-[#c6a15a]">
-          已使用 {view.used.toFixed(1)}　總獲得 {view.gained.toFixed(1)}
-          {view.overflow > 0 ? <span className="text-[#e5484d]">（溢出 {view.overflow.toFixed(1)}）</span> : null}
+          已使用 {full.used.toFixed(1)}　總獲得 {full.gained.toFixed(1)}
+          {full.overflow > 0 ? <span className="text-[#e5484d]">（溢出 {full.overflow.toFixed(1)}）</span> : null}
         </p>
       </div>
-      <div className={cn("relative flex flex-col bg-[#120e0a]", expanded ? "min-h-0 flex-1" : "shrink-0")}>
+      <div className="relative flex min-h-0 flex-1 flex-col bg-[#120e0a]">
         <ActWindow
           remain={remain}
           acts={listed}
@@ -355,42 +445,49 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
         ) : null}
       </div>
 
-      <div className={cn("min-h-0 flex-1 overflow-y-auto bg-bg px-3 py-1.5 sm:px-6", expanded && "hidden")}>
-        <div className="flex flex-col gap-1">
+      <div className={cn("shrink-0 bg-bg px-3 py-2.5 sm:px-6", expanded && "hidden")}>
+        <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
           <p className="font-display text-xl tabular-nums leading-none text-fg">
-            <span className="mr-1.5 text-xs font-normal text-faint">此刻</span>
+            <span className="mr-1.5 text-sm font-normal text-faint">此刻</span>
             {view.morale.toFixed(1)}
-            <span className="text-base text-muted">／{view.max}</span>
+            <span className="text-sm text-muted">／{view.max}</span>
+            {view.live > 0 ? (
+              <span className="ml-1.5 text-xs font-normal text-[#e5484d]">（溢出 {view.live.toFixed(1)}）</span>
+            ) : null}
           </p>
           <button
             type="button"
             onClick={reset}
-            className="plain-press h-7 shrink-0 rounded-md bg-faction-hi px-2.5 text-xs font-medium text-white"
+            className="plain-press h-8 shrink-0 rounded-md bg-faction-hi px-2.5 text-sm font-medium text-white"
           >
             重設
           </button>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          <span className="shrink-0 text-xs text-faint">勢力</span>
+        <div className="flex items-center gap-2 pt-1">
+          <span className="shrink-0 text-sm font-medium text-[#c6a15a]">卡組</span>
+          <span className="h-px min-w-4 flex-1 bg-[#c6a15a]/40" aria-hidden />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="shrink-0 text-sm text-faint">勢力</span>
           <select
             aria-label="勢力"
             value={factions}
             onChange={(event) => setFactions(Number(event.target.value))}
-            className="plain-press h-8 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
+            className="plain-press h-9 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
           >
             <option value={1}>1</option>
             <option value={2}>2</option>
             <option value={3}>3</option>
             <option value={4}>4+</option>
           </select>
-          <span className="shrink-0 text-xs text-faint">昂揚</span>
+          <span className="shrink-0 text-sm text-faint">昂揚</span>
           <select
             aria-label="昂揚"
             value={koyo}
             onChange={(event) => setKoyo(Number(event.target.value))}
-            className="plain-press h-8 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
+            className="plain-press h-9 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
           >
             {Array.from({ length: 19 }, (_, i) => i / 2).map((n) => (
               <option key={n} value={n}>
@@ -398,12 +495,12 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
               </option>
             ))}
           </select>
-          <span className="shrink-0 text-xs text-faint">同盟</span>
+          <span className="shrink-0 text-sm text-faint">同盟</span>
           <select
             aria-label="同盟"
             value={allies}
             onChange={(event) => setAllies(Number(event.target.value))}
-            className="plain-press h-8 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
+            className="plain-press h-9 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
           >
             {Array.from({ length: 10 }, (_, n) => (
               <option key={n} value={n}>
@@ -413,85 +510,141 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
           </select>
         </div>
 
-        <Row label="使用士氣">
-          <Stepper value={strat} min={1} max={15} step={1} onChange={setStrat} />
-          <Add onClick={() => place("spend", strat, `使用士氣 −${strat}`)}>輸入</Add>
-        </Row>
-
-        <Row label="短計">
-          <Stepper value={mini} min={0.5} max={2} step={0.5} onChange={setMini} />
-          <Add onClick={() => place("spend", mini, `短計 −${mini}`)}>輸入</Add>
-        </Row>
-
-        <Row label="增加士氣">
-          <Stepper value={plus} min={0.5} max={12} step={0.5} onChange={setPlus} />
-          <Add onClick={() => place("plus", plus, `增加士氣 ＋${Number.isInteger(plus) ? plus : plus.toFixed(1)}`)}>輸入</Add>
-        </Row>
-
-        <div className="flex items-center gap-2">
-          <span className="w-[4.75rem] shrink-0 whitespace-nowrap text-xs leading-none text-faint">增加上限</span>
-          <select
-            aria-label="增加上限"
-            value={capId}
-            onChange={(event) => setCapId(event.target.value)}
-            className="plain-press h-8 min-w-0 flex-1 truncate rounded-md bg-surface-2 px-2 text-xs text-fg"
-          >
-            {CAP_STRATS.map((entry) => (
-              <option key={entry.id} value={entry.id}>
-                {entry.name}　士氣−{entry.cost}
-              </option>
-            ))}
-          </select>
-          <Add onClick={placeCap}>輸入</Add>
+        <div className="flex items-center gap-2 pt-1">
+          <span className="shrink-0 text-sm font-medium text-[#c6a15a]">動作</span>
+          <span className="h-px min-w-4 flex-1 bg-[#c6a15a]/40" aria-hidden />
         </div>
-
-        <div className="flex items-center gap-2">
-          <span ref={schoolTip} className="relative flex w-[4.75rem] shrink-0 items-center gap-0.5 whitespace-nowrap text-xs leading-none text-faint">
-            流派
-            <button
-              type="button"
-              aria-label="流派說明"
-              aria-expanded={schoolNote}
-              onClick={() => setSchoolNote((open) => !open)}
-              className="grid size-4 place-items-center text-muted"
+        <div className="grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)_auto] items-center gap-x-2 gap-y-2.5">
+          <select
+            aria-label="動作"
+            value={mode}
+            onChange={(event) => {
+              const next = event.target.value as ActionGroup;
+              setMode(next);
+              setStratNote(false);
+              if (next === "school") {
+                const open = SCHOOLS.find(
+                  (entry) => !used(entry.kind) && (!pickedSchool || (entry.group === pickedSchool.group && entry.side === pickedSchool.side)),
+                );
+                if (open) setSchool(open.kind);
+              }
+            }}
+            className="plain-press h-9 w-full truncate rounded-md bg-surface-2 px-1 text-sm text-fg"
+          >
+            <option value="spend">使用計略</option>
+            <option value="mini">短計</option>
+            <option value="plus">效果(增加)</option>
+            <option value="minus">效果(減少)</option>
+            <option value="school">流派</option>
+            <option value="gear">戰器</option>
+          </select>
+          {mode === "school" ? (
+            <select
+              aria-label="流派"
+              value={school}
+              onChange={(event) => setSchool(event.target.value as Kind)}
+              className="plain-press h-9 w-full truncate rounded-md bg-surface-2 px-1 text-sm text-fg"
             >
-              <CircleHelp className="size-3.5" />
-            </button>
-            {schoolNote ? (
-              <p className="absolute left-0 top-full z-30 mt-1 w-44 rounded-md border border-white/10 bg-[#2a221c] px-2.5 py-2 text-[11px] font-normal leading-snug text-fg">
-                實際可發動時間以遊戲情況為準
-              </p>
+              {SCHOOLS.map((entry) => (
+                <option
+                  key={entry.kind}
+                  value={entry.kind}
+                  disabled={used(entry.kind) || Boolean(pickedSchool && (entry.group !== pickedSchool.group || entry.side !== pickedSchool.side))}
+                >
+                  {used(entry.kind) ? `${entry.label}（已發動）` : entry.label}
+                </option>
+              ))}
+            </select>
+          ) : mode === "gear" ? (
+            <select aria-label="戰器" value="gear" disabled={used("gear")} className="plain-press h-9 w-full truncate rounded-md bg-surface-2 px-1 text-sm text-fg disabled:opacity-40">
+              <option value="gear">{used("gear") ? "已發動" : "＋0.75"}</option>
+            </select>
+          ) : (
+            <select
+              aria-label="士氣"
+              value={amount}
+              onChange={(event) => setAmount(Number(event.target.value))}
+              className="plain-press h-9 w-full truncate rounded-md bg-surface-2 px-1 text-sm text-fg"
+            >
+              {(mode === "spend"
+                ? Array.from({ length: 15 }, (_, index) => index + 1)
+                : mode === "mini"
+                  ? [0.5, 1, 1.5, 2]
+                  : mode === "minus"
+                    ? [1, 1.5, 2]
+                    : Array.from({ length: 24 }, (_, index) => (index + 1) / 2)
+              ).map((n) => (
+                <option key={n} value={n}>
+                  {mode === "plus" ? `＋${n.toFixed(1)}` : mode === "minus" ? `－${n.toFixed(1)}` : n.toFixed(1)}
+                </option>
+              ))}
+            </select>
+          )}
+          <Add
+            disabled={
+              mode === "gear"
+                ? used("gear")
+                : mode === "school"
+                  ? used(school) || Boolean(pickedSchool && SCHOOLS.some((entry) => entry.kind === school && (entry.group !== pickedSchool.group || entry.side !== pickedSchool.side)))
+                  : false
+            }
+            onClick={() => {
+              if (mode === "spend" || mode === "mini" || mode === "plus" || mode === "minus") {
+                placeMorale();
+                return;
+              }
+              if (mode === "gear") {
+                place("gear", 0.75, "戰器 ＋0.75");
+                setUnlock(false);
+                return;
+              }
+              const entry = SCHOOLS.find((item) => item.kind === school);
+              if (entry) {
+                place(entry.kind, entry.n, entry.label);
+                setUnlock(false);
+              }
+            }}
+          >
+            輸入
+          </Add>
+          <span ref={stratTip} className="relative col-start-1 flex h-5 items-center justify-start">
+            {mode === "plus" || mode === "minus" || mode === "school" ? (
+              <>
+                <button
+                  type="button"
+                  aria-label="動作說明"
+                  aria-expanded={stratNote}
+                  onClick={() => setStratNote((open) => !open)}
+                  className="grid size-5 place-items-center text-muted"
+                >
+                  <CircleHelp className="size-4" />
+                </button>
+                {stratNote ? (
+                  <p className="absolute left-5 top-1/2 z-30 ml-1 w-44 -translate-y-1/2 rounded-md border border-white/10 bg-[#2a221c] px-2.5 py-2 text-xs font-normal leading-snug text-fg">
+                    {mode === "plus"
+                      ? "效果為增加士氣的計略效果"
+                      : mode === "minus"
+                        ? "效果為減少士氣的計略效果"
+                        : "實際可發動時間以遊戲情況為準"}
+                  </p>
+                ) : null}
+              </>
             ) : null}
           </span>
-          <select
-            value={schoolPick?.kind ?? ""}
-            disabled={!schoolPick}
-            onChange={(event) => setSchool(event.target.value as Kind)}
-            className="plain-press h-8 min-w-0 flex-1 rounded-md bg-surface-2 px-2 text-xs text-fg disabled:opacity-40"
-          >
-            {schoolOptions.map((entry) => (
-              <option key={entry.kind} value={entry.kind}>
-                {entry.label}
-              </option>
-            ))}
-            {!schoolPick ? <option value="">已用完</option> : null}
-          </select>
-          <Add
-            disabled={!schoolPick}
-            onClick={() => schoolPick && place(schoolPick.kind, schoolPick.n, schoolPick.label)}
-          >
-            輸入
-          </Add>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="w-[4.75rem] shrink-0 whitespace-nowrap text-xs leading-none text-faint">戰器</span>
-          <span className={cn("flex h-8 min-w-0 flex-1 items-center rounded-md bg-surface-2 px-2 text-xs text-fg", used("gear") && "opacity-40")}>
-            {used("gear") ? "已用完" : "＋0.75"}
+          <span className="col-start-2 flex h-5 items-center">
+            {mode === "spend" ? (
+              <label className="flex items-center gap-1.5 text-sm text-faint">
+                <input
+                  type="checkbox"
+                  checked={unlock}
+                  onChange={(event) => setUnlock(event.target.checked)}
+                  className="size-4 accent-[#c6a15a]"
+                  aria-label="解放士氣上限"
+                />
+                解放士氣上限
+              </label>
+            ) : null}
           </span>
-          <Add disabled={used("gear")} onClick={() => place("gear", 0.75, "戰器 ＋0.75")}>
-            輸入
-          </Add>
         </div>
         </div>
       </div>
@@ -549,7 +702,7 @@ function ActWindow({
   const ticks = Array.from({ length: 100 }, (_, index) => 99 - index);
   const placed: number[] = [];
   return (
-    <div className={cn("flex flex-col px-2 pb-1", expanded ? "min-h-0 flex-1" : "h-32 shrink-0")}>
+    <div className="relative flex min-h-0 flex-1 flex-col px-2">
       <div
         ref={frame}
         className="relative min-h-0 flex-1 touch-none select-none overflow-hidden rounded-md bg-[#1a140c] shadow-[inset_0_0_0_1px_rgba(198,161,90,0.28)]"
@@ -577,6 +730,10 @@ function ActWindow({
           </button>
         ) : null}
         <div className="pointer-events-none absolute inset-x-2 top-1/2 z-20 h-px -translate-y-1/2 bg-[#e25822]/45" />
+        <div className="pointer-events-none absolute bottom-6 right-1.5 top-7 z-20 flex flex-col items-center justify-between text-[#c6a15a]/55">
+          <ChevronUp className="size-3.5" />
+          <ChevronDown className="size-3.5" />
+        </div>
         <div className="absolute inset-x-0 top-0" style={{ height: pad * 2 + span, transform: `translateY(${-shift}px)` }}>
           <div className="absolute bottom-0 left-[3.55rem] top-0 w-px bg-[#c6a15a]/40" />
           {ticks.map((c) => {
@@ -611,17 +768,25 @@ function ActWindow({
               const last = placed[placed.length - 1];
               if (last != null && top < last + 22) top = last + 22;
               placed.push(top);
+              const lacking = short.has(act.id);
+              const tone = lacking
+                ? "bg-[#3a3a3a] text-[#8d8d8d]"
+                : act.kind === "gear"
+                  ? "bg-[#3a2748] text-[#e4c4f5]"
+                  : act.kind === "spend" || act.kind === "plus"
+                    ? "bg-[#3d321c] text-[#f3dd9a]"
+                    : "bg-[#1c3344] text-[#b7dff2]";
               return (
                 <div key={act.id} className="absolute left-[4.1rem] right-2 flex -translate-y-1/2 items-center" style={{ top }}>
-                  <div className="flex min-w-0 max-w-full items-center gap-1 rounded bg-[#2a2118] px-1.5 py-0.5">
-                    <span className="w-8 shrink-0 text-[10px] tabular-nums text-[#c6a15a]">{displayC(act.at)}C</span>
-                    <span className="min-w-0 truncate text-[11px] text-[#f4efe4]">{act.label}</span>
-                    {short.has(act.id) ? <span className="shrink-0 text-[10px] text-[#e5484d]">不足</span> : null}
+                  <div className={cn("flex min-w-0 max-w-full items-center gap-1 rounded px-1.5 py-0.5", tone)}>
+                    <span className="w-8 shrink-0 text-[10px] tabular-nums opacity-80">{displayC(act.at)}C</span>
+                    <span className="min-w-0 truncate text-[11px]">{act.label}</span>
+                    {lacking ? <span className="shrink-0 text-[10px] text-[#e5484d]">不足</span> : null}
                     <button
                       type="button"
                       aria-label="刪除"
                       onClick={() => onDelete(act.id)}
-                      className="grid size-4 shrink-0 place-items-center text-[#c6a15a]"
+                      className="grid size-4 shrink-0 place-items-center opacity-70"
                     >
                       <X className="size-3" />
                     </button>
@@ -635,10 +800,9 @@ function ActWindow({
         type="button"
         aria-label={expanded ? "收起" : "展開"}
         onClick={onToggle}
-        className="relative z-20 mx-auto -mt-px flex h-6 w-1/2 items-center justify-center gap-1 rounded-b-md bg-[#c6a15a] text-xs font-medium text-[#1a140c]"
+        className="absolute bottom-0 left-1/2 z-20 flex h-4 w-10 -translate-x-1/2 items-center justify-center rounded-t-md bg-[#c6a15a] text-[#1a140c]"
       >
-        {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-        {expanded ? "收起" : "展開"}
+        {expanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
       </button>
     </div>
   );
@@ -708,61 +872,13 @@ function Scrub({
   );
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <span className="w-[4.75rem] shrink-0 whitespace-nowrap text-xs leading-none text-faint">{label}</span>
-      {children}
-    </div>
-  );
-}
-
-function Stepper({
-  value,
-  min,
-  max,
-  step,
-  onChange,
-  compact,
-}: {
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  onChange: (next: number) => void;
-  compact?: boolean;
-}) {
-  const shown = Number.isInteger(step) && Number.isInteger(value) ? String(value) : value.toFixed(1);
-  return (
-    <div className="flex h-8 min-w-0 flex-1 items-center rounded-md bg-surface-2">
-      <button
-        type="button"
-        aria-label="減少"
-        onClick={() => onChange(round1(Math.max(min, value - step)))}
-        className={cn("grid h-full place-items-center text-fg", compact ? "w-6" : "w-9")}
-      >
-        −
-      </button>
-      <span className="min-w-0 flex-1 text-center text-sm tabular-nums">{shown}</span>
-      <button
-        type="button"
-        aria-label="增加"
-        onClick={() => onChange(round1(Math.min(max, value + step)))}
-        className={cn("grid h-full place-items-center text-fg", compact ? "w-6" : "w-9")}
-      >
-        ＋
-      </button>
-    </div>
-  );
-}
-
 function Add({ children, onClick, disabled }: { children: string; onClick: () => void; disabled?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="plain-press h-8 shrink-0 rounded-md bg-[#c6a15a] px-3 text-xs font-medium text-[#1a140c] disabled:opacity-40"
+      className="plain-press h-9 shrink-0 rounded-md bg-[#c6a15a] px-3 text-sm font-medium text-[#1a140c] disabled:opacity-40"
     >
       {children}
     </button>

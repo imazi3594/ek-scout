@@ -119,6 +119,21 @@
   animation: morale-pip 1.1s ease-in-out infinite;
 }
 
+@keyframes morale-clock-late {
+  0%,
+  45% {
+    color: #ff4b3a;
+  }
+  55%,
+  100% {
+    color: #ff9a2e;
+  }
+}
+
+.morale-clock-late {
+  animation: morale-clock-late 0.7s steps(1) infinite;
+}
+
 @layer components {
   .rarity-er {
     background-image: linear-gradient(90deg, #ff6b8a, #ffd166, #7ee787, #6ecbff, #c9a0ff);

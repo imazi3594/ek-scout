@@ -615,7 +615,7 @@ function OshiGauge({ tracks }: { tracks: GaugeTrack[] }) {
           </div>
         ))}
       </dl>
-      <p className="mt-2 text-[11px] text-faint">樣本之間按直線推算，只供參考</p>
+      <p className="mt-2 text-[11px] text-faint">樣本之間按直線推算，僅供參考</p>
     </div>
   );
 }
