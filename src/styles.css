@@ -134,6 +134,25 @@
   animation: morale-clock-late 0.7s steps(1) infinite;
 }
 
+@keyframes morale-step-flash {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.9);
+  }
+  18% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-70%);
+  }
+}
+
+.morale-step-flash {
+  animation: morale-step-flash 0.7s ease-out forwards;
+}
+
 @layer components {
   .rarity-er {
     background-image: linear-gradient(90deg, #ff6b8a, #ffd166, #7ee787, #6ecbff, #c9a0ff);

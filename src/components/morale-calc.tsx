@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChevronsLeft, ChevronsRight, CircleHelp, X } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronUp, CircleHelp, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TOTAL_MS = 240 * 1000;
@@ -52,6 +52,7 @@ type MoraleDraft = {
   mini: number;
   school: Kind;
   acts: Act[];
+  deckLocked: boolean;
 };
 
 function loadMorale(): MoraleDraft | null {
@@ -81,6 +82,7 @@ function loadMorale(): MoraleDraft | null {
       data.mode = "school";
     } else data.mode = "spend";
     if (!MORALE_KINDS.has(data.school)) data.school = "max3";
+    data.deckLocked = Boolean(data.deckLocked) || data.acts.length > 0 || data.remain < TOTAL_MS - 0.5;
     return data;
   } catch {
     return null;
@@ -245,6 +247,9 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
   const [warn, setWarn] = useState<{ text: string; id: number } | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [stratNote, setStratNote] = useState(false);
+  const [stepFlash, setStepFlash] = useState<{ text: string; id: number } | null>(null);
+  const [deckLocked, setDeckLocked] = useState(false);
+  const [resetAsk, setResetAsk] = useState(false);
   const [ready, setReady] = useState(false);
   const stratTip = useRef<HTMLSpanElement>(null);
 
@@ -263,14 +268,15 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
       setMini(saved.mini);
       setSchool(saved.school);
       setActs(saved.acts);
+      setDeckLocked(saved.deckLocked);
     }
     setReady(true);
   }, []);
   useEffect(() => {
     if (!ready) return;
-    const draft: MoraleDraft = { remain, factions, koyo, allies, spendAmount, plusAmount, minusAmount, mode, unlock, mini, school, acts };
+    const draft: MoraleDraft = { remain, factions, koyo, allies, spendAmount, plusAmount, minusAmount, mode, unlock, mini, school, acts, deckLocked };
     localStorage.setItem(MORALE_STORE, JSON.stringify(draft));
-  }, [ready, remain, factions, koyo, allies, spendAmount, plusAmount, minusAmount, mode, unlock, mini, school, acts]);
+  }, [ready, remain, factions, koyo, allies, spendAmount, plusAmount, minusAmount, mode, unlock, mini, school, acts, deckLocked]);
 
   const clock = displayC(remain);
   useEffect(() => {
@@ -290,6 +296,15 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
   const full = useMemo(() => simulate(acts, 0, factions, koyo, 0, -1, 0, -1, allies), [acts, factions, koyo, allies]);
 
   const move = (deltaMs: number) => setRemain((current) => Math.max(0, Math.min(TOTAL_MS, current + deltaMs)));
+  const scrub = (ms: number) => {
+    if (!deckLocked) return;
+    setRemain(ms);
+  };
+  const nudge = (text: string, deltaMs: number) => {
+    if (!deckLocked) return;
+    move(deltaMs);
+    setStepFlash({ text, id: Date.now() });
+  };
 
   const reset = () => {
     setRemain(TOTAL_MS);
@@ -304,6 +319,8 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
     setMini(1);
     setSchool("max3");
     setActs([]);
+    setDeckLocked(false);
+    setResetAsk(false);
     localStorage.removeItem(MORALE_STORE);
   };
 
@@ -320,7 +337,7 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
     const signed = mode === "minus" ? -amount : amount;
     const label =
       mode === "spend"
-        ? `使用計略 −${shown}${cap}`
+        ? `計略 −${shown}${cap}`
         : mode === "mini"
           ? `短計 −${shown}`
           : `效果 ${signed < 0 ? "－" : "＋"}${shown}${cap}`;
@@ -375,45 +392,27 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
           <div className="pointer-events-none absolute inset-x-0 text-center">
             <p
               className={cn(
-                "font-display text-4xl leading-none tabular-nums",
+                "relative inline-block font-display text-4xl leading-none tabular-nums",
                 clock <= 10 ? "morale-clock-late" : clock <= 20 ? "text-[#f5d84a]" : "text-[#f4efe4]",
               )}
             >
               {clock < 10 ? `0${clock}` : clock}
+              {stepFlash ? (
+                <span key={stepFlash.id} className="morale-step-flash absolute top-1/2 left-full ml-2 whitespace-nowrap text-base font-medium text-[#f5d84a]">
+                  {stepFlash.text}
+                </span>
+              ) : null}
             </p>
             <p className="mt-1 text-[10px] leading-none text-[#c6a15a]">剩餘時間</p>
           </div>
           <p className="relative z-10 ml-auto pr-1 text-[10px] tracking-widest text-[#c6a15a]/70">僅供參考</p>
         </div>
-        <div className="flex items-start gap-1 px-2 pb-1">
-          <div className="flex justify-start gap-1">
-            <Scrub label="後退 10 秒" hint="−10秒" onClick={() => move(10000)} disabled={remain >= TOTAL_MS}>
-              <ChevronsLeft className="size-4" />
-            </Scrub>
-            <Scrub label="後退 1 秒" hint="−1秒" onClick={() => move(1000)} disabled={remain >= TOTAL_MS}>
-              <ChevronLeft className="size-4" />
-            </Scrub>
-          </div>
-          <TimeBar
-            value={TOTAL_MS - remain}
-            max={TOTAL_MS}
-            onChange={(elapsed) => setRemain(TOTAL_MS - elapsed)}
-          />
-          <div className="flex justify-end gap-1">
-            <Scrub label="前進 1 秒" hint="＋1秒" onClick={() => move(-1000)} disabled={remain <= 0}>
-              <ChevronRight className="size-4" />
-            </Scrub>
-            <Scrub label="前進 10 秒" hint="＋10秒" onClick={() => move(-10000)} disabled={remain <= 0}>
-              <ChevronsRight className="size-4" />
-            </Scrub>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center justify-center gap-1 px-3 pb-1">
+        <div className="flex flex-wrap items-center justify-center gap-1 px-3">
           {Array.from({ length: view.max }, (_, i) => {
-            const full = Math.floor(view.morale + 1e-9);
-            const frac = view.morale - full;
-            const on = i < full;
-            const partial = i === full && frac > 0.02;
+            const filled = Math.floor(view.morale + 1e-9);
+            const frac = view.morale - filled;
+            const on = i < filled;
+            const partial = i === filled && frac > 0.02;
             return (
               <span key={i} className="relative size-[18px] rounded-full border border-[#c6a15a] bg-[#1a140c]">
                 {on ? <FullPip /> : null}
@@ -428,97 +427,87 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
         </div>
         <p className="pb-1 text-center text-[10px] tabular-nums tracking-wide text-[#c6a15a]">
           已使用 {show1(full.used)}　總獲得 {show1(full.gained)}
-          {full.overflow > 0 ? <span className="text-[#e5484d]">（溢出 {show1(full.overflow)}）</span> : null}
+          {full.overflow > 0 ? <span className="text-[#e5484d]">（總溢出 {show1(full.overflow)}）</span> : null}
         </p>
       </div>
-      <div className="relative flex min-h-0 flex-1 flex-col bg-[#120e0a]">
+      <div className={cn("relative flex min-h-0 flex-1 flex-col bg-[#120e0a]", !deckLocked && "pointer-events-none opacity-40")}>
         <ActWindow
           remain={remain}
           acts={listed}
           short={full.short}
           expanded={expanded}
           onToggle={() => setExpanded((open) => !open)}
-          onScrub={setRemain}
+          onScrub={scrub}
           onDelete={(id) => setActs((list) => list.filter((item) => item.id !== id))}
           onClear={() => setActs([])}
         />
         {warn ? (
-          <p className="pointer-events-none absolute inset-x-4 bottom-0 z-30 translate-y-full rounded-md bg-[#e5484d] px-3 py-2 text-center text-sm font-medium text-white shadow-lg">
+          <p className="pointer-events-none absolute inset-x-4 bottom-2 z-30 rounded-md bg-[#e5484d] px-3 py-2 text-center text-sm font-medium text-white shadow-lg">
             {warn.text}
           </p>
         ) : null}
       </div>
+      <div className={cn("shrink-0 bg-[#120e0a]", !deckLocked && "pointer-events-none opacity-40")}>
+        <div className="flex items-center gap-1 px-2 py-1">
+          <div className="flex justify-start gap-1">
+            <Scrub label="後退 10 秒" onClick={() => nudge("−10秒", 10000)} disabled={!deckLocked || remain >= TOTAL_MS}>
+              <Tri dir="left" />
+              <Tri dir="left" />
+            </Scrub>
+            <Scrub label="後退 1 秒" onClick={() => nudge("−1秒", 1000)} disabled={!deckLocked || remain >= TOTAL_MS}>
+              <Tri dir="left" />
+            </Scrub>
+          </div>
+          <TimeBar
+            value={TOTAL_MS - remain}
+            max={TOTAL_MS}
+            onChange={(elapsed) => scrub(TOTAL_MS - elapsed)}
+          />
+          <div className="flex justify-end gap-1">
+            <Scrub label="前進 1 秒" onClick={() => nudge("＋1秒", -1000)} disabled={!deckLocked || remain <= 0}>
+              <Tri dir="right" />
+            </Scrub>
+            <Scrub label="前進 10 秒" onClick={() => nudge("＋10秒", -10000)} disabled={!deckLocked || remain <= 0}>
+              <Tri dir="right" />
+              <Tri dir="right" />
+            </Scrub>
+          </div>
+        </div>
+      </div>
 
       <div className={cn("shrink-0 bg-bg px-3 py-2.5 sm:px-6", expanded && "hidden")}>
-        <div className="flex flex-col gap-2">
+        <div className="relative flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
-          <p className="font-display text-xl tabular-nums leading-none text-fg">
-            <span className="mr-1.5 text-sm font-normal text-faint">此刻</span>
-            {show1(view.morale)}
-            <span className="text-sm text-muted">／{view.max}</span>
-            {view.live > 0 ? (
-              <span className="ml-1.5 text-xs font-normal text-[#e5484d]">（溢出 {show1(view.live)}）</span>
-            ) : null}
-          </p>
+          <div className="min-w-0">
+            <p className="font-display text-xl tabular-nums leading-none text-fg">
+              <span className="mr-1.5 text-sm font-normal text-faint">此刻士氣</span>
+              {show1(view.morale)}
+              <span className="text-sm text-muted">／{view.max}</span>
+              {view.live > 0 ? (
+                <span className="ml-1.5 text-xs font-normal text-[#e5484d]">（溢出 {show1(view.live)}）</span>
+              ) : null}
+            </p>
+            <p className="mt-1 min-h-4 text-xs leading-4 text-faint">
+              {deckLocked
+                ? `勢力 ${factions === 4 ? "4+" : factions}　昂揚 ${Number.isInteger(koyo) ? koyo : koyo.toFixed(1)}　同盟 ${allies}`
+                : ""}
+            </p>
+          </div>
           <button
             type="button"
-            onClick={reset}
+            onClick={() => setResetAsk(true)}
             className="plain-press h-8 shrink-0 rounded-md bg-faction-hi px-2.5 text-sm font-medium text-white"
           >
             重設
           </button>
         </div>
 
-        <div className="flex items-center gap-2 pt-1">
-          <span className="shrink-0 text-sm font-medium text-[#c6a15a]">卡組</span>
-          <span className="h-px min-w-4 flex-1 bg-[#c6a15a]/40" aria-hidden />
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="shrink-0 text-sm text-faint">勢力</span>
-          <select
-            aria-label="勢力"
-            value={factions}
-            onChange={(event) => setFactions(Number(event.target.value))}
-            className="plain-press h-9 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
-          >
-            <option value={1}>1</option>
-            <option value={2}>2</option>
-            <option value={3}>3</option>
-            <option value={4}>4+</option>
-          </select>
-          <span className="shrink-0 text-sm text-faint">昂揚</span>
-          <select
-            aria-label="昂揚"
-            value={koyo}
-            onChange={(event) => setKoyo(Number(event.target.value))}
-            className="plain-press h-9 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
-          >
-            {Array.from({ length: 19 }, (_, i) => i / 2).map((n) => (
-              <option key={n} value={n}>
-                {Number.isInteger(n) ? n : n.toFixed(1)}
-              </option>
-            ))}
-          </select>
-          <span className="shrink-0 text-sm text-faint">同盟</span>
-          <select
-            aria-label="同盟"
-            value={allies}
-            onChange={(event) => setAllies(Number(event.target.value))}
-            className="plain-press h-9 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
-          >
-            {Array.from({ length: 10 }, (_, n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex items-center gap-2 pt-1">
-          <span className="shrink-0 text-sm font-medium text-[#c6a15a]">動作</span>
-          <span className="h-px min-w-4 flex-1 bg-[#c6a15a]/40" aria-hidden />
-        </div>
-        <div className="grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)_auto] items-center gap-x-2 gap-y-2.5">
+        <div className="relative flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <span className="shrink-0 text-sm font-medium text-[#c6a15a]">動作</span>
+            <span className="h-px min-w-4 flex-1 bg-[#c6a15a]/40" aria-hidden />
+          </div>
+          <div className="grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)_auto] items-center gap-x-2 gap-y-2.5">
           <select
             aria-label="動作"
             value={mode}
@@ -535,7 +524,7 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
             }}
             className="plain-press h-9 w-full truncate rounded-md bg-surface-2 px-1 text-sm text-fg"
           >
-            <option value="spend">使用計略</option>
+            <option value="spend">計略</option>
             <option value="mini">短計</option>
             <option value="plus">效果(增加)</option>
             <option value="minus">效果(減少)</option>
@@ -579,18 +568,19 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
                     : Array.from({ length: 24 }, (_, index) => (index + 1) / 2)
               ).map((n) => (
                 <option key={n} value={n}>
-                  {mode === "plus" ? `＋${n.toFixed(1)}` : mode === "minus" ? `－${n.toFixed(1)}` : n.toFixed(1)}
+                  {mode === "plus" ? `＋${n.toFixed(1)}` : `－${n.toFixed(1)}`}
                 </option>
               ))}
             </select>
           )}
           <Add
             disabled={
-              mode === "gear"
+              !deckLocked ||
+              (mode === "gear"
                 ? used("gear")
                 : mode === "school"
                   ? used(school) || Boolean(pickedSchool && SCHOOLS.some((entry) => entry.kind === school && (entry.group !== pickedSchool.group || entry.side !== pickedSchool.side)))
-                  : false
+                  : false)
             }
             onClick={() => {
               if (mode === "spend" || mode === "mini" || mode === "plus" || mode === "minus") {
@@ -651,7 +641,86 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
           </span>
         </div>
         </div>
+        {!deckLocked ? (
+          <div className="absolute inset-0 z-20 flex flex-col justify-center gap-3 bg-bg">
+            <p className="text-center text-base text-fg">請設定卡組</p>
+            <div className="flex items-center gap-2">
+              <span className="shrink-0 text-sm text-faint">勢力</span>
+              <select
+                aria-label="勢力"
+                value={factions}
+                onChange={(event) => setFactions(Number(event.target.value))}
+                className="plain-press h-9 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
+              >
+                <option value={1}>1</option>
+                <option value={2}>2</option>
+                <option value={3}>3</option>
+                <option value={4}>4+</option>
+              </select>
+              <span className="shrink-0 text-sm text-faint">昂揚</span>
+              <select
+                aria-label="昂揚"
+                value={koyo}
+                onChange={(event) => setKoyo(Number(event.target.value))}
+                className="plain-press h-9 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
+              >
+                {Array.from({ length: 19 }, (_, i) => i / 2).map((n) => (
+                  <option key={n} value={n}>
+                    {Number.isInteger(n) ? n : n.toFixed(1)}
+                  </option>
+                ))}
+              </select>
+              <span className="shrink-0 text-sm text-faint">同盟</span>
+              <select
+                aria-label="同盟"
+                value={allies}
+                onChange={(event) => setAllies(Number(event.target.value))}
+                className="plain-press h-9 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
+              >
+                {Array.from({ length: 10 }, (_, n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDeckLocked(true)}
+              className="plain-press mx-auto h-11 w-44 rounded-md bg-[#c6a15a] text-base font-medium text-[#1a140c]"
+            >
+              開始使用
+            </button>
+          </div>
+        ) : null}
+        {resetAsk ? (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/55">
+            <div className="w-56 rounded-lg bg-[#1c1814] px-4 py-4 text-center shadow-lg">
+              <p className="text-sm text-fg">確定重設？</p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setResetAsk(false)}
+                  className="plain-press h-9 flex-1 rounded-md bg-surface-2 text-sm text-fg"
+                >
+                  取消
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResetAsk(false);
+                    reset();
+                  }}
+                  className="plain-press h-9 flex-1 rounded-md bg-[#e5484d] text-sm font-medium text-white"
+                >
+                  確定
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
+    </div>
     </div>
   );
 }
@@ -847,32 +916,39 @@ function TimeBar({ value, max, onChange }: { value: number; max: number; onChang
   );
 }
 
+function Tri({ dir }: { dir: "left" | "right" }) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "block h-0 w-0 border-y-[6px] border-y-transparent",
+        dir === "left" ? "border-r-[9px] border-r-current" : "border-l-[9px] border-l-current",
+      )}
+    />
+  );
+}
+
 function Scrub({
   children,
   label,
-  hint,
   onClick,
   disabled,
 }: {
   children: ReactNode;
   label: string;
-  hint: string;
   onClick: () => void;
   disabled?: boolean;
 }) {
   return (
-    <div className="flex flex-col items-center">
-      <button
-        type="button"
-        aria-label={label}
-        disabled={disabled}
-        onClick={onClick}
-        className="grid size-8 place-items-center rounded-md bg-[#2a2118] text-[#f4efe4] disabled:opacity-30"
-      >
-        {children}
-      </button>
-      <span className="mt-0.5 whitespace-nowrap text-[10px] tabular-nums text-[#c6a15a]">{hint}</span>
-    </div>
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="inline-flex h-8 min-w-8 items-center justify-center gap-0.5 rounded-md bg-[#2a2118] px-2 text-[#f4efe4] disabled:opacity-30"
+    >
+      {children}
+    </button>
   );
 }
 
