@@ -228,7 +228,19 @@ function simulate(
   }
   if (cursor > stop) regen(stop);
   note();
-  return { morale: round2(morale), max, short, extra, ready, overflow: round2(overflow), live: round2(live), used: round2(used), gained: round2(gained) };
+  const speeding = perm125 || (uraFrom != null && cursor <= uraFrom + 0.5 && cursor > uraFrom - URA_MS);
+  return {
+    morale: round2(morale),
+    max,
+    short,
+    extra,
+    ready,
+    overflow: round2(overflow),
+    live: round2(live),
+    used: round2(used),
+    gained: round2(gained),
+    speeding,
+  };
 }
 
 export function MoraleCalc({ onBack }: { onBack?: () => void }) {
@@ -250,6 +262,7 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
   const [stepFlash, setStepFlash] = useState<{ text: string; id: number } | null>(null);
   const [deckLocked, setDeckLocked] = useState(false);
   const [resetAsk, setResetAsk] = useState(false);
+  const [barHint, setBarHint] = useState(false);
   const [ready, setReady] = useState(false);
   const stratTip = useRef<HTMLSpanElement>(null);
 
@@ -321,6 +334,7 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
     setActs([]);
     setDeckLocked(false);
     setResetAsk(false);
+    setBarHint(false);
     localStorage.removeItem(MORALE_STORE);
   };
 
@@ -376,20 +390,18 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
   return (
     <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden" data-no-swipe="">
       <div className="relative shrink-0 bg-[#120e0a]">
-        <div className="relative flex min-h-14 items-center px-2">
+        <div className="relative px-2 pt-3 pb-0.5">
           {onBack ? (
             <button
               type="button"
               onClick={onBack}
-              className="relative z-10 inline-flex h-8 items-center gap-0.5 rounded-md bg-black/70 px-2.5 text-xs font-medium text-[#f6e7c1] shadow-[0_0_0_1px_rgba(198,161,90,0.45)]"
+              className="absolute top-3 left-2 z-10 inline-flex h-8 items-center gap-0.5 rounded-md bg-black/70 px-2.5 text-xs font-medium text-[#f6e7c1] shadow-[0_0_0_1px_rgba(198,161,90,0.45)]"
             >
               <ChevronLeft className="size-4" />
               返回
             </button>
-          ) : (
-            <span />
-          )}
-          <div className="pointer-events-none absolute inset-x-0 text-center">
+          ) : null}
+          <div className="text-center">
             <p
               className={cn(
                 "relative inline-block font-display text-4xl leading-none tabular-nums",
@@ -403,11 +415,19 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
                 </span>
               ) : null}
             </p>
-            <p className="mt-1 text-[10px] leading-none text-[#c6a15a]">剩餘時間</p>
+            <p className="mt-2 text-[11px] leading-none tracking-wide text-[#c6a15a]">剩餘時間</p>
           </div>
-          <p className="relative z-10 ml-auto pr-1 text-[10px] tracking-widest text-[#c6a15a]/70">僅供參考</p>
+          <p className="absolute top-3 right-2 z-10 pr-1 text-[10px] tracking-widest text-[#c6a15a]/70">僅供參考</p>
         </div>
-        <div className="flex flex-wrap items-center justify-center gap-1 px-3">
+        <p
+          className={cn(
+            "h-4 text-center text-[11px] font-medium leading-4 tracking-wide",
+            view.speeding ? "morale-speed-flash" : "invisible",
+          )}
+        >
+          士氣速度上升中
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-1 px-3 pt-1">
           {Array.from({ length: view.max }, (_, i) => {
             const filled = Math.floor(view.morale + 1e-9);
             const frac = view.morale - filled;
@@ -425,7 +445,7 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
             );
           })}
         </div>
-        <p className="pb-1 text-center text-[10px] tabular-nums tracking-wide text-[#c6a15a]">
+        <p className="pb-2.5 pt-1 text-center text-[10px] tabular-nums tracking-wide text-[#c6a15a]">
           已使用 {show1(full.used)}　總獲得 {show1(full.gained)}
           {full.overflow > 0 ? <span className="text-[#e5484d]">（總溢出 {show1(full.overflow)}）</span> : null}
         </p>
@@ -461,6 +481,8 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
           <TimeBar
             value={TOTAL_MS - remain}
             max={TOTAL_MS}
+            hint={barHint}
+            onHintDone={() => setBarHint(false)}
             onChange={(elapsed) => scrub(TOTAL_MS - elapsed)}
           />
           <div className="flex justify-end gap-1">
@@ -686,7 +708,10 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
             </div>
             <button
               type="button"
-              onClick={() => setDeckLocked(true)}
+              onClick={() => {
+                setDeckLocked(true);
+                setBarHint(true);
+              }}
               className="plain-press mx-auto h-11 w-44 rounded-md bg-[#c6a15a] text-base font-medium text-[#1a140c]"
             >
               開始使用
@@ -881,10 +906,23 @@ function ActWindow({
   );
 }
 
-function TimeBar({ value, max, onChange }: { value: number; max: number; onChange: (ms: number) => void }) {
+function TimeBar({
+  value,
+  max,
+  hint,
+  onHintDone,
+  onChange,
+}: {
+  value: number;
+  max: number;
+  hint: boolean;
+  onHintDone: () => void;
+  onChange: (ms: number) => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const ratio = max <= 0 ? 0 : Math.min(1, Math.max(0, value / max));
   const pick = (clientX: number) => {
+    onHintDone();
     const box = ref.current?.getBoundingClientRect();
     if (!box || box.width <= 0) return;
     const next = Math.round(((clientX - box.left) / box.width) * max / 1000) * 1000;
@@ -912,6 +950,11 @@ function TimeBar({ value, max, onChange }: { value: number; max: number; onChang
         className="absolute top-1 bottom-1 w-3 -translate-x-1/2 rounded-[2px] bg-[#f4efe4]"
         style={{ left: `${ratio * 100}%` }}
       />
+      {hint ? (
+        <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-[10px] tracking-wide text-[#c6a15a]">
+          左右拖動
+        </span>
+      ) : null}
     </div>
   );
 }

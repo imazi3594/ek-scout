@@ -134,6 +134,21 @@
   animation: morale-clock-late 0.7s steps(1) infinite;
 }
 
+@keyframes morale-speed-flash {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.morale-speed-flash {
+  color: #f5d84a;
+  animation: morale-speed-flash 1.2s ease-in-out infinite;
+}
+
 @keyframes morale-step-flash {
   0% {
     opacity: 0;
