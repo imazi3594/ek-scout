@@ -686,7 +686,7 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
                 onChange={(event) => setKoyo(Number(event.target.value))}
                 className="plain-press h-9 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
               >
-                {Array.from({ length: 19 }, (_, i) => i / 2).map((n) => (
+                {Array.from({ length: 37 }, (_, i) => i / 2).map((n) => (
                   <option key={n} value={n}>
                     {Number.isInteger(n) ? n : n.toFixed(1)}
                   </option>
