@@ -240,7 +240,116 @@ type Indexed = {
   foldStratKana: string;
   foldNo: string;
   foldTanken: string[];
+  romaName: string;
+  romaNameLoose: string;
+  romaStrat: string;
+  romaStratLoose: string;
 };
+
+const KATA = "ァアィイゥウェエォオカガキギクグケゲコゴサザシジスズセゼソゾタダチヂッツヅテデトドナニヌネノハバパヒビピフブプヘベペホボポマミムメモャヤュユョヨラリルレロヮワヰヱヲンヴ";
+const HIRA = "ぁあぃいぅうぇえぉおかがきぎくぐけげこごさざしじすずせぜそぞただちぢっつづてでとどなにぬねのはばぱひびぴふぶぷへべぺほぼぽまみむめもゃやゅゆょよらりるれろゎわゐゑをんゔ";
+
+const DIGRAPH: Record<string, string> = {
+  きゃ: "kya", きゅ: "kyu", きょ: "kyo",
+  ぎゃ: "gya", ぎゅ: "gyu", ぎょ: "gyo", ぐぃ: "gwi",
+  しゃ: "sha", しゅ: "shu", しょ: "sho", しぇ: "she",
+  じゃ: "ja", じゅ: "ju", じょ: "jo",
+  ちゃ: "cha", ちゅ: "chu", ちょ: "cho",
+  にゃ: "nya", にゅ: "nyu", にょ: "nyo",
+  ひゃ: "hya", ひゅ: "hyu", ひょ: "hyo",
+  びゃ: "bya", びゅ: "byu", びょ: "byo",
+  ぴゃ: "pya", ぴゅ: "pyu", ぴょ: "pyo",
+  みゃ: "mya", みゅ: "myu", みょ: "myo", みぃ: "mi",
+  りゃ: "rya", りゅ: "ryu", りょ: "ryo",
+  ふぁ: "fa", ふぃ: "fi", ふぇ: "fe", ふぉ: "fo",
+  ゔぁ: "va", ゔぃ: "vi", ゔぇ: "ve", ゔぉ: "vo",
+  うぁ: "wa", うぃ: "wi", うぇ: "we", うぉ: "wo",
+  てぃ: "ti", でぃ: "di", でゅ: "dyu",
+  つぇ: "tse",
+};
+
+const MORA: Record<string, string> = {
+  あ: "a", い: "i", う: "u", え: "e", お: "o",
+  か: "ka", き: "ki", く: "ku", け: "ke", こ: "ko",
+  が: "ga", ぎ: "gi", ぐ: "gu", げ: "ge", ご: "go",
+  さ: "sa", し: "shi", す: "su", せ: "se", そ: "so",
+  ざ: "za", じ: "ji", ず: "zu", ぜ: "ze", ぞ: "zo",
+  た: "ta", ち: "chi", つ: "tsu", て: "te", と: "to",
+  だ: "da", ぢ: "ji", づ: "zu", で: "de", ど: "do",
+  な: "na", に: "ni", ぬ: "nu", ね: "ne", の: "no",
+  は: "ha", ひ: "hi", ふ: "fu", へ: "he", ほ: "ho",
+  ば: "ba", び: "bi", ぶ: "bu", べ: "be", ぼ: "bo",
+  ぱ: "pa", ぴ: "pi", ぷ: "pu", ぺ: "pe", ぽ: "po",
+  ま: "ma", み: "mi", む: "mu", め: "me", も: "mo",
+  や: "ya", ゆ: "yu", よ: "yo",
+  ら: "ra", り: "ri", る: "ru", れ: "re", ろ: "ro",
+  わ: "wa", ゐ: "wi", ゑ: "we", を: "o", ん: "n", ゔ: "vu",
+  ぁ: "a", ぃ: "i", ぅ: "u", ぇ: "e", ぉ: "o", ゃ: "ya", ゅ: "yu", ょ: "yo",
+};
+
+function toHira(input: string): string {
+  let out = "";
+  for (const ch of input) {
+    const index = KATA.indexOf(ch);
+    out += index >= 0 ? HIRA[index] : ch;
+  }
+  return out;
+}
+
+function toRomaji(input: string): string {
+  const text = toHira(input);
+  let out = "";
+  let soku = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (ch === "っ") {
+      soku = true;
+      continue;
+    }
+    if (ch === "ー") {
+      const last = out.at(-1);
+      if (last && "aeiou".includes(last)) out += last;
+      continue;
+    }
+    const pair = text.slice(i, i + 2);
+    let mora = DIGRAPH[pair];
+    if (mora) i += 1;
+    else mora = MORA[ch];
+    if (!mora) continue;
+    if (soku) {
+      out += mora[0];
+      soku = false;
+    }
+    out += mora;
+  }
+  return out;
+}
+
+function loosenRomaji(input: string): string {
+  return input.replace(/ou/g, "o").replace(/oo/g, "o").replace(/uu/g, "u").replace(/ee/g, "e").replace(/ii/g, "i");
+}
+
+function normalizeRomaji(input: string): string {
+  return input
+    .replace(/l/g, "r")
+    .replace(/sya/g, "sha")
+    .replace(/syu/g, "shu")
+    .replace(/syo/g, "sho")
+    .replace(/tya/g, "cha")
+    .replace(/tyu/g, "chu")
+    .replace(/tyo/g, "cho")
+    .replace(/zya/g, "ja")
+    .replace(/zyu/g, "ju")
+    .replace(/zyo/g, "jo")
+    .replace(/jya/g, "ja")
+    .replace(/jyu/g, "ju")
+    .replace(/jyo/g, "jo")
+    .replace(/si/g, "shi")
+    .replace(/ti/g, "chi")
+    .replace(/tu/g, "tsu")
+    .replace(/(?<![sc])hu/g, "fu")
+    .replace(/zi/g, "ji");
+}
 
 const INDEX: Indexed[] = CARDS.map((card) => {
   const foldName = fold(card.name);
@@ -249,7 +358,21 @@ const INDEX: Indexed[] = CARDS.map((card) => {
   const foldStratKana = fold(card.stratKana);
   const foldNo = fold(card.no);
   const foldTanken = tankenNames(card).flatMap((name) => [fold(name), fold(`短計${name}`)]);
-  return { card, foldName, foldKana, foldStrat, foldStratKana, foldNo, foldTanken };
+  const romaName = toRomaji(card.kana);
+  const romaStrat = toRomaji(card.stratKana);
+  return {
+    card,
+    foldName,
+    foldKana,
+    foldStrat,
+    foldStratKana,
+    foldNo,
+    foldTanken,
+    romaName,
+    romaNameLoose: loosenRomaji(romaName),
+    romaStrat,
+    romaStratLoose: loosenRomaji(romaStrat),
+  };
 });
 
 export type SearchHit = { card: Card; score: number };
@@ -260,6 +383,9 @@ export function searchCards(query: string, limit = 60): SearchHit[] {
   const f = fold(q);
   if (!f) return [];
   const exactNo = paddedNo(q.replace(/[\s　]/g, "")) ?? paddedNo(f);
+  const letters = f.replace(/[^a-z]/g, "");
+  const roma = letters.length >= 2 ? normalizeRomaji(letters).replace(/mb/g, "nb").replace(/mp/g, "np") : "";
+  const romaLoose = roma ? loosenRomaji(roma) : "";
 
   const hits: SearchHit[] = [];
   for (const row of INDEX) {
@@ -269,12 +395,16 @@ export function searchCards(query: string, limit = 60): SearchHit[] {
     else if (row.foldName === f) score = 800;
     else if (row.foldName.startsWith(f)) score = 700;
     else if (row.foldKana === f || row.foldKana.startsWith(f)) score = 650;
+    else if (roma && (row.romaName === roma || row.romaName.startsWith(roma) || row.romaNameLoose.startsWith(romaLoose))) score = 640;
     else if (row.foldStrat === f || row.foldStrat.startsWith(f)) score = 600;
     else if (row.foldTanken.some((name) => name === f || name.startsWith(f))) score = 580;
+    else if (roma && (row.romaStrat.startsWith(roma) || row.romaStratLoose.startsWith(romaLoose))) score = 560;
     else if (row.foldNo.includes(f)) score = 500;
     else if (row.foldName.includes(f)) score = 400;
     else if (row.foldKana.includes(f)) score = 360;
+    else if (roma && (row.romaName.includes(roma) || row.romaNameLoose.includes(romaLoose))) score = 620;
     else if (row.foldStrat.includes(f) || row.foldStratKana.includes(f) || row.foldTanken.some((name) => name.includes(f))) score = 300;
+    else if (roma && (row.romaStrat.includes(roma) || row.romaStratLoose.includes(romaLoose))) score = 280;
     if (score > 0) hits.push({ card: row.card, score });
   }
 

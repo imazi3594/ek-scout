@@ -40,8 +40,6 @@ type Tab = "search" | "recents" | "tools" | "skills";
 const TABS: Tab[] = ["search", "recents", "tools", "skills"];
 const DUR_LO = 0;
 const DUR_HI = 99;
-const DUR_DEF_LO = 1;
-const DUR_DEF_HI = 10;
 const MORALE_LO = 1;
 const MORALE_HI = 10;
 const STAT_LO = 1;
@@ -91,8 +89,8 @@ export function ScoutApp() {
   const [rarities, setRarities] = useState<string[]>([]);
   const [stratCats, setStratCats] = useState<string[]>([]);
   const [costs, setCosts] = useState<number[]>([]);
-  const [durMin, setDurMin] = useState(DUR_DEF_LO);
-  const [durMax, setDurMax] = useState(DUR_DEF_HI);
+  const [durMin, setDurMin] = useState(DUR_LO);
+  const [durMax, setDurMax] = useState(DUR_HI);
   const [moraleMin, setMoraleMin] = useState(MORALE_LO);
   const [moraleMax, setMoraleMax] = useState(MORALE_HI);
   const [powerMin, setPowerMin] = useState(STAT_LO);
@@ -449,18 +447,17 @@ export function ScoutApp() {
   }, []);
 
   const durOn = durMin > DUR_LO || durMax < DUR_HI;
-  const durChanged = durMin !== DUR_DEF_LO || durMax !== DUR_DEF_HI;
   const moraleOn = moraleMin > MORALE_LO || moraleMax < MORALE_HI;
   const powerOn = powerMin > STAT_LO || powerMax < STAT_HI;
   const intelOn = intelMin > STAT_LO || intelMax < STAT_HI;
   const statOn = pickPower != null || pickIntel != null;
-  const layerActive = colors.length + costs.length + units.length + periods.length + skills.length + rarities.length + stratCats.length + (durChanged ? 1 : 0) + (moraleOn ? 1 : 0) + (powerOn ? 1 : 0) + (intelOn ? 1 : 0) + (statOn ? 1 : 0) + (sorts.length ? 1 : 0);
+  const layerActive = colors.length + costs.length + units.length + periods.length + skills.length + rarities.length + stratCats.length + (durOn ? 1 : 0) + (moraleOn ? 1 : 0) + (powerOn ? 1 : 0) + (intelOn ? 1 : 0) + (statOn ? 1 : 0) + (sorts.length ? 1 : 0);
 
   const hits = useMemo(() => {
     const q = query.trim();
     if (!q && !layerActive) return [];
     let list = q ? searchCards(q, 200).map((h) => h.card) : CARDS;
-    if (layerActive || (q && durOn)) list = filterCards(list, { colors, periods, units, skills, rarities, costs, stratCats, durMin, durMax, moraleMin, moraleMax });
+    if (layerActive) list = filterCards(list, { colors, periods, units, skills, rarities, costs, stratCats, durMin, durMax, moraleMin, moraleMax });
     if (powerOn) list = list.filter((card) => card.power >= powerMin && card.power <= powerMax);
     if (intelOn) list = list.filter((card) => card.intel >= intelMin && card.intel <= intelMax);
     if (pickPower != null) list = list.filter((card) => card.power === pickPower);
@@ -511,8 +508,8 @@ export function ScoutApp() {
     setSkills([]);
     setRarities([]);
     setStratCats([]);
-    setDurMin(DUR_DEF_LO);
-    setDurMax(DUR_DEF_HI);
+    setDurMin(DUR_LO);
+    setDurMax(DUR_HI);
     setMoraleMin(MORALE_LO);
     setMoraleMax(MORALE_HI);
     setPowerMin(STAT_LO);
@@ -654,8 +651,8 @@ export function ScoutApp() {
                   aria-expanded={moreFilters}
                 >
                   進階篩選
-                  {periods.length + skills.length + rarities.length + stratCats.length + (durChanged ? 1 : 0) + (moraleOn ? 1 : 0) + (powerOn ? 1 : 0) + (intelOn ? 1 : 0) + (sorts.length ? 1 : 0) ? (
-                    <span className="tabular-nums">{periods.length + skills.length + rarities.length + stratCats.length + (durChanged ? 1 : 0) + (moraleOn ? 1 : 0) + (powerOn ? 1 : 0) + (intelOn ? 1 : 0) + (sorts.length ? 1 : 0)}</span>
+                  {periods.length + skills.length + rarities.length + stratCats.length + (durOn ? 1 : 0) + (moraleOn ? 1 : 0) + (powerOn ? 1 : 0) + (intelOn ? 1 : 0) + (sorts.length ? 1 : 0) ? (
+                    <span className="tabular-nums">{periods.length + skills.length + rarities.length + stratCats.length + (durOn ? 1 : 0) + (moraleOn ? 1 : 0) + (powerOn ? 1 : 0) + (intelOn ? 1 : 0) + (sorts.length ? 1 : 0)}</span>
                   ) : null}
                   {moreFilters ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
                 </button>
@@ -735,7 +732,7 @@ export function ScoutApp() {
               {!query.trim() && !layerActive ? (
                 <div className="px-6 pt-10 text-center">
                   <p className="text-sm leading-relaxed text-pretty text-muted">
-                    可使用篩選，或輸入名稱、卡號或計略名的其中一字即可極速搜查。亦可按右上方「武知」，點選武力同知力。
+                    可使用篩選，或輸入名稱、卡號、計略名或羅馬拼音的其中一字即可極速搜查。亦可按右上方「武知」，點選武力同知力。
                   </p>
                   <div className="mt-5 flex flex-col items-center">
                     <button
@@ -1405,7 +1402,19 @@ function DurationRange({
   max: number;
   onChange: (min: number, max: number) => void;
 }) {
-  const nums = Array.from({ length: DUR_HI - DUR_LO + 1 }, (_, index) => DUR_LO + index);
+  const [lo, setLo] = useState(String(min));
+  const [hi, setHi] = useState(String(max));
+  useEffect(() => setLo(String(min)), [min]);
+  useEffect(() => setHi(String(max)), [max]);
+  const edit = (raw: string, which: "min" | "max") => {
+    const digits = raw.replace(/\D/g, "").slice(0, 2);
+    if (which === "min") setLo(digits);
+    else setHi(digits);
+    if (digits === "") return;
+    const value = Math.min(DUR_HI, Math.max(DUR_LO, Number(digits)));
+    if (which === "min") onChange(Math.min(value, max), max);
+    else onChange(min, Math.max(value, min));
+  };
   return (
     <div>
       <div className="mb-1.5 flex items-center gap-2">
@@ -1413,37 +1422,25 @@ function DurationRange({
         <span className="h-px min-w-4 flex-1 bg-border" aria-hidden />
       </div>
       <div className="flex items-center gap-1">
-        <select
+        <input
+          type="text"
+          inputMode="numeric"
           aria-label="最短時長"
-          value={min}
-          onChange={(event) => {
-            const next = Number(event.target.value);
-            onChange(next, Math.max(next, max));
-          }}
+          value={lo}
+          onChange={(event) => edit(event.target.value, "min")}
+          onBlur={() => setLo(String(min))}
           className="plain-press h-8 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
-        >
-          {nums.map((n) => (
-            <option key={n} value={n}>
-              {n}C
-            </option>
-          ))}
-        </select>
+        />
         <span className="shrink-0 text-xs text-faint">至</span>
-        <select
+        <input
+          type="text"
+          inputMode="numeric"
           aria-label="最長時長"
-          value={max}
-          onChange={(event) => {
-            const next = Number(event.target.value);
-            onChange(Math.min(min, next), next);
-          }}
+          value={hi}
+          onChange={(event) => edit(event.target.value, "max")}
+          onBlur={() => setHi(String(max))}
           className="plain-press h-8 min-w-0 flex-1 rounded-md bg-surface-2 px-1 text-center text-sm tabular-nums text-fg"
-        >
-          {nums.map((n) => (
-            <option key={n} value={n}>
-              {n}C
-            </option>
-          ))}
-        </select>
+        />
       </div>
     </div>
   );
