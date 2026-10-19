@@ -99,13 +99,24 @@ export function ScoutApp() {
   const [intelMax, setIntelMax] = useState(STAT_HI);
   const [pickPower, setPickPower] = useState<number | null>(null);
   const [pickIntel, setPickIntel] = useState<number | null>(null);
-  const [statPhase, setStatPhase] = useState<"closed" | "opening" | "open" | "closing">("closed");
+  const [statMode, setStatMode] = useState(false);
+  const [statReady, setStatReady] = useState(false);
   const [sorts, setSorts] = useState<SortRule[]>([]);
   const [morePhase, setMorePhase] = useState<"closed" | "opening" | "open" | "closing">("closed");
   const [guideTopic, setGuideTopic] = useState<GuideTopic | null>(null);
   const [toolPage, setToolPage] = useState<ToolId | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setStatMode(localStorage.getItem("ek-stat-mode") === "1");
+    const id = requestAnimationFrame(() => setStatReady(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+  useEffect(() => {
+    if (!statReady) return;
+    localStorage.setItem("ek-stat-mode", statMode ? "1" : "0");
+  }, [statMode, statReady]);
 
   useEffect(() => {
     if (morePhase !== "opening") return;
@@ -125,35 +136,11 @@ export function ScoutApp() {
     return () => window.clearTimeout(t);
   }, [morePhase]);
 
-  useEffect(() => {
-    if (statPhase !== "opening") return;
-    let inner = 0;
-    const outer = requestAnimationFrame(() => {
-      inner = requestAnimationFrame(() => setStatPhase((p) => (p === "opening" ? "open" : p)));
-    });
-    return () => {
-      cancelAnimationFrame(outer);
-      if (inner) cancelAnimationFrame(inner);
-    };
-  }, [statPhase]);
-
-  useEffect(() => {
-    if (statPhase !== "closing") return;
-    const t = window.setTimeout(() => setStatPhase((p) => (p === "closing" ? "closed" : p)), 380);
-    return () => window.clearTimeout(t);
-  }, [statPhase]);
-
   const moreFilters = morePhase === "opening" || morePhase === "open";
-  const statOpen = statPhase === "opening" || statPhase === "open";
   function toggleStat() {
-    closeMoreFilters();
-    setStatPhase((p) => (p === "open" || p === "opening" ? "closing" : "opening"));
-  }
-  function closeStat() {
-    setStatPhase((p) => (p === "closed" ? p : "closing"));
+    setStatMode((on) => !on);
   }
   function toggleMoreFilters() {
-    closeStat();
     setMorePhase((p) => (p === "open" || p === "opening" ? "closing" : "opening"));
   }
   function closeMoreFilters() {
@@ -629,15 +616,19 @@ export function ScoutApp() {
               <div className="relative shrink-0">
               <button
                 type="button"
-                aria-expanded={statOpen}
-                aria-label="武知"
+                aria-pressed={statMode}
+                aria-label={statMode ? "切換到成本和兵種" : "切換到武力知力"}
                 onClick={toggleStat}
-                className={cn(
-                  "flex h-12 items-center justify-center rounded-md bg-[#3a322c] px-3 text-base font-medium text-[#d4cec4]",
-                  statOpen && "ring-1 ring-white/25",
-                )}
+                className="mode-flip size-12"
               >
-                武知
+                <span className={cn("mode-flip-inner", statMode && "is-flipped", !statReady && "is-instant")}>
+                  <span className="mode-face rounded-md bg-[#3a322c] text-[#d4cec4]">
+                    <StatMark />
+                  </span>
+                  <span className="mode-face mode-face-back rounded-md bg-[#3a322c] text-[#d4cec4]">
+                    <CostUnitMark />
+                  </span>
+                </span>
               </button>
               </div>
               </div>
@@ -668,21 +659,6 @@ export function ScoutApp() {
             </div>
 
             <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-            {statPhase !== "closed" ? (
-              <div className={cn("more-sheet absolute inset-x-0 top-0 z-30 border-t-2 border-faction-ko bg-[#241910] px-4 pt-1.5 pb-2 shadow-[0_18px_36px_rgb(0_0_0/0.45)] sm:px-6", statPhase === "open" && "is-open")}>
-                <div className="grid grid-cols-2 gap-3">
-                  <StatPick label="武力" tone="power" value={pickPower} onChange={setPickPower} />
-                  <StatPick label="知力" tone="intel" value={pickIntel} onChange={setPickIntel} />
-                </div>
-                <button
-                  type="button"
-                  className="mt-1.5 flex h-8 w-full items-center justify-center rounded-md bg-faction-ko text-sm font-medium text-white"
-                  onClick={closeStat}
-                >
-                  完成
-                </button>
-              </div>
-            ) : null}
             <div className="shrink-0 border-b border-border bg-bg/60 px-4 pb-2.5 sm:px-6">
               <div className="flex flex-col gap-1">
                 <FilterRule label="勢力" />
@@ -697,7 +673,8 @@ export function ScoutApp() {
                     toggle: () => toggle(colors, c, setColors),
                   }))}
                 />
-                <div className="flex min-w-0 flex-col gap-1">
+                <div className="grid">
+                  <div className={cn("col-start-1 row-start-1 flex flex-col gap-1", statMode && "invisible")} aria-hidden={statMode} inert={statMode}>
                     <FilterRule label="成本" />
                     <ChipGrid
                       cols="grid-cols-7"
@@ -711,8 +688,6 @@ export function ScoutApp() {
                         toggle: () => toggle(costs, c, setCosts),
                       }))}
                     />
-                  </div>
-                  <div className="flex min-w-0 flex-col gap-1">
                     <FilterRule label="兵種" />
                     <ChipGrid
                       cols="grid-cols-5"
@@ -725,6 +700,11 @@ export function ScoutApp() {
                       }))}
                     />
                   </div>
+                  <div className={cn("col-start-1 row-start-1 grid h-full grid-cols-2 gap-3", !statMode && "invisible")} aria-hidden={!statMode} inert={!statMode}>
+                    <StatPick label="武力" tone="power" value={pickPower} onChange={setPickPower} />
+                    <StatPick label="知力" tone="intel" value={pickIntel} onChange={setPickIntel} />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -732,7 +712,7 @@ export function ScoutApp() {
               {!query.trim() && !layerActive ? (
                 <div className="px-6 pt-10 text-center">
                   <p className="text-sm leading-relaxed text-pretty text-muted">
-                    可使用篩選，或輸入名稱、卡號、計略名或羅馬拼音的其中一字即可極速搜查。亦可按右上方「武知」，點選武力同知力。
+                    可使用篩選，或輸入名稱、卡號、計略名或羅馬拼音的其中一字即可極速搜查。按右上方「武知」可切換武力知力篩選。
                   </p>
                   <div className="mt-5 flex flex-col items-center">
                     <button
@@ -1228,6 +1208,24 @@ function TabBtn({
   );
 }
 
+function StatMark() {
+  return (
+    <span className="grid leading-none" aria-hidden>
+      <span className="text-[13px] font-semibold text-[#e07070]">武</span>
+      <span className="-mt-px text-[13px] font-semibold text-[#7aa2e3]">知</span>
+    </span>
+  );
+}
+
+function CostUnitMark() {
+  return (
+    <span className="flex items-center gap-1" aria-hidden>
+      <CostPips cost={4} small stacked />
+      <UnitIcon unit="槍兵" className="size-5" />
+    </span>
+  );
+}
+
 function toggle<T>(list: T[], value: T, set: (next: T[]) => void) {
   set(list.includes(value) ? list.filter((x) => x !== value) : [...list, value]);
 }
@@ -1245,12 +1243,15 @@ function StatPick({
 }) {
   const power = tone === "power";
   return (
-    <div className={cn("rounded-md px-1 py-1", power ? "bg-[#3a1818] ring-1 ring-[#b41e22]/50" : "bg-[#152038] ring-1 ring-[#1e3c8a]/70")}>
-      <p className={cn("mb-0.5 text-center text-xs leading-none", power ? "text-[#e07070]" : "text-[#7aa2e3]")}>
-        {label}
-        {value != null ? ` ${value}` : ""}
-      </p>
-      <div className="grid grid-cols-4 gap-1">
+    <div className={cn("flex h-full min-h-0 flex-col rounded-md px-1.5 py-1.5", power ? "bg-[#3a1818]/80 ring-1 ring-[#b41e22]/40" : "bg-[#152038]/80 ring-1 ring-[#1e3c8a]/55")}>
+      <div className="mb-1 flex items-center gap-2">
+        <span className={cn("shrink-0 text-xs", power ? "text-[#e07070]" : "text-[#7aa2e3]")}>
+          {label}
+          {value != null ? ` ${value}` : ""}
+        </span>
+        <span className={cn("h-px min-w-4 flex-1", power ? "bg-[#b41e22]/50" : "bg-[#1e3c8a]/70")} aria-hidden />
+      </div>
+      <div className="grid min-h-0 flex-1 grid-cols-4 grid-rows-3 gap-1">
         {Array.from({ length: 12 }, (_, index) => {
           const n = index + 1;
           const on = value === n;
@@ -1262,7 +1263,7 @@ function StatPick({
               aria-pressed={on}
               onClick={() => onChange(on ? null : n)}
               className={cn(
-                "flex h-8 items-center justify-center rounded-sm text-sm tabular-nums",
+                "flex h-full min-h-8 items-center justify-center rounded-sm text-sm tabular-nums",
                 on
                   ? power
                     ? "bg-faction-hi text-white"

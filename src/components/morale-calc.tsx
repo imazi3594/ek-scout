@@ -257,6 +257,7 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
   const [school, setSchool] = useState<Kind>("max3");
   const [acts, setActs] = useState<Act[]>([]);
   const [warn, setWarn] = useState<{ text: string; id: number } | null>(null);
+  const [warnFade, setWarnFade] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [stratNote, setStratNote] = useState(false);
   const [stepFlash, setStepFlash] = useState<{ text: string; id: number } | null>(null);
@@ -301,8 +302,29 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
   }, [stratNote]);
   useEffect(() => {
     if (!warn) return;
-    const id = window.setTimeout(() => setWarn(null), 1600);
-    return () => window.clearTimeout(id);
+    setWarnFade(false);
+    let gone = false;
+    let fadeTimer = 0;
+    const hide = () => {
+      if (gone) return;
+      gone = true;
+      setWarn(null);
+    };
+    const timer = window.setTimeout(hide, 4000);
+    const onAct = () => {
+      if (gone) return;
+      window.clearTimeout(timer);
+      setWarnFade(true);
+      fadeTimer = window.setTimeout(hide, 320);
+    };
+    document.addEventListener("pointerdown", onAct);
+    document.addEventListener("keydown", onAct);
+    return () => {
+      window.clearTimeout(timer);
+      window.clearTimeout(fadeTimer);
+      document.removeEventListener("pointerdown", onAct);
+      document.removeEventListener("keydown", onAct);
+    };
   }, [warn]);
   const view = useMemo(() => simulate(acts, remain, factions, koyo, 0, -1, 0, -1, allies), [acts, remain, factions, koyo, allies]);
   const full = useMemo(() => simulate(acts, 0, factions, koyo, 0, -1, 0, -1, allies), [acts, factions, koyo, allies]);
@@ -443,10 +465,17 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
             );
           })}
         </div>
-        <p className="pb-2.5 pt-1 text-center text-[10px] tabular-nums tracking-wide text-[#c6a15a]">
-          已使用 {show1(full.used)}　總獲得 {show1(full.gained)}
-          {full.overflow > 0 ? <span className="text-[#e5484d]">（總溢出 {show1(full.overflow)}）</span> : null}
-        </p>
+        <div className="w-full px-3 pb-2 pt-1 text-center">
+          <p className="w-full text-center text-[10px] tabular-nums tracking-wide text-[#c6a15a]">
+            已使用 {show1(full.used)}　總獲得 {show1(full.gained)}
+            {full.overflow > 0 ? <span className="text-[#e5484d]">（總溢出 {show1(full.overflow)}）</span> : null}
+          </p>
+          <p className="mt-0.5 min-h-4 w-full text-center text-[10px] leading-4 tracking-wide text-[#c6a15a]">
+            {deckLocked
+              ? `卡組構成：勢力 ${factions === 4 ? "4+" : factions}　昂揚 ${Number.isInteger(koyo) ? koyo : koyo.toFixed(1)}　同盟 ${allies}`
+              : ""}
+          </p>
+        </div>
       </div>
       <div className={cn("relative flex min-h-0 flex-1 flex-col bg-[#120e0a]", !deckLocked && "pointer-events-none opacity-40")}>
         <ActWindow
@@ -460,7 +489,7 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
           onClear={() => setActs([])}
         />
         {warn ? (
-          <div className="pointer-events-none absolute inset-x-3 bottom-1 z-30 rounded-md bg-[#e5484d] px-3 py-1.5 text-center text-white shadow-lg">
+          <div key={warn.id} className={cn("pointer-events-none absolute inset-x-3 bottom-1 z-30 rounded-md bg-[#e5484d] px-3 py-1.5 text-center text-white shadow-lg", warnFade ? "morale-warn-dismiss" : "morale-warn-out")}>
             <p className="text-sm font-medium">{warn.text}</p>
             <p className="mt-0.5 text-xs leading-snug">請滑動下面捲軸到足夠士氣的時間位置。</p>
           </div>
@@ -505,11 +534,6 @@ export function MoraleCalc({ onBack }: { onBack?: () => void }) {
               {view.live > 0 ? (
                 <span className="ml-1.5 text-xs font-normal text-[#e5484d]">（溢出 {show1(view.live)}）</span>
               ) : null}
-            </p>
-            <p className="mt-1 min-h-4 text-xs leading-4 text-faint">
-              {deckLocked
-                ? `勢力 ${factions === 4 ? "4+" : factions}　昂揚 ${Number.isInteger(koyo) ? koyo : koyo.toFixed(1)}　同盟 ${allies}`
-                : ""}
             </p>
           </div>
           <button

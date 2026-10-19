@@ -97,7 +97,7 @@ export function ToolsPage({
           <div className="flex h-[7.25rem] flex-col bg-[linear-gradient(to_bottom,#14110c_0%,#241c14_58%,#3a2c1c_100%)] px-4 py-4">
             <span className="block font-display text-xl text-[#f6e7c1]">士氣計算器</span>
             <span className="mt-1 block text-sm leading-relaxed text-pretty text-[#e7d3b0]/85">
-              運用時間軸，預先計劃發動計略、流派和戰器的時機和可發動次數。
+              運用時間軸，透過安排計略、流派和戰器，預先計算可用士氣數量。
             </span>
           </div>
           <div className="relative flex h-8 items-center gap-2 bg-[#120e0a] px-3" aria-hidden>
