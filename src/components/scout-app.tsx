@@ -947,7 +947,7 @@ export function ScoutApp() {
                 select(null);
               }
             }}
-            className="absolute right-3 top-[max(0.35rem,env(safe-area-inset-top))] z-20 grid size-10 place-items-center text-[#8a847c]"
+            className="absolute right-0 top-[env(safe-area-inset-top)] z-20 flex size-16 items-start justify-end pt-0.5 pr-0.5 text-[#8a847c]"
             aria-label="關閉"
           >
             <X className="size-5" />
