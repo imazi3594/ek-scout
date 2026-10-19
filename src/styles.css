@@ -213,23 +213,23 @@
 }
 
 .card-frame-n {
-  --card-rim: linear-gradient(145deg, #4a4641, #1c1b19 46%, #6a655e 58%, #242220);
-  --card-line: rgb(255 255 255 / 0.08);
+  --card-rim: linear-gradient(145deg, #6a645c, #2a2826 46%, #9a9388 58%, #3a3632);
+  --card-line: rgb(255 255 255 / 0.14);
 }
 
 .card-frame-r {
-  --card-rim: linear-gradient(145deg, #8e96a3, #3a404a 38%, #c5ccd6 52%, #2e343c 78%, #6d7582);
-  --card-line: rgb(220 226 236 / 0.22);
+  --card-rim: linear-gradient(145deg, #c5ccd6, #4e5662 38%, #f2f5f8 52%, #3e4550 78%, #9aa3b0);
+  --card-line: rgb(220 226 236 / 0.34);
 }
 
 .card-frame-sr {
-  --card-rim: linear-gradient(145deg, #a89048, #5c4816 34%, #c4a45a 50%, #3d2e0e 74%, #8a7030);
-  --card-line: rgb(226 193 90 / 0.28);
+  --card-rim: linear-gradient(145deg, #e2c56a, #7a5c1c 34%, #fff1b0 50%, #5a4210 74%, #c4a24a);
+  --card-line: rgb(226 193 90 / 0.42);
 }
 
 .card-frame-er {
-  --card-rim: linear-gradient(110deg, #7a3d4c, #6a5428, #2f5a3a, #2a4d66, #4a3870, #7a3d4c);
-  --card-line: rgb(255 255 255 / 0.16);
+  --card-rim: linear-gradient(110deg, #c45a70, #c9a24a, #4e9a68, #4a86b0, #8a68b8, #c45a70);
+  --card-line: rgb(255 255 255 / 0.28);
   background-size: 240% 240%;
   animation: card-frame-er 9s linear infinite;
 }
