@@ -70,6 +70,14 @@ export default async function grokPwaMiddleware(
   const path = event.url.pathname;
   const urlWithQuery = path + event.url.search;
 
+  if (path === "/index.html") {
+    const target = `/${event.url.search}`;
+    return new Response(null, {
+      status: 302,
+      headers: { location: target, "cache-control": "no-cache" },
+    });
+  }
+
   if (path === "/__grok/manifest.webmanifest" || path === "/__grok/manifest.json") {
     return new Response(renderWebManifest(requestHost(event)), {
       headers: {

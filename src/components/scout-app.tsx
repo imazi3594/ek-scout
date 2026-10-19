@@ -1151,29 +1151,30 @@ function CardHitRow({
         active ? "bg-surface-2" : "hover:bg-surface",
       )}
     >
-      <span className={cn("h-7 w-1 shrink-0 rounded-full", COLOR_BAR[card.color])} aria-hidden />
+      <span className={cn("w-1 shrink-0 self-stretch rounded-full", COLOR_BAR[card.color])} aria-hidden />
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-1.5 text-xs">
           <span className={cn("shrink-0 rounded-sm px-1 py-px font-medium", COLOR_CLASS[card.color])}>{card.no}</span>
-          <UnitIcon unit={card.unit} title={card.unit} className="size-4" />
+          <UnitIcon unit={card.unit} title={card.unit} className="size-4 shrink-0" />
           <RarityMark rarity={card.rarity} className="shrink-0" />
-          <span className="min-w-0 truncate font-bold text-fg">{card.name}</span>
+          <span className="min-w-0 flex-1 truncate font-bold text-fg">{card.name}</span>
           <CostPips cost={card.cost} small />
-          <span className="shrink-0 tabular-nums text-muted">
-            /{card.power}/{card.intel}
+          <span className="shrink-0 tabular-nums text-fg">
+            {card.power}/{card.intel}
           </span>
+        </div>
+        <div className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-faint">
+          <span className="shrink-0 text-muted">{card.period}</span>
+          <span className="min-w-0 truncate text-fg">{card.stratName}</span>
+          <span className="shrink-0 text-muted">士氣{card.stratCost}</span>
+          <span className="shrink-0 tabular-nums text-muted">{dur.compact}</span>
+          {dur.cap ? <span className="shrink-0 text-[10px] text-faint">上限</span> : null}
           {card.skills.length ? (
             <span className="ml-auto flex shrink-0 items-center">
               <SkillList ids={card.skills} short />
             </span>
           ) : null}
         </div>
-        <p className="mt-0.5 truncate text-xs text-faint">
-          <span className="text-fg">{card.stratName}</span>
-          <span className="text-muted">　士氣{card.stratCost}</span>
-          <span className="tabular-nums text-muted">　{dur.compact}</span>
-          {dur.cap ? <span className="text-[10px] text-faint">上限</span> : null}
-        </p>
       </div>
     </button>
   );

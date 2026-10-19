@@ -42,12 +42,21 @@ async function precacheShell() {
   const cache = await caches.open(CACHE);
   const base = self.registration.scope;
   const indexUrl = new URL("index.html", base).href;
+  const scopeUrl = new URL("./", base).href;
   let html = "";
   try {
     const indexRes = await timeoutFetch(indexUrl, REVALIDATE_TIMEOUT);
     if (indexRes.ok) html = await indexRes.text();
   } catch {
-    return false;
+    html = "";
+  }
+  if (!html) {
+    try {
+      const scopeRes = await timeoutFetch(scopeUrl, REVALIDATE_TIMEOUT);
+      if (scopeRes.ok) html = await scopeRes.text();
+    } catch {
+      return false;
+    }
   }
   if (!html) return false;
 
@@ -169,15 +178,22 @@ async function notify(data) {
 let refreshing = null;
 
 async function doRevalidate() {
-  const indexUrl = new URL("index.html", self.registration.scope).href;
-  const old = await caches.match(indexUrl);
+  const base = self.registration.scope;
+  const indexUrl = new URL("index.html", base).href;
+  const scopeUrl = new URL("./", base).href;
+  const old = (await caches.match(indexUrl)) || (await caches.match(scopeUrl)) || (await caches.match(base));
   const previous = old ? await old.clone().text() : "";
   let html = "";
-  try {
-    const indexRes = await timeoutFetch(indexUrl, REVALIDATE_TIMEOUT);
-    if (indexRes && indexRes.ok) html = await indexRes.text();
-  } catch {
-    html = "";
+  for (const url of [scopeUrl, indexUrl]) {
+    try {
+      const indexRes = await timeoutFetch(url, REVALIDATE_TIMEOUT);
+      if (indexRes && indexRes.ok) {
+        html = await indexRes.text();
+        if (html) break;
+      }
+    } catch {
+      html = "";
+    }
   }
   if (!html) {
     await notify({ type: "degraded" });
