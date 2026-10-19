@@ -1,6 +1,5 @@
-import type { CSSProperties } from "react";
 import type { Card, ColorName, UnitName } from "@/data/catalog";
-import { UnitIcon } from "@/components/unit-icon";
+import { PixelUnitTrail } from "@/components/unit-icon";
 import { cn } from "@/lib/utils";
 
 const FACTION: Record<ColorName, string> = {
@@ -29,7 +28,7 @@ const RARITY_WASH: Partial<Record<Card["rarity"], string>> = {
 
 export function CardThemeBackdrop({ card }: { card: Card }) {
   const color = FACTION[card.color];
-  const { angle, rotate } = UNIT_WASH[card.unit];
+  const { angle } = UNIT_WASH[card.unit];
   const rarityWash = RARITY_WASH[card.rarity];
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -48,11 +47,7 @@ export function CardThemeBackdrop({ card }: { card: Card }) {
       <pre className="card-code absolute top-3 left-3 max-w-[min(18rem,72%)] font-mono text-[10px] leading-[1.45] text-[#9c958a] [mask-image:linear-gradient(115deg,#000_18%,transparent_82%)]">
         {`const card = {\n  no: ${JSON.stringify(card.no)},\n  name: ${JSON.stringify(card.name)},\n  faction: ${JSON.stringify(card.color)},\n  era: ${JSON.stringify(card.period)},\n  unit: ${JSON.stringify(card.unit)},\n  rarity: ${JSON.stringify(card.rarity)},\n  cost: ${card.cost},\n  pow: ${card.power},\n  int: ${card.intel},\n  strat: ${JSON.stringify(card.stratName)},\n  morale: ${card.stratCost},\n}`}
       </pre>
-      <UnitIcon
-        unit={card.unit}
-        className="absolute -right-8 -bottom-6 size-[min(16rem,70vw)] opacity-[0.18] lg:-right-10 lg:size-[24rem] lg:opacity-[0.22]"
-        style={{ color, transform: `rotate(${rotate})` } satisfies CSSProperties}
-      />
+      <PixelUnitTrail unit={card.unit} />
     </div>
   );
 }

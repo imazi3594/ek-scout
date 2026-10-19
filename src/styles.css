@@ -264,6 +264,11 @@
   mask-image: linear-gradient(to bottom, transparent 0%, transparent 42%, #000 68%);
 }
 
+.pixel-unit {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
 @layer components {
   .rarity-er {
     background-image: linear-gradient(90deg, #ff6b8a, #ffd166, #7ee787, #6ecbff, #c9a0ff);
