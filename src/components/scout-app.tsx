@@ -911,7 +911,8 @@ export function ScoutApp() {
           </div>
         </section>
 
-        <aside className="relative hidden min-h-0 overflow-hidden lg:block">
+        <aside className={cn("relative hidden min-h-0 overflow-hidden lg:flex lg:flex-col", selected && "card-frame", selected && `card-frame-${selected.rarity.toLowerCase()}`)}>
+          <div className={cn("relative min-h-0 flex-1 overflow-hidden", selected && "card-frame-body bg-bg")}>
           {selected ? <CardThemeBackdrop card={selected} /> : null}
           <div className="relative z-10 h-full overflow-y-auto p-5">
             {selected ? (
@@ -921,6 +922,7 @@ export function ScoutApp() {
                 選擇一張武將，即可查看計略時長與效果值。
               </p>
             )}
+          </div>
           </div>
         </aside>
       </div>
@@ -932,7 +934,8 @@ export function ScoutApp() {
       ) : null}
 
       {sheetOpen && selected && (tab === "search" || tab === "recents") ? (
-        <div className="absolute inset-0 z-50 flex min-h-0 flex-col bg-bg lg:hidden">
+        <div className={cn("card-frame absolute inset-0 z-50 flex min-h-0 flex-col lg:hidden", `card-frame-${selected.rarity.toLowerCase()}`)}>
+          <div className="card-frame-body relative flex min-h-0 flex-1 flex-col overflow-hidden bg-bg">
           <CardThemeBackdrop card={selected} />
           <button
             type="button"
@@ -944,13 +947,14 @@ export function ScoutApp() {
                 select(null);
               }
             }}
-            className="absolute right-2 top-[max(0.35rem,env(safe-area-inset-top))] z-20 grid size-10 place-items-center rounded-full bg-black/70 text-fg shadow-[0_0_0_1px_rgba(255,255,255,0.12)] backdrop-blur-sm hover:bg-black/85"
+            className="absolute right-3 top-[max(0.35rem,env(safe-area-inset-top))] z-20 grid size-10 place-items-center text-[#8a847c]"
             aria-label="關閉"
           >
             <X className="size-5" />
           </button>
           <div className="relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-[max(3rem,calc(env(safe-area-inset-top)+2.5rem))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
             <CardDetail card={selected} />
+          </div>
           </div>
         </div>
       ) : null}
@@ -1147,8 +1151,8 @@ function CardHitRow({
       type="button"
       onClick={onOpen}
       className={cn(
-        "list-row flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors duration-[var(--motion-quick)]",
-        active ? "bg-surface-2" : "hover:bg-surface",
+        "list-row mb-1 flex w-full items-center gap-2 rounded-sm bg-white/[0.06] px-2 py-1.5 text-left",
+        active ? "bg-white/[0.14]" : "hover:bg-white/[0.09]",
       )}
     >
       <span className={cn("w-1 shrink-0 self-stretch rounded-full", COLOR_BAR[card.color])} aria-hidden />
@@ -1166,7 +1170,7 @@ function CardHitRow({
         <div className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-faint">
           <span className="shrink-0 text-muted">{card.period}</span>
           <span className="min-w-0 truncate text-fg">{card.stratName}</span>
-          <span className="shrink-0 text-muted">士氣{card.stratCost}</span>
+          <span className="shrink-0 tabular-nums text-muted">【{card.stratCost}】</span>
           <span className="shrink-0 tabular-nums text-muted">{dur.compact}</span>
           {dur.cap ? <span className="shrink-0 text-[10px] text-faint">上限</span> : null}
           {card.skills.length ? (

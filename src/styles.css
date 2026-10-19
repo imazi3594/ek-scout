@@ -203,6 +203,67 @@
   animation: morale-warn-dismiss 0.32s ease-out forwards;
 }
 
+.card-frame {
+  padding: 5px;
+  background: var(--card-rim);
+}
+
+.card-frame-body {
+  box-shadow: inset 0 0 0 1px var(--card-line);
+}
+
+.card-frame-n {
+  --card-rim: linear-gradient(145deg, #4a4641, #1c1b19 46%, #6a655e 58%, #242220);
+  --card-line: rgb(255 255 255 / 0.08);
+}
+
+.card-frame-r {
+  --card-rim: linear-gradient(145deg, #8e96a3, #3a404a 38%, #c5ccd6 52%, #2e343c 78%, #6d7582);
+  --card-line: rgb(220 226 236 / 0.22);
+}
+
+.card-frame-sr {
+  --card-rim: linear-gradient(145deg, #a89048, #5c4816 34%, #c4a45a 50%, #3d2e0e 74%, #8a7030);
+  --card-line: rgb(226 193 90 / 0.28);
+}
+
+.card-frame-er {
+  --card-rim: linear-gradient(110deg, #7a3d4c, #6a5428, #2f5a3a, #2a4d66, #4a3870, #7a3d4c);
+  --card-line: rgb(255 255 255 / 0.16);
+  background-size: 240% 240%;
+  animation: card-frame-er 9s linear infinite;
+}
+
+@keyframes card-frame-er {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 100% 50%;
+  }
+}
+
+.card-code {
+  animation: card-code-ghost 7s ease-in-out infinite;
+}
+
+@keyframes card-code-ghost {
+  0%,
+  100% {
+    opacity: 0.16;
+  }
+  50% {
+    opacity: 0.38;
+  }
+}
+
+.card-cyber {
+  opacity: 0.14;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='38.11' height='66' viewBox='0 0 38.11 66'%3E%3Cg fill='none' stroke='%239c958a' stroke-width='1'%3E%3Cpath d='M19.05 0 L38.11 11 L38.11 33 L19.05 44 L0 33 L0 11 Z'/%3E%3Cpath d='M0 33 L19.05 44 L19.05 66 L0 77 L-19.05 66 L-19.05 44 Z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 38.11px 66px;
+  mask-image: linear-gradient(to bottom, transparent 0%, transparent 42%, #000 68%);
+}
+
 @layer components {
   .rarity-er {
     background-image: linear-gradient(90deg, #ff6b8a, #ffd166, #7ee787, #6ecbff, #c9a0ff);

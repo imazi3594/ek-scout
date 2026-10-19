@@ -21,9 +21,16 @@ const UNIT_WASH: Record<UnitName, { angle: string; rotate: string }> = {
   鉄砲隊: { angle: "8deg", rotate: "4deg" },
 };
 
+const RARITY_WASH: Partial<Record<Card["rarity"], string>> = {
+  R: "radial-gradient(130% 90% at 50% -10%, rgb(232 236 244 / 0.2), transparent 58%)",
+  SR: "radial-gradient(130% 90% at 50% -10%, rgb(226 193 90 / 0.22), transparent 60%)",
+  ER: "linear-gradient(165deg, rgb(255 107 138 / 0.16), rgb(255 209 102 / 0.1) 32%, rgb(126 231 135 / 0.08) 55%, rgb(110 203 255 / 0.14) 78%, rgb(201 160 255 / 0.16))",
+};
+
 export function CardThemeBackdrop({ card }: { card: Card }) {
   const color = FACTION[card.color];
   const { angle, rotate } = UNIT_WASH[card.unit];
+  const rarityWash = RARITY_WASH[card.rarity];
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
       <div
@@ -36,6 +43,11 @@ export function CardThemeBackdrop({ card }: { card: Card }) {
           ].join(","),
         }}
       />
+      {rarityWash ? <div className="absolute inset-0" style={{ background: rarityWash }} /> : null}
+      <div className="card-cyber absolute inset-0" />
+      <pre className="card-code absolute top-3 left-3 max-w-[min(18rem,72%)] font-mono text-[10px] leading-[1.45] text-[#9c958a] [mask-image:linear-gradient(115deg,#000_18%,transparent_82%)]">
+        {`const card = {\n  no: ${JSON.stringify(card.no)},\n  name: ${JSON.stringify(card.name)},\n  faction: ${JSON.stringify(card.color)},\n  era: ${JSON.stringify(card.period)},\n  unit: ${JSON.stringify(card.unit)},\n  rarity: ${JSON.stringify(card.rarity)},\n  cost: ${card.cost},\n  pow: ${card.power},\n  int: ${card.intel},\n  strat: ${JSON.stringify(card.stratName)},\n  morale: ${card.stratCost},\n}`}
+      </pre>
       <UnitIcon
         unit={card.unit}
         className="absolute -right-8 -bottom-6 size-[min(16rem,70vw)] opacity-[0.18] lg:-right-10 lg:size-[24rem] lg:opacity-[0.22]"
