@@ -444,10 +444,10 @@ export const SKILLS: SkillDef[] = [
     playTip: "看對手時代是否集中。同時代大兵隊要用範圍傷害或計略處理。",
     kind: "open",
     facts: [
-      { label: "合計 1.0 Cost", value: "最大兵力 ＋約 5%" },
-      { label: "合計 2.0 Cost", value: "＋約 10%" },
-      { label: "合計 4.0 Cost", value: "＋約 15%" },
-      { label: "合計 9.0 Cost", value: "＋約 30%" },
+      { label: "每 0.5 Cost", value: "最大兵力 ＋1%" },
+      { label: "合計 1.0 Cost", value: "＋6%" },
+      { label: "合計 5.0 Cost", value: "＋14%" },
+      { label: "合計 9.0 Cost", value: "＋22%" },
     ],
   },
   {
@@ -528,12 +528,12 @@ export const SKILLS: SkillDef[] = [
     official: "特技「霊力」を持つ武将の武将コスト合計に応じて最大兵力が上がります。",
     detail:
       "持有「靈力」的武將，成本合計愈高，最大兵力愈高。此為『櫻花大戰』卡組的核心特技，與時代無關。",
-    playTip: "靈力隊的兵力會特別高。合計 2.5 Cost 約 ＋10%，7.5 Cost（前半四張齊集）約 ＋25%。宜用範圍傷害或計略處理。",
+    playTip: "靈力隊的兵力會特別高。合計 2.5 Cost ＋9%，7.5 Cost（前半四張齊集）＋19%。宜用範圍傷害或計略處理。",
     kind: "open",
     facts: [
-      { label: "公式", value: "最大兵力 ＋（靈力成本合計 × 約 4%）" },
-      { label: "合計 2.5 Cost", value: "＋約 10%" },
-      { label: "合計 7.5 Cost", value: "＋約 25%" },
+      { label: "每 0.5 Cost", value: "最大兵力 ＋1%（1 Cost 為 ＋6%）" },
+      { label: "合計 1 / 5 / 9 Cost", value: "＋6% / ＋14% / ＋22%" },
+      { label: "合計 2.5 / 7.5 Cost", value: "＋9% / ＋19%" },
     ],
   },
 ];
@@ -544,10 +544,10 @@ export const CARD_COUNT = payload.count;
 
 /** 資料對應的遊戲版與擷取日，下次 scrape 記得改。 */
 export const DATA_META = {
-  gameVer: "3.5.0I",
+  gameVer: "3.5.0K",
   pack: "第６彈 古幻相剋の八象　『サクラ大戦』コラボ後半",
-  gameDate: "2026-09-30",
-  dataDate: "2026-09-30",
+  gameDate: "2026-10-21",
+  dataDate: "2026-10-21",
 } as const;
 
 export const CARD_BY_ID: Record<string, Card> = Object.fromEntries(CARDS.map((c) => [c.id, c]));
@@ -2316,13 +2316,17 @@ export function skillCardFacts(card: Card, skillId: number): StatLine[] {
         { label: "槽增加", value: "造成傷害的 60%" },
         { label: "100% / 200%", value: "武知 ＋1 / ＋2" },
       ];
-    case 17:
+    case 17: {
+      const total = card.cost * copies;
+      const pct = Math.floor((4 + 2 * total) * 100) / 100;
+      const shown = Number.isInteger(pct) ? String(pct) : pct.toFixed(1);
       return [
         {
           label: "此卡貢獻",
-          value: `${costLabel(card.cost * copies)}　最大兵力 ＋約 ${Math.round(card.cost * copies * 4 * 10) / 10}%`,
+          value: `${costLabel(total)}　最大兵力 ＋${shown}%`,
         },
       ];
+    }
     default:
       return [];
   }

@@ -533,7 +533,7 @@ export const UNIT_GROUPS: GuideGroup[] = [
         facts: [
           { label: "攻城基礎", value: "0.56" },
           { label: "動作", value: "移動一段距離後帶上突擊氣場，接觸敵軍造成大傷害" },
-          { label: "突擊中", value: "受到弓、鐵砲的傷害減輕" },
+          { label: "突擊中", value: "受到弓、鐵砲、龍射的傷害為 0.4 倍" },
         ],
       },
       {
@@ -656,7 +656,10 @@ export const SPECIAL_UNIT_GROUPS: GuideGroup[] = [
       },
       {
         name: "龍突",
-        facts: [{ label: "鐵砲", value: "命中可取消鐵砲隊射擊" }],
+        facts: [
+          { label: "鐵砲", value: "命中可取消鐵砲隊射擊" },
+          { label: "龍突中", value: "受到弓、鐵砲、龍射的傷害為 0.4 倍" },
+        ],
       },
     ],
   },
@@ -697,6 +700,7 @@ export const SPECIAL_UNIT_GROUPS: GuideGroup[] = [
           { label: "亂戰", value: "亂戰中仍可進入突進" },
           { label: "鐵砲", value: "突進可取消鐵砲隊射擊" },
           { label: "解除", value: "被斬擊等彈開時，突進解除" },
+          { label: "突進中", value: "受到弓、鐵砲、龍射的傷害為 0.4 倍" },
         ],
       },
     ],
