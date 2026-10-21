@@ -158,11 +158,7 @@ export function AboutPage() {
       <section className="mt-4 rounded-lg border border-white/10 bg-black/35 p-4 text-sm leading-relaxed text-pretty text-muted">
         <p className="text-xs text-faint">資料版本</p>
         <p className="mt-2 text-fg">英傑大戦 Ver.{DATA_META.gameVer}</p>
-        <p className="mt-2">
-          第６彈 古幻相剋の八象
-          <br />
-          『サクラ大戦』コラボ後半
-        </p>
+        <p className="mt-2">{DATA_META.pack}</p>
         <p className="mt-2 tabular-nums">
           遊戲更新 {DATA_META.gameDate.replaceAll("-", "/")}
           <br />
