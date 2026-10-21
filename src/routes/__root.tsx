@@ -100,12 +100,14 @@ export const Route = createRootRoute({
   component: () => (
     <html lang="zh-Hant" suppressHydrationWarning>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html:
-              'if("serviceWorker"in navigator){navigator.serviceWorker.register("/sw.js",{scope:"/",updateViaCache:"none"})}',
-          }}
-        />
+        {import.meta.env.PROD ? (
+          <script
+            dangerouslySetInnerHTML={{
+              __html:
+                'if("serviceWorker"in navigator){navigator.serviceWorker.register("/sw.js",{scope:"/",updateViaCache:"none"})}',
+            }}
+          />
+        ) : null}
         <HeadContent />
       </head>
       <body className="antialiased">

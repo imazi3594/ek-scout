@@ -164,9 +164,16 @@ export function ScoutApp() {
   const [installHint, setInstallHint] = useState("");
 
   useEffect(() => {
+    if (!import.meta.env.DEV || !("serviceWorker" in navigator)) return;
+    void navigator.serviceWorker.getRegistrations().then((regs) => {
+      for (const reg of regs) void reg.unregister();
+    });
+  }, []);
+
+  useEffect(() => {
     const sync = () => setBrowserOffline(navigator.onLine === false);
     const kick = () => {
-      if (!navigator.onLine || !("serviceWorker" in navigator)) return;
+      if (import.meta.env.DEV || !navigator.onLine || !("serviceWorker" in navigator)) return;
       void navigator.serviceWorker.ready.then((reg) => {
         reg.active?.postMessage({ type: "revalidate" });
         void reg.update();
@@ -177,8 +184,13 @@ export function ScoutApp() {
       if (type === "degraded") setLinkDown(true);
       if (type === "online" || type === "updated") setLinkDown(false);
       if (type === "updated") {
+        if (import.meta.env.DEV) return;
         const rev = String(event.data?.rev || "");
         if (!rev || sessionStorage.getItem("ek-sw-rev") === rev) return;
+        const now = Date.now();
+        const prevAt = Number(sessionStorage.getItem("ek-sw-reload-at") || "0");
+        if (now - prevAt < 20000) return;
+        sessionStorage.setItem("ek-sw-reload-at", String(now));
         sessionStorage.setItem("ek-sw-rev", rev);
         window.location.reload();
       }

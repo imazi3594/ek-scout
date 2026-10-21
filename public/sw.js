@@ -1,4 +1,4 @@
-const CACHE = "ek-scout-v9";
+const CACHE = "ek-scout-v10";
 const NETWORK_TIMEOUT = 12000;
 const REVALIDATE_TIMEOUT = 20000;
 
@@ -96,6 +96,10 @@ async function precacheShell() {
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
+      if (await detectDev()) {
+        await self.skipWaiting();
+        return;
+      }
       const ready = await precacheShell().catch(() => false);
       const cache = await caches.open(CACHE);
       const has = await cache.match(new URL("index.html", self.registration.scope).href);
@@ -107,6 +111,20 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
+      if (devMode || (await detectDev())) {
+        await self.registration.unregister();
+        const keys = await caches.keys();
+        await Promise.all(keys.map((key) => caches.delete(key)));
+        const list = await self.clients.matchAll({ type: "window" });
+        for (const client of list) {
+          try {
+            await client.navigate(client.url);
+          } catch {
+            /* already navigating */
+          }
+        }
+        return;
+      }
       const cache = await caches.open(CACHE);
       const indexUrl = new URL("index.html", self.registration.scope).href;
       const hasShell = (await cache.match(indexUrl)) || (await cache.match(self.registration.scope));
@@ -170,6 +188,35 @@ function revOf(text) {
   return (hash >>> 0).toString(16);
 }
 
+function shellKey(html) {
+  const urls = [];
+  const re = /(?:src|href)="([^"]+)"/g;
+  let match;
+  while ((match = re.exec(html))) {
+    const href = match[1];
+    if (/\.(?:js|css)(?:\?|#|$)/.test(href) || href.includes("/assets/")) urls.push(href.split("?")[0]);
+  }
+  urls.sort();
+  return urls.join("|");
+}
+
+function looksLikeDev(html) {
+  return html.includes("tanstack-start-dev") || html.includes("@react-refresh") || html.includes("/@vite/");
+}
+
+let devMode = false;
+
+async function detectDev() {
+  try {
+    const res = await fetch(new URL("./", self.registration.scope), { cache: "reload" });
+    const html = await res.text();
+    devMode = looksLikeDev(html);
+  } catch {
+    devMode = false;
+  }
+  return devMode;
+}
+
 async function notify(data) {
   const list = await self.clients.matchAll({ includeUncontrolled: true, type: "window" });
   for (const client of list) client.postMessage(data);
@@ -199,7 +246,7 @@ async function doRevalidate() {
     await notify({ type: "degraded" });
     return;
   }
-  if (previous && html === previous) {
+  if (previous && (html === previous || (shellKey(html) && shellKey(html) === shellKey(previous)))) {
     await notify({ type: "online" });
     return;
   }
@@ -211,7 +258,9 @@ async function doRevalidate() {
   await notify({ type: "online" });
   const nextRes = await caches.match(indexUrl);
   const next = nextRes ? await nextRes.clone().text() : "";
-  if (next && next !== previous) await notify({ type: "updated", rev: revOf(next) });
+  if (next && shellKey(next) && shellKey(next) !== shellKey(previous)) {
+    await notify({ type: "updated", rev: revOf(shellKey(next)) });
+  }
 }
 
 function revalidate() {
@@ -238,9 +287,17 @@ self.addEventListener("message", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  if (devMode) return;
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
+  if (
+    url.pathname.startsWith("/@") ||
+    url.pathname.startsWith("/src/") ||
+    url.pathname.startsWith("/node_modules/")
+  ) {
+    return;
+  }
 
   event.respondWith(
     (async () => {
