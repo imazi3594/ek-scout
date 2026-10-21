@@ -1070,6 +1070,7 @@ function effectRows(effects: CardEffect[], hide?: CardEffect | null, rippleC?: n
     }
     const label = translateLabel(rawLabel);
     const value = translateValue(effect.value);
+    if (!value.trim()) continue;
     const key = `${label}|${value}`;
     if (seen.has(key)) continue;
     seen.add(key);
@@ -1099,15 +1100,55 @@ function konshinSpecialTexts(card: Card): Set<string> {
   return texts;
 }
 
+function konshinMoraleSlot(value: string): "none" | "weak" | "strong" | null {
+  const v = fullwidthNum(value).replace(/\s/g, "").replace(/＋/g, "+");
+  if (!v.includes("所持士気が必要士気")) return null;
+  if (v.includes("+1未満")) return "strong";
+  if (v.includes("+2以上")) return "none";
+  if (v.includes("+1以上")) return "weak";
+  return null;
+}
+
+function konshinGroupSlot(group: CardEffect[]): "none" | "weak" | "strong" | null {
+  for (const effect of group) {
+    const slot = konshinMoraleSlot(effect.value);
+    if (slot) return slot;
+  }
+  return null;
+}
+
 export function konshinTiers(card: Card): KonshinTier[] | null {
   if (!isKonshinCard(card)) return null;
-  const groups = collapseKonshinGroups(splitKonshinGroups(card.effects ?? [])).map(stripKonshinMarks);
-  if (groups.length < 2) return null;
+  const rawGroups = collapseKonshinGroups(splitKonshinGroups(card.effects ?? []));
+  if (!rawGroups.length) return null;
 
-  const noneRows = effectRows(groups[0] ?? []);
-  const weakRows = effectRows(groups[1] ?? groups[0] ?? []);
-  const strongRows = effectRows(groups[2] ?? groups[1] ?? groups[0] ?? []);
   const cost = card.stratCost;
+  let noneG: CardEffect[] = [];
+  let weakG: CardEffect[] = [];
+  let strongG: CardEffect[] = [];
+  const slots = rawGroups.map(konshinGroupSlot);
+
+  if (slots.some(Boolean)) {
+    rawGroups.forEach((group, index) => {
+      const slot = slots[index];
+      if (slot === "none") noneG = group;
+      else if (slot === "weak") weakG = group;
+      else if (slot === "strong") strongG = group;
+      else if (index === 0) noneG = group;
+      else if (index === 1) weakG = group;
+      else strongG = group;
+    });
+  } else {
+    if (rawGroups.length < 2) return null;
+    noneG = rawGroups[0] ?? [];
+    weakG = rawGroups[1] ?? rawGroups[0] ?? [];
+    strongG = rawGroups[2] ?? rawGroups[1] ?? rawGroups[0] ?? [];
+  }
+
+  const noneRows = effectRows(stripKonshinMarks(noneG));
+  const weakRows = effectRows(stripKonshinMarks(weakG));
+  const strongRows = effectRows(stripKonshinMarks(strongG));
+  if (!noneRows.length && !weakRows.length && !strongRows.length) return null;
 
   return [
     { id: "strong", title: "強渾身", morale: `士氣 ${cost}`, rows: strongRows },

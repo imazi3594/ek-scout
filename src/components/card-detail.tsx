@@ -719,7 +719,7 @@ function KonshinGrid({ tiers, href }: { tiers: KonshinTier[]; href?: string }) {
               </h3>
               <p className="text-xs tabular-nums text-faint">{tier.morale}</p>
             </div>
-            <TierRows id={tier.id} rows={tier.rows} href={href} />
+            <TierRows id={tier.id} rows={tier.rows} href={href} empty="未列實測" />
             {tier.id === "strong" || tier.id === "weak" ? <KonshinDamage tier={tier.id} /> : null}
           </section>
         ))}
@@ -1233,10 +1233,20 @@ function KonshinDamage({ tier }: { tier: "strong" | "weak" }) {
   return <IntelDamageTable chart={sliced} />;
 }
 
-function TierRows({ id, rows, href }: { id: string; rows: StatLine[]; href?: string }) {
+function TierRows({
+  id,
+  rows,
+  href,
+  empty = "—",
+}: {
+  id: string;
+  rows: StatLine[];
+  href?: string;
+  empty?: string;
+}) {
   const chart = useContext(DamageChartContext);
   const shown = chart ? rows.filter((row) => !isDamagePlaceholder(row)) : rows;
-  if (!shown.length) return rows.length ? null : <p className="mt-2 text-xs text-faint">—</p>;
+  if (!shown.length) return rows.length ? null : <p className="mt-2 text-xs text-faint">{empty}</p>;
   return (
     <dl className="mt-1.5 grid grid-cols-1 gap-1.5">
       {shown.map((row) => (

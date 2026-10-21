@@ -1,6 +1,6 @@
-const CACHE = "ek-scout-v8";
-const NETWORK_TIMEOUT = 2500;
-const REVALIDATE_TIMEOUT = 6000;
+const CACHE = "ek-scout-v9";
+const NETWORK_TIMEOUT = 12000;
+const REVALIDATE_TIMEOUT = 20000;
 
 const PRECACHE = [
   "index.html",
@@ -42,12 +42,21 @@ async function precacheShell() {
   const cache = await caches.open(CACHE);
   const base = self.registration.scope;
   const indexUrl = new URL("index.html", base).href;
+  const scopeUrl = new URL("./", base).href;
   let html = "";
   try {
     const indexRes = await timeoutFetch(indexUrl, REVALIDATE_TIMEOUT);
     if (indexRes.ok) html = await indexRes.text();
   } catch {
-    return false;
+    html = "";
+  }
+  if (!html) {
+    try {
+      const scopeRes = await timeoutFetch(scopeUrl, REVALIDATE_TIMEOUT);
+      if (scopeRes.ok) html = await scopeRes.text();
+    } catch {
+      return false;
+    }
   }
   if (!html) return false;
 
@@ -169,15 +178,22 @@ async function notify(data) {
 let refreshing = null;
 
 async function doRevalidate() {
-  const indexUrl = new URL("index.html", self.registration.scope).href;
-  const old = await caches.match(indexUrl);
+  const base = self.registration.scope;
+  const indexUrl = new URL("index.html", base).href;
+  const scopeUrl = new URL("./", base).href;
+  const old = (await caches.match(indexUrl)) || (await caches.match(scopeUrl)) || (await caches.match(base));
   const previous = old ? await old.clone().text() : "";
   let html = "";
-  try {
-    const indexRes = await timeoutFetch(indexUrl, REVALIDATE_TIMEOUT);
-    if (indexRes && indexRes.ok) html = await indexRes.text();
-  } catch {
-    html = "";
+  for (const url of [scopeUrl, indexUrl]) {
+    try {
+      const indexRes = await timeoutFetch(url, REVALIDATE_TIMEOUT);
+      if (indexRes && indexRes.ok) {
+        html = await indexRes.text();
+        if (html) break;
+      }
+    } catch {
+      html = "";
+    }
   }
   if (!html) {
     await notify({ type: "degraded" });
@@ -205,6 +221,16 @@ function revalidate() {
     });
   }
   return refreshing;
+}
+
+const OFFLINE_HTML =
+  "<!doctype html><meta charset=utf-8><title>英傑大戦⚡️速查</title><body style=\"margin:0;background:#0c0b0a;color:#f3efe6;font-family:sans-serif;display:grid;min-height:100vh;place-items:center;text-align:center;padding:24px\"><p>尚未有離線資料。請先連線開啟一次。</p>";
+
+function offlineDocument() {
+  return new Response(OFFLINE_HTML, {
+    status: 200,
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
 }
 
 self.addEventListener("message", (event) => {
@@ -239,10 +265,7 @@ self.addEventListener("fetch", (event) => {
               /* 首次沒有快取 */
             }
           }
-          return new Response(
-            "<!doctype html><meta charset=utf-8><title>英傑大戦⚡️速查</title><body style=\"margin:0;background:#0c0b0a;color:#f3efe6;font-family:sans-serif;display:grid;min-height:100vh;place-items:center\"><p>尚未有離線資料。請先連線開啟一次。</p>",
-            { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } },
-          );
+          return offlineDocument();
         }
 
         const hit = await cached(event.request);
@@ -262,8 +285,11 @@ self.addEventListener("fetch", (event) => {
           return new Response("", { status: 503, statusText: "offline" });
         }
       } catch {
-        const page = await shell().catch(() => null);
-        if (page) return page;
+        if (event.request.mode === "navigate") {
+          const page = await shell().catch(() => null);
+          if (page) return page;
+          return offlineDocument();
+        }
         return new Response("", { status: 503, statusText: "offline" });
       }
     })(),
