@@ -1,4 +1,4 @@
-const CACHE = "ek-scout-v11";
+const CACHE = "ek-scout-v12";
 const NETWORK_TIMEOUT = 8000;
 const REVALIDATE_TIMEOUT = 8000;
 const UPDATE_AFTER_MS = 30_000;
@@ -101,10 +101,8 @@ self.addEventListener("install", (event) => {
         await self.skipWaiting();
         return;
       }
-      const ready = await precacheShell().catch(() => false);
-      const cache = await caches.open(CACHE);
-      const has = await cache.match(new URL("index.html", self.registration.scope).href);
-      if (ready || has) await self.skipWaiting();
+      await precacheShell().catch(() => false);
+      await self.skipWaiting();
     })(),
   );
 });
@@ -335,6 +333,25 @@ self.addEventListener("fetch", (event) => {
     url.pathname.startsWith("/src/") ||
     url.pathname.startsWith("/node_modules/")
   ) {
+    return;
+  }
+
+  // 程式檔約 1.7MB。有快取就用快取；沒有就交給瀏覽器自己下載，不要在 8 秒後改回 503。
+  if (url.pathname.startsWith("/assets/")) {
+    event.respondWith(
+      (async () => {
+        const hit = await cached(event.request);
+        if (hit) return hit;
+        const fresh = await fetch(event.request);
+        if (fresh && fresh.ok) {
+          const copy = await materialize(fresh);
+          const cache = await caches.open(CACHE);
+          event.waitUntil(cache.put(event.request, copy.clone()).catch(() => undefined));
+          return copy;
+        }
+        return fresh;
+      })(),
+    );
     return;
   }
 
