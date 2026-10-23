@@ -13,18 +13,6 @@ createRoot(document.getElementById("root")!).render(
 );
 
 if ("serviceWorker" in navigator) {
-  if (navigator.serviceWorker.controller) {
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
-      if (navigator.onLine) window.location.reload();
-    });
-  }
-  navigator.serviceWorker.addEventListener("message", (event) => {
-    if (event.data?.type !== "updated") return;
-    const rev = String(event.data.rev ?? "");
-    if (!rev || sessionStorage.getItem("ek-rev") === rev) return;
-    sessionStorage.setItem("ek-rev", rev);
-    window.location.reload();
-  });
   void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, {
     scope: import.meta.env.BASE_URL,
   });

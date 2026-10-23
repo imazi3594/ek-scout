@@ -172,45 +172,37 @@ export function ScoutApp() {
 
   useEffect(() => {
     const sync = () => setBrowserOffline(navigator.onLine === false);
-    const kick = () => {
-      if (import.meta.env.DEV || !navigator.onLine || !("serviceWorker" in navigator)) return;
+    const UPDATE_AFTER_MS = 30_000;
+    const started = Date.now();
+    let checked = false;
+    let timer = 0;
+    const checkUpdate = () => {
+      if (import.meta.env.DEV || checked || !navigator.onLine || !("serviceWorker" in navigator)) return;
+      if (Date.now() - started < UPDATE_AFTER_MS) return;
+      checked = true;
       void navigator.serviceWorker.ready.then((reg) => {
-        reg.active?.postMessage({ type: "revalidate" });
-        void reg.update();
+        reg.active?.postMessage({ type: "revalidate", since: Date.now() - started });
       });
     };
     const onMessage = (event: MessageEvent) => {
       const type = event.data?.type;
-      if (type === "degraded") setLinkDown(true);
       if (type === "online" || type === "updated") setLinkDown(false);
-      if (type === "updated") {
-        if (import.meta.env.DEV) return;
-        const rev = String(event.data?.rev || "");
-        if (!rev || sessionStorage.getItem("ek-sw-rev") === rev) return;
-        const now = Date.now();
-        const prevAt = Number(sessionStorage.getItem("ek-sw-reload-at") || "0");
-        if (now - prevAt < 20000) return;
-        sessionStorage.setItem("ek-sw-reload-at", String(now));
-        sessionStorage.setItem("ek-sw-rev", rev);
-        window.location.reload();
-      }
     };
-    const onVisible = () => {
-      if (document.visibilityState === "visible") kick();
+    timer = window.setTimeout(checkUpdate, UPDATE_AFTER_MS);
+    const onOnline = () => {
+      sync();
+      checkUpdate();
     };
     window.addEventListener("online", sync);
     window.addEventListener("offline", sync);
-    window.addEventListener("online", kick);
-    window.addEventListener("pageshow", kick);
-    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("online", onOnline);
     navigator.serviceWorker?.addEventListener("message", onMessage);
     sync();
     return () => {
+      window.clearTimeout(timer);
       window.removeEventListener("online", sync);
       window.removeEventListener("offline", sync);
-      window.removeEventListener("online", kick);
-      window.removeEventListener("pageshow", kick);
-      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("online", onOnline);
       navigator.serviceWorker?.removeEventListener("message", onMessage);
     };
   }, []);
@@ -543,7 +535,7 @@ export function ScoutApp() {
     <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-bg text-fg">
       {offline ? (
         <p className="relative z-[80] shrink-0 border-b border-red-950 bg-red-800 px-4 pt-[max(0.35rem,env(safe-area-inset-top))] pb-1.5 text-center text-xs text-white">
-          {browserOffline ? "離線模式　已儲存的資料仍可查閱" : "網絡不穩，已改用離線資料。恢復後會自動更新"}
+          {browserOffline ? "離線模式　已儲存的資料仍可查閱" : "網絡不穩，已用已儲存的資料"}
         </p>
       ) : null}
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">

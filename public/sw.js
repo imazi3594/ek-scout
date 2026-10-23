@@ -1,6 +1,7 @@
-const CACHE = "ek-scout-v10";
-const NETWORK_TIMEOUT = 12000;
-const REVALIDATE_TIMEOUT = 20000;
+const CACHE = "ek-scout-v11";
+const NETWORK_TIMEOUT = 8000;
+const REVALIDATE_TIMEOUT = 8000;
+const UPDATE_AFTER_MS = 30_000;
 
 const PRECACHE = [
   "index.html",
@@ -223,8 +224,25 @@ async function notify(data) {
 }
 
 let refreshing = null;
+let openedAt = 0;
+let updateTimer = null;
+let forceUpdate = false;
+
+function scheduleUpdate() {
+  openedAt = Date.now();
+  if (updateTimer) clearTimeout(updateTimer);
+  updateTimer = setTimeout(() => {
+    updateTimer = null;
+    if (self.navigator.onLine === false) return;
+    void revalidate();
+  }, UPDATE_AFTER_MS);
+}
 
 async function doRevalidate() {
+  const force = forceUpdate;
+  if (force) forceUpdate = false;
+  if (!force && self.navigator.onLine === false) return;
+  if (!force && (!openedAt || Date.now() - openedAt < UPDATE_AFTER_MS - 1000)) return;
   const base = self.registration.scope;
   const indexUrl = new URL("index.html", base).href;
   const scopeUrl = new URL("./", base).href;
@@ -243,33 +261,40 @@ async function doRevalidate() {
     }
   }
   if (!html) {
-    await notify({ type: "degraded" });
+    await notify(force ? { type: "update-result", ok: false } : { type: "degraded" });
     return;
   }
   if (previous && (html === previous || (shellKey(html) && shellKey(html) === shellKey(previous)))) {
-    await notify({ type: "online" });
+    await notify(force ? { type: "update-result", ok: true } : { type: "online" });
     return;
   }
   const ready = await precacheShell().catch(() => false);
   if (!ready) {
-    await notify({ type: "degraded" });
+    await notify(force ? { type: "update-result", ok: false } : { type: "degraded" });
     return;
   }
   await notify({ type: "online" });
   const nextRes = await caches.match(indexUrl);
   const next = nextRes ? await nextRes.clone().text() : "";
   if (next && shellKey(next) && shellKey(next) !== shellKey(previous)) {
-    await notify({ type: "updated", rev: revOf(shellKey(next)) });
+    await notify({ type: "updated", rev: revOf(shellKey(next)), reload: force });
+  } else if (force) {
+    await notify({ type: "update-result", ok: true });
   }
 }
 
 function revalidate() {
-  if (!refreshing) {
-    refreshing = doRevalidate().finally(() => {
-      refreshing = null;
+  const run = () => {
+    const job = doRevalidate().finally(() => {
+      if (refreshing === job) refreshing = null;
     });
-  }
-  return refreshing;
+    refreshing = job;
+    return job;
+  };
+  if (!refreshing) return run();
+  if (!forceUpdate) return refreshing;
+  const pending = refreshing;
+  return pending.then(() => run());
 }
 
 const OFFLINE_HTML =
@@ -283,7 +308,21 @@ function offlineDocument() {
 }
 
 self.addEventListener("message", (event) => {
-  if (event.data && event.data.type === "revalidate") event.waitUntil(revalidate());
+  const data = event.data;
+  if (!data) return;
+  if (data.type === "skip-wait") {
+    void self.skipWaiting();
+    return;
+  }
+  if (data.type !== "revalidate") return;
+  const since = Number(data.since || 0);
+  if (data.force) {
+    forceUpdate = true;
+    openedAt = Date.now() - UPDATE_AFTER_MS;
+  } else if (since >= UPDATE_AFTER_MS - 1000) {
+    openedAt = Date.now() - since;
+  }
+  event.waitUntil(revalidate());
 });
 
 self.addEventListener("fetch", (event) => {
@@ -308,14 +347,14 @@ self.addEventListener("fetch", (event) => {
         if (navigate) {
           const fallback = (await cached(event.request).then((hit) => (hit ? htmlResponse(hit) : null))) || (await shell());
           if (fallback) {
-            if (!offline) event.waitUntil(revalidate());
+            scheduleUpdate();
             return fallback;
           }
           if (!offline) {
             try {
               const fresh = await timeoutFetch(event.request, REVALIDATE_TIMEOUT);
               if (fresh && fresh.ok) {
-                event.waitUntil(revalidate());
+                scheduleUpdate();
                 return htmlResponse(fresh);
               }
             } catch {

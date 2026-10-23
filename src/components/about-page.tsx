@@ -20,6 +20,7 @@ export function AboutPage() {
   const [android, setAndroid] = useState(false);
   const [copied, setCopied] = useState(false);
   const [hint, setHint] = useState("");
+  const [updateNote, setUpdateNote] = useState("");
 
   useEffect(() => {
     setInstalled(isStandalone());
@@ -52,6 +53,52 @@ export function AboutPage() {
     setHint("用 Chrome 右上 ⋮ →「安裝應用程式」。");
   }
 
+  async function forceRefresh() {
+    if (!navigator.onLine) {
+      setUpdateNote("而家沒有網絡");
+      return;
+    }
+    if (import.meta.env.DEV || !("serviceWorker" in navigator)) {
+      window.location.reload();
+      return;
+    }
+    setUpdateNote("檢查緊…");
+    let settled = false;
+    const finish = (text: string) => {
+      if (settled) return;
+      settled = true;
+      navigator.serviceWorker.removeEventListener("message", onMessage);
+      navigator.serviceWorker.removeEventListener("controllerchange", onControl);
+      setUpdateNote(text);
+    };
+    const onControl = () => {
+      if (settled) return;
+      settled = true;
+      window.location.reload();
+    };
+    const onMessage = (event: MessageEvent) => {
+      const data = event.data;
+      if (!data) return;
+      if (data.type === "updated" && data.reload) {
+        settled = true;
+        window.location.reload();
+        return;
+      }
+      if (data.type === "update-result") finish(data.ok ? "已是最新" : "而家更新唔到");
+    };
+    navigator.serviceWorker.addEventListener("message", onMessage);
+    navigator.serviceWorker.addEventListener("controllerchange", onControl);
+    window.setTimeout(() => finish("而家更新唔到"), 25000);
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      await reg.update();
+      if (reg.waiting) reg.waiting.postMessage({ type: "skip-wait" });
+      reg.active?.postMessage({ type: "revalidate", force: true });
+    } catch {
+      finish("而家更新唔到");
+    }
+  }
+
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(PAGE_URL);
@@ -65,13 +112,16 @@ export function AboutPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-6 sm:px-6">
       <div className="flex flex-col items-center text-center">
-        <img
-          src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
-          alt=""
-          width={96}
-          height={96}
-          className="size-24 rounded-3xl shadow-[var(--shadow-border)]"
-        />
+        <button type="button" onClick={() => void forceRefresh()} className="rounded-3xl" aria-label="英傑速查">
+          <img
+            src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
+            alt=""
+            width={96}
+            height={96}
+            className="size-24 rounded-3xl shadow-[var(--shadow-border)]"
+          />
+        </button>
+        {updateNote ? <p className="mt-2 text-xs text-faint">{updateNote}</p> : null}
         <div className="mt-4 flex items-center gap-2">
           <h2 className="font-display text-2xl tracking-tight">英傑大戦⚡️速查</h2>
         </div>
