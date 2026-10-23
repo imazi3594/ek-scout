@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Copy, Download, Share, Smartphone } from "lucide-react";
 import { CARD_COUNT, DATA_META } from "@/data/catalog";
 import { deviceKind, isStandalone, subscribeInstall, type BeforeInstall } from "@/lib/install";
@@ -21,6 +21,24 @@ export function AboutPage() {
   const [copied, setCopied] = useState(false);
   const [hint, setHint] = useState("");
   const [updateNote, setUpdateNote] = useState("");
+  const noteTimer = useRef<number | null>(null);
+
+  function showNote(text: string, persist = false) {
+    if (noteTimer.current) window.clearTimeout(noteTimer.current);
+    setUpdateNote(text);
+    if (!persist) {
+      noteTimer.current = window.setTimeout(() => {
+        setUpdateNote("");
+        noteTimer.current = null;
+      }, 2400);
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      if (noteTimer.current) window.clearTimeout(noteTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     setInstalled(isStandalone());
@@ -55,21 +73,21 @@ export function AboutPage() {
 
   async function forceRefresh() {
     if (!navigator.onLine) {
-      setUpdateNote("而家沒有網絡");
+      showNote("目前沒有網絡");
       return;
     }
     if (import.meta.env.DEV || !("serviceWorker" in navigator)) {
       window.location.reload();
       return;
     }
-    setUpdateNote("檢查緊…");
+    showNote("正在檢查…", true);
     let settled = false;
     const finish = (text: string) => {
       if (settled) return;
       settled = true;
       navigator.serviceWorker.removeEventListener("message", onMessage);
       navigator.serviceWorker.removeEventListener("controllerchange", onControl);
-      setUpdateNote(text);
+      showNote(text);
     };
     const onControl = () => {
       if (settled) return;
@@ -84,18 +102,18 @@ export function AboutPage() {
         window.location.reload();
         return;
       }
-      if (data.type === "update-result") finish(data.ok ? "已是最新" : "而家更新唔到");
+      if (data.type === "update-result") finish(data.ok ? "已是最新版本" : "暫時無法更新");
     };
     navigator.serviceWorker.addEventListener("message", onMessage);
     navigator.serviceWorker.addEventListener("controllerchange", onControl);
-    window.setTimeout(() => finish("而家更新唔到"), 25000);
+    window.setTimeout(() => finish("暫時無法更新"), 25000);
     try {
       const reg = await navigator.serviceWorker.ready;
       await reg.update();
       if (reg.waiting) reg.waiting.postMessage({ type: "skip-wait" });
       reg.active?.postMessage({ type: "revalidate", force: true });
     } catch {
-      finish("而家更新唔到");
+      finish("暫時無法更新");
     }
   }
 
@@ -111,6 +129,13 @@ export function AboutPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-6 sm:px-6">
+      {updateNote ? (
+        <div className="pointer-events-none fixed inset-x-0 top-0 z-[90] flex justify-center px-4 pt-[max(0.6rem,env(safe-area-inset-top))]">
+          <p role="status" className="rounded-full bg-black/85 px-4 py-2 text-sm text-fg shadow-[var(--shadow-border)]">
+            {updateNote}
+          </p>
+        </div>
+      ) : null}
       <div className="flex flex-col items-center text-center">
         <button type="button" onClick={() => void forceRefresh()} className="rounded-3xl" aria-label="英傑速查">
           <img
@@ -121,7 +146,6 @@ export function AboutPage() {
             className="size-24 rounded-3xl shadow-[var(--shadow-border)]"
           />
         </button>
-        {updateNote ? <p className="mt-2 text-xs text-faint">{updateNote}</p> : null}
         <div className="mt-4 flex items-center gap-2">
           <h2 className="font-display text-2xl tracking-tight">英傑大戦⚡️速查</h2>
         </div>
