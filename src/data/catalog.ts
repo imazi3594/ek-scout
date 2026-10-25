@@ -547,7 +547,7 @@ export const DATA_META = {
   gameVer: "3.5.0K",
   pack: "第６彈 古幻相剋の八象",
   gameDate: "2026-10-21",
-  dataDate: "2026-10-21",
+  dataDate: "2026-10-24",
 } as const;
 
 export const CARD_BY_ID: Record<string, Card> = Object.fromEntries(CARDS.map((c) => [c.id, c]));
@@ -946,12 +946,15 @@ export function spinTiers(card: Card): SpinTiers | null {
     else shared.push(effect);
   }
 
+  const cols: SpinCol[] = [
+    { id: "left", title: "向左", rows: effectRows(left, hide) },
+    { id: "right", title: "向右", rows: effectRows(right, hide) },
+  ];
+  if (cols.every((col) => col.rows.length === 0)) return null;
+
   return {
     shared: effectRows(shared, hide),
-    cols: [
-      { id: "left", title: "向左", rows: effectRows(left, hide) },
-      { id: "right", title: "向右", rows: effectRows(right, hide) },
-    ],
+    cols,
   };
 }
 
