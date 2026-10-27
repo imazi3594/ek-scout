@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Copy, Download, Share, Smartphone } from "lucide-react";
+import { Copy, Download, RefreshCw, Share, Smartphone } from "lucide-react";
 import { CARD_COUNT, DATA_META } from "@/data/catalog";
 import { deviceKind, isStandalone, subscribeInstall, type BeforeInstall } from "@/lib/install";
 
@@ -21,6 +21,7 @@ export function AboutPage() {
   const [copied, setCopied] = useState(false);
   const [hint, setHint] = useState("");
   const [updateNote, setUpdateNote] = useState("");
+  const [checking, setChecking] = useState(false);
   const noteTimer = useRef<number | null>(null);
 
   function showNote(text: string, persist = false) {
@@ -72,6 +73,7 @@ export function AboutPage() {
   }
 
   async function forceRefresh() {
+    if (checking) return;
     if (!navigator.onLine) {
       showNote("目前沒有網絡");
       return;
@@ -80,6 +82,7 @@ export function AboutPage() {
       window.location.reload();
       return;
     }
+    setChecking(true);
     showNote("正在檢查…", true);
     let settled = false;
     const finish = (text: string) => {
@@ -87,6 +90,7 @@ export function AboutPage() {
       settled = true;
       navigator.serviceWorker.removeEventListener("message", onMessage);
       navigator.serviceWorker.removeEventListener("controllerchange", onControl);
+      setChecking(false);
       showNote(text);
     };
     const onControl = () => {
@@ -137,15 +141,13 @@ export function AboutPage() {
         </div>
       ) : null}
       <div className="flex flex-col items-center text-center">
-        <button type="button" onClick={() => void forceRefresh()} className="rounded-3xl" aria-label="英傑速查">
-          <img
-            src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
-            alt=""
-            width={96}
-            height={96}
-            className="size-24 rounded-3xl shadow-[var(--shadow-border)]"
-          />
-        </button>
+        <img
+          src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
+          alt=""
+          width={96}
+          height={96}
+          className="size-24 rounded-3xl shadow-[var(--shadow-border)]"
+        />
         <div className="mt-4 flex items-center gap-2">
           <h2 className="font-display text-2xl tracking-tight">英傑大戦⚡️速查</h2>
         </div>
@@ -238,6 +240,15 @@ export function AboutPage() {
           <br />
           資料擷取 {DATA_META.dataDate.replaceAll("-", "/")}
         </p>
+        <button
+          type="button"
+          onClick={() => void forceRefresh()}
+          disabled={checking}
+          className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-md bg-surface-2 font-medium text-fg disabled:opacity-60"
+        >
+          <RefreshCw className="size-4" />
+          檢查更新
+        </button>
       </section>
 
       <section className="mt-4 rounded-lg border border-white/10 bg-black/35 p-4 text-sm leading-relaxed text-pretty text-muted">

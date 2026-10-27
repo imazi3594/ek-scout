@@ -1004,11 +1004,20 @@ function pickKonshinSplitLabel(items: CardEffect[]): string | null {
   const counts = new Map<string, number>();
   for (const item of items) counts.set(item.label, (counts.get(item.label) ?? 0) + 1);
   const first = items[0]?.label;
-  if (first && (counts.get(first) ?? 0) >= 2) return first;
+  if (first && first !== "特殊効果" && (counts.get(first) ?? 0) >= 2) return first;
   const primary = KONSHIN_PRIMARY.find((label) => (counts.get(label) ?? 0) >= 2);
   if (primary) return primary;
   let best = "";
   let bestN = 0;
+  for (const item of items) {
+    if (item.label === "特殊効果") continue;
+    const n = counts.get(item.label) ?? 0;
+    if (n > bestN) {
+      best = item.label;
+      bestN = n;
+    }
+  }
+  if (bestN >= 2) return best;
   for (const item of items) {
     const n = counts.get(item.label) ?? 0;
     if (n > bestN) {
@@ -1042,7 +1051,10 @@ function splitKonshinGroups(effects: CardEffect[]): CardEffect[][] {
   if (current.length) groups.push(current);
 
   if (prefix.length) {
-    if (groups.length === 2) groups.unshift(prefix);
+    const prefixMarked = prefix.some((effect) => konshinMoraleSlot(effect.value));
+    if (!prefixMarked && groups.length >= 3) {
+      for (let i = 0; i < groups.length; i++) groups[i] = [...prefix, ...groups[i]];
+    } else if (groups.length === 2) groups.unshift(prefix);
     else if (groups.length) groups[0] = [...prefix, ...groups[0]];
     else groups.push(prefix);
   }
