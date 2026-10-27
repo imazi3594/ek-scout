@@ -1,7 +1,7 @@
 const CACHE = "ek-scout-v12";
 const NETWORK_TIMEOUT = 8000;
 const REVALIDATE_TIMEOUT = 8000;
-const UPDATE_AFTER_MS = 30_000;
+const UPDATE_AFTER_MS = 10_000;
 
 const PRECACHE = [
   "index.html",

@@ -172,7 +172,7 @@ export function ScoutApp() {
 
   useEffect(() => {
     const sync = () => setBrowserOffline(navigator.onLine === false);
-    const UPDATE_AFTER_MS = 30_000;
+    const UPDATE_AFTER_MS = 10_000;
     const started = Date.now();
     let checked = false;
     let timer = 0;
