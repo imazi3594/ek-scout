@@ -1258,5 +1258,17 @@
         "melee": false
       }
     ]
+  },
+  "EX221": {
+    "stat": "武力",
+    "base": 2,
+    "rows": [
+      {
+        "label": "傷害",
+        "coef": 10,
+        "fixed": 35,
+        "melee": false
+      }
+    ]
   }
 }
