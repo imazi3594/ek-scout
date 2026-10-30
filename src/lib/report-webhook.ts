@@ -5,7 +5,7 @@
 export const REPORT_WEBHOOK_URL =
   "https://script.google.com/macros/s/AKfycbzUgClMBUU6glZE_yIjuXdRuYlNrSltVhYOVw51dDhsKJZCBR3ArGImFxOCaZjXKA8b/exec";
 
-export const REPORT_REASONS = ["翻譯有誤／不通順", "資料有誤", "介面顯示混亂"] as const;
+export const REPORT_REASONS = ["翻譯有誤／不通順", "資料有誤", "資料冗長或重複"] as const;
 
 export type ReportReason = (typeof REPORT_REASONS)[number];
 
