@@ -542,12 +542,13 @@ const payload = raw as { count: number; cards: Card[] };
 export const CARDS: Card[] = payload.cards;
 export const CARD_COUNT = payload.count;
 
-/** 資料對應的遊戲版與擷取日，下次 scrape 記得改。 */
+/** 遊戲版／資料日／App 發佈日。刮卡資料後改 gameVer、gameDate、dataDate；發佈 App 程式改動時改 appDate。 */
 export const DATA_META = {
   gameVer: "3.5.0K",
   pack: "第６彈 古幻相剋の八象",
   gameDate: "2026-10-21",
   dataDate: "2026-10-27",
+  appDate: "2026-10-30",
 } as const;
 
 export const CARD_BY_ID: Record<string, Card> = Object.fromEntries(CARDS.map((c) => [c.id, c]));
