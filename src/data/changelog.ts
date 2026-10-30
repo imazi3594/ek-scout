@@ -9,6 +9,11 @@ export type ChangelogEntry = {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-10-31",
+    title: "App 1.1.4",
+    features: ["更新日誌改由頂部顯示"],
+  },
+  {
+    date: "2026-10-31",
     title: "功能調整",
     features: ["調整卡牌回報選項"],
   },
