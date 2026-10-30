@@ -15,7 +15,6 @@ export type CardReportPayload = {
   卡號: string;
   武將名: string;
   原因: ReportReason;
-  補充?: string;
 };
 
 export async function submitCardReport(payload: CardReportPayload): Promise<void> {
@@ -24,8 +23,6 @@ export async function submitCardReport(payload: CardReportPayload): Promise<void
     武將名: payload.武將名,
     原因: payload.原因,
   };
-  const note = payload.補充?.trim();
-  if (note) body.補充 = note;
 
   const res = await fetch(REPORT_WEBHOOK_URL, {
     method: "POST",

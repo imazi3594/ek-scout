@@ -215,13 +215,11 @@ export function CardDetail({ card }: { card: Card }) {
 function CardReportButton({ card }: { card: Card }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<ReportReason | "">("");
-  const [note, setNote] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "ok" | "err">("idle");
   const [error, setError] = useState("");
 
   const reset = () => {
     setReason("");
-    setNote("");
     setStatus("idle");
     setError("");
   };
@@ -240,7 +238,6 @@ function CardReportButton({ card }: { card: Card }) {
         卡號: card.no,
         武將名: card.name,
         原因: reason,
-        補充: note,
       });
       setStatus("ok");
       window.setTimeout(() => onOpenChange(false), 900);
@@ -285,17 +282,6 @@ function CardReportButton({ card }: { card: Card }) {
               </label>
             ))}
           </fieldset>
-          <label className="block space-y-1.5">
-            <span className="text-xs text-faint">補充（可選）</span>
-            <textarea
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              rows={3}
-              maxLength={500}
-              placeholder="想補充嘅細節…"
-              className="w-full resize-none rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
-          </label>
           {status === "ok" ? (
             <p className="text-sm text-accent">已送出，多謝回報。</p>
           ) : null}

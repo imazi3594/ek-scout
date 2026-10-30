@@ -238,7 +238,7 @@ export function AboutPage() {
         <p className="mt-2 tabular-nums">
           遊戲更新 {DATA_META.gameDate.replaceAll("-", "/")}
           <br />
-          資料擷取 {DATA_META.dataDate.replaceAll("-", "/")}
+          資料更新日期：{DATA_META.dataDate.replaceAll("-", "/")}
         </p>
         <button
           type="button"
