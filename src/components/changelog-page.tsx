@@ -16,9 +16,7 @@ export function ChangelogPage({ onBack }: { onBack: () => void }) {
       </div>
 
       <h2 className="font-display text-2xl tracking-tight">更新日誌</h2>
-      <p className="mt-2 text-sm leading-relaxed text-pretty text-muted">
-        記錄較重大的功能改動，以及更新過的卡牌資料。
-      </p>
+      <p className="mt-2 text-sm leading-relaxed text-pretty text-muted">近期較大改動一覽。</p>
 
       <ol className="mt-6 flex flex-col gap-3">
         {CHANGELOG.map((entry) => (
@@ -36,19 +34,11 @@ export function ChangelogPage({ onBack }: { onBack: () => void }) {
               </ul>
             ) : null}
             {entry.cards?.length ? (
-              <div className="mt-3">
-                <p className="text-xs text-faint">卡牌資料</p>
-                <ul className="mt-1.5 flex flex-wrap gap-1.5">
-                  {entry.cards.map((card) => (
-                    <li
-                      key={card}
-                      className="rounded-md bg-surface-2 px-2 py-1 text-xs tabular-nums text-fg"
-                    >
-                      {card}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-muted">
+                {entry.cards.map((card) => (
+                  <li key={card}>{card}</li>
+                ))}
+              </ul>
             ) : null}
           </li>
         ))}
