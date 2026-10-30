@@ -16,7 +16,6 @@ export function ChangelogPage({ onBack }: { onBack: () => void }) {
       </div>
 
       <h2 className="font-display text-2xl tracking-tight">更新日誌</h2>
-      <p className="mt-2 text-sm leading-relaxed text-pretty text-muted">近期較大改動一覽。</p>
 
       <ol className="mt-6 flex flex-col gap-3">
         {CHANGELOG.map((entry) => (
