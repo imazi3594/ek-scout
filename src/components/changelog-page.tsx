@@ -1,9 +1,26 @@
+import { useEffect, useRef } from "react";
 import { ChevronLeft } from "lucide-react";
 import { CHANGELOG } from "@/data/changelog";
 
 export function ChangelogPage({ onBack }: { onBack: () => void }) {
+  const scroller = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    el.scrollTo(0, 0);
+    let parent = el.parentElement;
+    while (parent) {
+      const style = getComputedStyle(parent);
+      if (/(auto|scroll)/.test(style.overflowY)) {
+        parent.scrollTo(0, 0);
+        break;
+      }
+      parent = parent.parentElement;
+    }
+  }, []);
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-6 sm:px-6">
+    <div ref={scroller} className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-6 sm:px-6">
       <div className="mb-4 flex items-center gap-2">
         <button
           type="button"

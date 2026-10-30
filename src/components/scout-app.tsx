@@ -606,11 +606,11 @@ export function ScoutApp() {
 
       <div className="relative z-10 mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_30rem]">
         {changelogOpen ? (
-          <div className="absolute inset-0 z-40 overflow-y-auto bg-bg">
+          <div key="changelog" className="absolute inset-0 z-40 overflow-y-auto bg-bg">
             <ChangelogPage onBack={closeChangelog} />
           </div>
         ) : aboutOpen ? (
-          <div className="absolute inset-0 z-40 overflow-y-auto bg-bg">
+          <div key="about" className="absolute inset-0 z-40 overflow-y-auto bg-bg">
             <AboutPage onOpenChangelog={openChangelog} />
           </div>
         ) : null}
