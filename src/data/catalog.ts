@@ -542,12 +542,13 @@ const payload = raw as { count: number; cards: Card[] };
 export const CARDS: Card[] = payload.cards;
 export const CARD_COUNT = payload.count;
 
-/** 遊戲版／資料日／App 發佈日。刮卡資料後改 gameVer、gameDate、dataDate；發佈 App 程式改動時改 appDate。 */
+/** 遊戲版／資料日／App 版號與發佈日。刮卡資料後改 gameVer、gameDate、dataDate；發佈 App 程式改動時改 appVer、appDate。 */
 export const DATA_META = {
   gameVer: "3.5.0K",
   pack: "第６彈 古幻相剋の八象",
   gameDate: "2026-10-21",
   dataDate: "2026-10-27",
+  appVer: "1.1.0",
   appDate: "2026-10-30",
 } as const;
 
