@@ -1,5 +1,5 @@
 import { createContext, useContext, useRef, useState } from "react";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Flag } from "lucide-react";
 import {
   cardTanken,
   cardSpecial,
@@ -36,7 +36,19 @@ import {
 } from "@/data/catalog";
 import { Button } from "@/components/ui/button";
 import { CardIdentity } from "@/components/card-identity";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import {
+  REPORT_REASONS,
+  submitCardReport,
+  type ReportReason,
+} from "@/lib/report-webhook";
 import charts from "@/data/damage-charts.json";
 
 function MoraleCost({ cost }: { cost: number | string }) {
@@ -177,7 +189,7 @@ export function CardDetail({ card }: { card: Card }) {
         />
       ))}
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button variant="ghost" asChild>
           <a href={officialUrl(card)} target="_blank" rel="noreferrer">
             <ExternalLink />
@@ -192,9 +204,118 @@ export function CardDetail({ card }: { card: Card }) {
             </a>
           </Button>
         ) : null}
+        <CardReportButton card={card} />
       </div>
     </div>
     </DamageChartContext.Provider>
+  );
+}
+
+
+function CardReportButton({ card }: { card: Card }) {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState<ReportReason | "">("");
+  const [note, setNote] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "ok" | "err">("idle");
+  const [error, setError] = useState("");
+
+  const reset = () => {
+    setReason("");
+    setNote("");
+    setStatus("idle");
+    setError("");
+  };
+
+  const onOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (!next) reset();
+  };
+
+  const submit = async () => {
+    if (!reason || status === "sending") return;
+    setStatus("sending");
+    setError("");
+    try {
+      await submitCardReport({
+        卡號: card.no,
+        武將名: card.name,
+        原因: reason,
+        補充: note,
+      });
+      setStatus("ok");
+      window.setTimeout(() => onOpenChange(false), 900);
+    } catch (err) {
+      setStatus("err");
+      setError(err instanceof Error ? err.message : "回報失敗，請稍後再試");
+    }
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <Button type="button" variant="ghost" onClick={() => setOpen(true)}>
+        <Flag />
+        回報
+      </Button>
+      <SheetContent side="bottom" className="gap-0">
+        <SheetHeader>
+          <SheetTitle>回報卡片問題</SheetTitle>
+          <SheetDescription>
+            {card.no}　{card.name}
+          </SheetDescription>
+        </SheetHeader>
+        <div className="flex flex-col gap-4 overflow-y-auto px-5 pb-6">
+          <fieldset className="space-y-2">
+            <legend className="text-xs text-faint">原因</legend>
+            {REPORT_REASONS.map((item) => (
+              <label
+                key={item}
+                className={cn(
+                  "flex cursor-pointer items-center gap-3 rounded-md border px-3 py-2.5 text-sm",
+                  reason === item ? "border-accent bg-accent/10 text-fg" : "border-border bg-surface-2 text-fg",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="report-reason"
+                  className="size-4 accent-[var(--color-accent)]"
+                  checked={reason === item}
+                  onChange={() => setReason(item)}
+                />
+                {item}
+              </label>
+            ))}
+          </fieldset>
+          <label className="block space-y-1.5">
+            <span className="text-xs text-faint">補充（可選）</span>
+            <textarea
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              rows={3}
+              maxLength={500}
+              placeholder="想補充嘅細節…"
+              className="w-full resize-none rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </label>
+          {status === "ok" ? (
+            <p className="text-sm text-accent">已送出，多謝回報。</p>
+          ) : null}
+          {status === "err" ? <p className="text-sm text-danger">{error}</p> : null}
+          <div className="flex gap-2">
+            <Button type="button" variant="ghost" className="flex-1" onClick={() => onOpenChange(false)}>
+              取消
+            </Button>
+            <Button
+              type="button"
+              className="flex-1"
+              disabled={!reason || status === "sending" || status === "ok"}
+              onClick={() => void submit()}
+            >
+              {status === "sending" ? "送出中…" : "送出"}
+            </Button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
