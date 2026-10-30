@@ -1,11 +1,9 @@
-/** Card report → Cursor automation webhook → Google Sheet.
- *  URL and key are public in this SPA; accepted for low-volume reports. */
+/** Card report → Google Apps Script Web App → Google Sheet.
+ *  Uses text/plain + no-cors so the browser skips CORS preflight
+ *  (Apps Script /exec does not send usable CORS headers for Authorization/json). */
 
 export const REPORT_WEBHOOK_URL =
-  "https://api2.cursor.sh/automations/webhook/5fecbb70-81e3-5a82-bf2b-7aa5647bcc53";
-
-export const REPORT_WEBHOOK_KEY =
-  "crsr_361a32a334275a997f3eb9fb893a450b1f8139a43a7add74aca933f64580aa5c";
+  "https://script.google.com/macros/s/AKfycbzUgClMBUU6glZE_yIjuXdRuYlNrSltVhYOVw51dDhsKJZCBR3ArGImFxOCaZjXKA8b/exec";
 
 export const REPORT_REASONS = ["翻譯有誤／不通順", "資料有誤"] as const;
 
@@ -18,23 +16,17 @@ export type CardReportPayload = {
 };
 
 export async function submitCardReport(payload: CardReportPayload): Promise<void> {
-  const body: Record<string, string> = {
+  const body = {
     卡號: payload.卡號,
     武將名: payload.武將名,
     原因: payload.原因,
   };
 
-  const res = await fetch(REPORT_WEBHOOK_URL, {
+  // no-cors → opaque response; treat network completion as success.
+  await fetch(REPORT_WEBHOOK_URL, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${REPORT_WEBHOOK_KEY}`,
-      "Content-Type": "application/json",
-    },
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify(body),
   });
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(text || `回報失敗（HTTP ${res.status}）`);
-  }
 }
