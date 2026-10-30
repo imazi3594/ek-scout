@@ -28,6 +28,7 @@ import { CardThemeBackdrop, HomeWash } from "@/components/card-theme";
 import { CostPips, RarityMark } from "@/components/card-identity";
 import { UnitIcon } from "@/components/unit-icon";
 import { AboutPage } from "@/components/about-page";
+import { ChangelogPage } from "@/components/changelog-page";
 import { GuidePage, ToolsPage, type ToolId } from "@/components/guide-page";
 import { SkillList } from "@/components/skill-chip";
 import { cn } from "@/lib/utils";
@@ -62,7 +63,8 @@ type Hist =
   | { v: "recents" }
   | { v: "tools" }
   | { v: "tool"; id: ToolId }
-  | { v: "about" };
+  | { v: "about" }
+  | { v: "changelog" };
 
 function histOf(tab: Tab, selectedId: string | null, guideTopic: GuideTopic | null, toolPage: ToolId | null): Hist {
   if (tab === "skills") return guideTopic ? { v: "guide", topic: guideTopic } : { v: "skills" };
@@ -106,6 +108,7 @@ export function ScoutApp() {
   const [guideTopic, setGuideTopic] = useState<GuideTopic | null>(null);
   const [toolPage, setToolPage] = useState<ToolId | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [changelogOpen, setChangelogOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -246,7 +249,8 @@ export function ScoutApp() {
     const s = state ?? { v: "home" as const };
     setToolPage(s.v === "tool" ? s.id : s.v === "guide" && s.topic === "siege" ? "siege" : null);
     setAboutOpen(s.v === "about");
-    if (s.v === "about") {
+    setChangelogOpen(s.v === "changelog");
+    if (s.v === "about" || s.v === "changelog") {
       setSheetOpen(false);
       return;
     }
@@ -300,10 +304,13 @@ export function ScoutApp() {
   applyHistRef.current = applyHist;
 
   function goTab(next: Tab) {
-    if (aboutOpen && next === tab) {
+    if ((aboutOpen || changelogOpen) && next === tab) {
       const cur = history.state as Hist | null;
-      if (cur?.v === "about") history.back();
-      else setAboutOpen(false);
+      if (cur?.v === "about" || cur?.v === "changelog") history.back();
+      else {
+        setAboutOpen(false);
+        setChangelogOpen(false);
+      }
       return;
     }
     if (next === tab) {
@@ -332,12 +339,13 @@ export function ScoutApp() {
     }
     const cur = history.state as Hist | null;
     setAboutOpen(false);
+    setChangelogOpen(false);
     setSheetOpen(false);
     setTab(next);
     if (next !== "skills") setGuideTopic(null);
     if (next !== "tools") setToolPage(null);
     const dest = histOf(next, null, next === "skills" ? guideTopic : null, next === "tools" ? toolPage : null);
-    if (cur?.v === "card" || cur?.v === "about") {
+    if (cur?.v === "card" || cur?.v === "about" || cur?.v === "changelog") {
       if (cur.v === "card") select(null);
       history.replaceState(dest, "");
       return;
@@ -360,6 +368,16 @@ export function ScoutApp() {
   }
 
   function openAbout() {
+    if (changelogOpen) {
+      const cur = history.state as Hist | null;
+      if (cur?.v === "changelog") history.back();
+      else {
+        setChangelogOpen(false);
+        setAboutOpen(true);
+        pushView({ v: "about" });
+      }
+      return;
+    }
     if (aboutOpen) {
       const cur = history.state as Hist | null;
       if (cur?.v === "about") history.back();
@@ -367,8 +385,26 @@ export function ScoutApp() {
       return;
     }
     setAboutOpen(true);
+    setChangelogOpen(false);
     setSheetOpen(false);
     pushView({ v: "about" });
+  }
+
+  function openChangelog() {
+    setAboutOpen(false);
+    setChangelogOpen(true);
+    setSheetOpen(false);
+    pushView({ v: "changelog" });
+  }
+
+  function closeChangelog() {
+    const cur = history.state as Hist | null;
+    if (cur?.v === "changelog") history.back();
+    else {
+      setChangelogOpen(false);
+      setAboutOpen(true);
+      pushView({ v: "about" });
+    }
   }
 
   function setGuideView(next: GuideTopic | null) {
@@ -405,7 +441,8 @@ export function ScoutApp() {
           raw.v === "recents" ||
           raw.v === "tools" ||
           raw.v === "tool" ||
-          raw.v === "about");
+          raw.v === "about" ||
+          raw.v === "changelog");
       if (raw != null && !known) return;
       const s = (known ? raw : { v: "root" }) as Hist;
       if (s.v === "root") {
@@ -509,7 +546,7 @@ export function ScoutApp() {
     setIntelMax(STAT_HI);
     setPickPower(null);
     setPickIntel(null);
-    setStatPhase("closed");
+    setMorePhase("closed");
     setSorts([]);
   };
 
@@ -550,10 +587,10 @@ export function ScoutApp() {
             type="button"
             onClick={openAbout}
             aria-label="關於"
-            aria-pressed={aboutOpen}
+            aria-pressed={aboutOpen || changelogOpen}
             className={cn(
               "grid size-9 shrink-0 place-items-center rounded-full",
-              aboutOpen ? "bg-surface-3 text-fg" : "text-muted hover:bg-surface-2 hover:text-fg",
+              aboutOpen || changelogOpen ? "bg-surface-3 text-fg" : "text-muted hover:bg-surface-2 hover:text-fg",
             )}
           >
             <Info className="size-5" />
@@ -568,9 +605,13 @@ export function ScoutApp() {
       </header>
 
       <div className="relative z-10 mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_30rem]">
-        {aboutOpen ? (
-          <div className="absolute inset-0 z-40 overflow-y-auto bg-bg px-4 py-6 sm:px-6">
-            <AboutPage />
+        {changelogOpen ? (
+          <div className="absolute inset-0 z-40 overflow-y-auto bg-bg">
+            <ChangelogPage onBack={closeChangelog} />
+          </div>
+        ) : aboutOpen ? (
+          <div className="absolute inset-0 z-40 overflow-y-auto bg-bg">
+            <AboutPage onOpenChangelog={openChangelog} />
           </div>
         ) : null}
         <section className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-border lg:border-r">

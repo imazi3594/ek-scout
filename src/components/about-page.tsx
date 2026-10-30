@@ -12,7 +12,7 @@ const FEATURES = [
 
 const PAGE_URL = "https://imazi3594.github.io/ek-scout/";
 
-export function AboutPage() {
+export function AboutPage({ onOpenChangelog }: { onOpenChangelog?: () => void }) {
   const [installEvent, setInstallEvent] = useState<BeforeInstall | null>(null);
   const [installed, setInstalled] = useState(false);
   const [ios, setIos] = useState(false);
@@ -243,11 +243,20 @@ export function AboutPage() {
           <br />
           版本更新日期：{DATA_META.appDate.replaceAll("-", "/")}
         </p>
+        {onOpenChangelog ? (
+          <button
+            type="button"
+            onClick={onOpenChangelog}
+            className="mt-4 flex h-11 w-full items-center justify-center rounded-md border border-white/15 bg-black/25 font-medium text-fg"
+          >
+            更新日誌
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => void forceRefresh()}
           disabled={checking}
-          className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-md bg-surface-2 font-medium text-fg disabled:opacity-60"
+          className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-md bg-surface-2 font-medium text-fg disabled:opacity-60"
         >
           <RefreshCw className="size-4" />
           檢查更新

@@ -548,7 +548,7 @@ export const DATA_META = {
   pack: "第６彈 古幻相剋の八象",
   gameDate: "2026-10-21",
   dataDate: "2026-10-27",
-  appVer: "1.1.1",
+  appVer: "1.1.2",
   appDate: "2026-10-30",
 } as const;
 
