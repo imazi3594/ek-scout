@@ -7,7 +7,7 @@ export const REPORT_WEBHOOK_URL =
 export const REPORT_WEBHOOK_KEY =
   "crsr_361a32a334275a997f3eb9fb893a450b1f8139a43a7add74aca933f64580aa5c";
 
-export const REPORT_REASONS = ["翻譯唔通順", "資料有誤"] as const;
+export const REPORT_REASONS = ["翻譯有誤／不通順", "資料有誤"] as const;
 
 export type ReportReason = (typeof REPORT_REASONS)[number];
 
