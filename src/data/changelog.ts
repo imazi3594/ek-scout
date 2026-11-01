@@ -9,6 +9,12 @@ export type ChangelogEntry = {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-11-01",
+    title: "修正明智光秀資料",
+    features: ["妨礙時長分開顯示，固定約8C"],
+    cards: ["明智光秀"],
+  },
+  {
+    date: "2026-11-01",
     title: "修正卡牌中文說明",
     features: ["修正回報所指嘅中文說明"],
     cards: [

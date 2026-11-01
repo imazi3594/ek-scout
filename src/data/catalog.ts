@@ -548,8 +548,8 @@ export const DATA_META = {
   pack: "第６彈 古幻相剋の八象",
   gameDate: "2026-10-21",
   dataDate: "2026-10-27",
-  appVer: "1.1.3",
-  appDate: "2026-10-31",
+  appVer: "1.1.4",
+  appDate: "2026-11-01",
 } as const;
 
 export const CARD_BY_ID: Record<string, Card> = Object.fromEntries(CARDS.map((c) => [c.id, c]));
@@ -890,11 +890,20 @@ function retagSecondaryDurations(effects: CardEffect[], hide: CardEffect | null)
   return effects.map((effect, i, arr) => {
     if (!effect.label.startsWith("効果時間")) return effect;
     if (hide && effect.label === hide.label && effect.value === hide.value) return effect;
-    const prev = [...arr.slice(0, i)].reverse().find((row) => !row.label.startsWith("効果時間"));
+    const before = [...arr.slice(0, i)].reverse();
+    const prev = before.find((row) => !row.label.startsWith("効果時間"));
     if (!prev) return { ...effect, label: "追加効果時間" };
     if (/速度低下/.test(prev.label)) return { ...effect, label: "速度低下時間" };
     if (/武力低下/.test(prev.label)) return { ...effect, label: "武力低下時間" };
     if (/知力低下/.test(prev.label)) return { ...effect, label: "知力低下時間" };
+    // 知力低下後夾住知力戦闘倍率嘅卡（例：明智光秀）
+    if (/知力戦闘倍率/.test(prev.label)) return { ...effect, label: "知力低下時間" };
+    const nearestDebuff = before.find((row) => /速度低下|武力低下|知力低下/.test(row.label));
+    if (nearestDebuff) {
+      if (/速度低下/.test(nearestDebuff.label)) return { ...effect, label: "速度低下時間" };
+      if (/武力低下/.test(nearestDebuff.label)) return { ...effect, label: "武力低下時間" };
+      return { ...effect, label: "知力低下時間" };
+    }
     return { ...effect, label: "追加効果時間" };
   });
 }
