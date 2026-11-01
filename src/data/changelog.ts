@@ -10,7 +10,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-11-01",
     title: "修正明智光秀資料",
-    features: ["計略時長約9C、知力低下時長約8C，分開顯示"],
+    features: ["計略約9C強、知力低下約8C強（對齊 eiketsudb），分開顯示"],
     cards: ["明智光秀"],
   },
   {
