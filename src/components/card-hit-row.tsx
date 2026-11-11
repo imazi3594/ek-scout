@@ -73,10 +73,10 @@ export function CardHitRow({
         }}
         className={cn(
           "my-0.5 flex w-11 shrink-0 items-center justify-center rounded-md text-xs font-semibold whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          inDeck ? "bg-white/10 text-faint" : "bg-faction-heki text-white",
+          inDeck ? "bg-faction-gen text-white" : "bg-faction-heki text-white",
         )}
       >
-        卡組
+        {inDeck ? "移除" : "卡組"}
       </button>
     </div>
   );
