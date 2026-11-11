@@ -4,11 +4,9 @@ import {
   CARD_BY_ID,
   CARDS,
   COLOR_BAR,
-  COLOR_CLASS,
   COLORS,
   COSTS,
   formatCost,
-  formatStratDuration,
   PERIODS,
   RARITIES,
   RARITY_CHIP,
@@ -25,12 +23,13 @@ import { useScout } from "@/lib/store";
 import { Input } from "@/components/ui/input";
 import { CardDetail } from "@/components/card-detail";
 import { CardThemeBackdrop, HomeWash } from "@/components/card-theme";
-import { CostPips, RarityMark } from "@/components/card-identity";
+import { CostPips } from "@/components/card-identity";
+import { CardHitRow } from "@/components/card-hit-row";
 import { UnitIcon } from "@/components/unit-icon";
 import { AboutPage } from "@/components/about-page";
 import { ChangelogPage } from "@/components/changelog-page";
 import { GuidePage, ToolsPage, type ToolId } from "@/components/guide-page";
-import { SkillList } from "@/components/skill-chip";
+import { DeckCountBadge } from "@/components/deck-sim";
 import { cn } from "@/lib/utils";
 import { deviceKind, initInstallCapture, isStandalone, subscribeInstall, type BeforeInstall } from "@/lib/install";
 import type { GuideTopic } from "@/data/guide";
@@ -149,6 +148,7 @@ export function ScoutApp() {
   function closeMoreFilters() {
     setMorePhase((p) => (p === "closed" ? p : "closing"));
   }
+  const deckCount = useScout((s) => s.deck.length);
   const query = useScout((s) => s.query);
   const setQuery = useScout((s) => s.setQuery);
   const selectedId = useScout((s) => s.selectedId);
@@ -282,7 +282,7 @@ export function ScoutApp() {
       select(null);
       return;
     }
-    if (s.v === "tools") {
+    if (s.v === "tools" || s.v === "tool") {
       setTab("tools");
       setGuideTopic(null);
       setSheetOpen(false);
@@ -599,7 +599,7 @@ export function ScoutApp() {
         <nav className="mx-auto flex max-w-6xl gap-0 px-2 sm:gap-1 sm:px-6">
           <TabBtn id="search" tab={tab} setTab={goTab} icon={<Search className="size-4" />} label="速查" />
           <TabBtn id="recents" tab={tab} setTab={goTab} icon={<Clock className="size-4" />} label="最近" />
-          <TabBtn id="tools" tab={tab} setTab={goTab} icon={<Wrench className="size-4" />} label="工具" />
+          <TabBtn id="tools" tab={tab} setTab={goTab} icon={<Wrench className="size-4" />} label="工具" badge={deckCount} />
           <TabBtn id="skills" tab={tab} setTab={goTab} icon={<BookOpen className="size-4" />} label="資料" />
         </nav>
       </header>
@@ -947,7 +947,7 @@ export function ScoutApp() {
             </ul>
           </div>
           <div className="tab-pane">
-            <ToolsPage page={toolPage} onPage={setToolView} />
+            <ToolsPage page={toolPage} onPage={setToolView} onBrowse={() => goTab("search")} onOpenCard={openCard} />
           </div>
           <div className="tab-pane">
             <GuidePage topic={guideTopic} onTopic={setGuideView} />
@@ -977,8 +977,9 @@ export function ScoutApp() {
           <p className="rounded-full bg-black/85 px-4 py-2 text-sm text-fg shadow-[var(--shadow-border)]">再按一次關閉程式</p>
         </div>
       ) : null}
+      <DeckToast />
 
-      {sheetOpen && selected && (tab === "search" || tab === "recents") ? (
+      {sheetOpen && selected && (tab === "search" || tab === "recents" || tab === "tools") ? (
         <div className={cn("card-frame absolute inset-0 z-50 flex min-h-0 flex-col lg:hidden", `card-frame-${selected.rarity.toLowerCase()}`)}>
           <div className="card-frame-body relative flex min-h-0 flex-1 flex-col overflow-hidden bg-bg">
           <CardThemeBackdrop card={selected} />
@@ -1181,51 +1182,28 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
   return { rootRef, trackRef };
 }
 
-function CardHitRow({
-  card,
-  active,
-  onOpen,
-}: {
-  card: Card;
-  active: boolean;
-  onOpen: () => void;
-}) {
-  const dur = formatStratDuration(card);
+function DeckToast() {
+  const note = useScout((s) => s.deckNote);
+  const clearDeckNote = useScout((s) => s.clearDeckNote);
+  useEffect(() => {
+    if (!note) return;
+    const key = note.key;
+    const timer = window.setTimeout(() => clearDeckNote(key), 2800);
+    return () => window.clearTimeout(timer);
+  }, [note, clearDeckNote]);
+  if (!note) return null;
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className={cn(
-        "list-row mb-1 flex w-full items-center gap-2 rounded-sm bg-white/[0.06] px-2 py-1.5 text-left",
-        active ? "bg-white/[0.14]" : "hover:bg-white/[0.09]",
-      )}
-    >
-      <span className={cn("w-1 shrink-0 self-stretch rounded-full", COLOR_BAR[card.color])} aria-hidden />
-      <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 items-center gap-1.5 text-xs">
-          <span className={cn("shrink-0 rounded-sm px-1 py-px font-medium", COLOR_CLASS[card.color])}>{card.no}</span>
-          <UnitIcon unit={card.unit} title={card.unit} className="size-4 shrink-0" />
-          <RarityMark rarity={card.rarity} className="shrink-0" />
-          <span className="min-w-0 flex-1 truncate font-bold text-fg">{card.name}</span>
-          <CostPips cost={card.cost} small />
-          <span className="shrink-0 tabular-nums text-fg">
-            {card.power}/{card.intel}
-          </span>
-        </div>
-        <div className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-faint">
-          <span className="shrink-0 text-muted">{card.period}</span>
-          <span className="min-w-0 truncate text-fg">{card.stratName}</span>
-          <span className="shrink-0 tabular-nums text-muted">【{card.stratCost}】</span>
-          <span className="shrink-0 tabular-nums text-muted">{dur.compact}</span>
-          {dur.cap ? <span className="shrink-0 text-[10px] text-faint">上限</span> : null}
-          {card.skills.length ? (
-            <span className="ml-auto flex shrink-0 items-center">
-              <SkillList ids={card.skills} short />
-            </span>
-          ) : null}
-        </div>
-      </div>
-    </button>
+    <div className="pointer-events-none absolute inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-[65] flex justify-center px-4">
+      <p
+        role="status"
+        className={cn(
+          "max-w-sm rounded-full px-4 py-2 text-center text-sm shadow-lg",
+          note.tone === "warn" ? "bg-red-800 text-white" : "bg-[#2a241c] text-[#f6e7c1] ring-1 ring-[#c6a15a]/60",
+        )}
+      >
+        {note.text}
+      </p>
+    </div>
   );
 }
 
@@ -1235,12 +1213,14 @@ function TabBtn({
   setTab,
   icon,
   label,
+  badge = 0,
 }: {
   id: Tab;
   tab: Tab;
   setTab: (t: Tab) => void;
   icon: ReactNode;
   label: string;
+  badge?: number;
 }) {
   const active = tab === id;
   return (
@@ -1248,12 +1228,15 @@ function TabBtn({
       type="button"
       onClick={() => setTab(id)}
       className={cn(
-        "flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 border-b-2 px-1.5 text-sm sm:h-11 sm:flex-none sm:px-3",
+        "relative flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 border-b-2 px-1.5 text-sm sm:h-11 sm:flex-none sm:px-3",
         active ? "border-accent text-fg" : "border-transparent text-muted hover:text-fg",
       )}
     >
       {icon}
       {label}
+      <span className="absolute top-0.5 right-0.5">
+        <DeckCountBadge count={badge} />
+      </span>
     </button>
   );
 }
