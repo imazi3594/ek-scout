@@ -92,7 +92,7 @@ export function DeckSim({
                 warnings.overCost ? "text-red-400" : "text-fg",
               )}
             >
-              {formatCost(summary.cost)}/{DECK_MAX_COST}
+              {formatCost(summary.cost)}/{formatCost(DECK_MAX_COST)}
             </span>
             <Metric label="最大士氣" value={summary.morale == null ? "—" : String(summary.morale)} />
             {summary.morale == null ? <span className="text-faint">尚未組卡</span> : null}
@@ -256,9 +256,9 @@ function Metric({ label, value, hot }: { label: string; value: string; hot?: boo
 
 function DataLine({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex h-8 min-w-0 items-center gap-2">
-      <h3 className="w-8 shrink-0 text-xs text-faint">{label}</h3>
-      <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto whitespace-nowrap">
+    <div className="flex min-w-0 items-start gap-2 py-1.5">
+      <h3 className="flex h-5 w-8 shrink-0 items-center text-xs text-faint">{label}</h3>
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 [&>*]:inline-flex [&>*]:min-h-5 [&>*]:shrink-0 [&>*]:items-center [&>*]:whitespace-nowrap">
         {children}
       </div>
     </div>
