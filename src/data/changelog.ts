@@ -8,6 +8,11 @@ export type ChangelogEntry = {
 /** 更新日誌：改卡只寫「修改部份卡片資料」（同日一次）；加新卡先列武將名。唔寫技術細節。 */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-11-11",
+    title: "功能更新",
+    features: ["新增卡組模擬器"],
+  },
+  {
     date: "2026-11-09",
     title: "修改部份卡片資料",
   },

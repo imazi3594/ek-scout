@@ -360,6 +360,54 @@
   .mode-face-back {
     transform: rotateY(180deg);
   }
+
+  .deck-layout {
+    container-type: inline-size;
+    display: flex;
+    min-height: 0;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .deck-body {
+    display: flex;
+    min-height: 0;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+  }
+
+  .deck-pane {
+    min-height: 0;
+    min-width: 0;
+    flex: 1 1 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .deck-pane-cards {
+    flex: 0 1 auto;
+    max-height: 52%;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  @container (min-width: 640px) {
+    .deck-body {
+      flex-direction: row;
+    }
+
+    .deck-pane-cards {
+      flex: none;
+      width: min(24rem, 46%);
+      max-height: none;
+      align-self: stretch;
+      border-bottom: 0;
+      border-right: 1px solid var(--color-border);
+    }
+  }
 }
 
 @keyframes result-marquee {

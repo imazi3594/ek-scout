@@ -282,7 +282,7 @@ export function ScoutApp() {
       select(null);
       return;
     }
-    if (s.v === "tools") {
+    if (s.v === "tools" || s.v === "tool") {
       setTab("tools");
       setGuideTopic(null);
       setSheetOpen(false);
@@ -947,7 +947,7 @@ export function ScoutApp() {
             </ul>
           </div>
           <div className="tab-pane">
-            <ToolsPage page={toolPage} onPage={setToolView} />
+            <ToolsPage page={toolPage} onPage={setToolView} onBrowse={() => goTab("search")} />
           </div>
           <div className="tab-pane">
             <GuidePage topic={guideTopic} onTopic={setGuideView} />
@@ -977,6 +977,7 @@ export function ScoutApp() {
           <p className="rounded-full bg-black/85 px-4 py-2 text-sm text-fg shadow-[var(--shadow-border)]">再按一次關閉程式</p>
         </div>
       ) : null}
+      <DeckToast />
 
       {sheetOpen && selected && (tab === "search" || tab === "recents") ? (
         <div className={cn("card-frame absolute inset-0 z-50 flex min-h-0 flex-col lg:hidden", `card-frame-${selected.rarity.toLowerCase()}`)}>
@@ -1191,41 +1192,85 @@ function CardHitRow({
   onOpen: () => void;
 }) {
   const dur = formatStratDuration(card);
+  const inDeck = useScout((s) => s.deck.includes(card.id));
+  const toggleDeck = useScout((s) => s.toggleDeck);
   return (
-    <button
-      type="button"
-      onClick={onOpen}
+    <div
       className={cn(
-        "list-row mb-1 flex w-full items-center gap-2 rounded-sm bg-white/[0.06] px-2 py-1.5 text-left",
+        "list-row mb-1 flex w-full items-stretch gap-1 rounded-sm bg-white/[0.06] py-1 pr-1 pl-2",
         active ? "bg-white/[0.14]" : "hover:bg-white/[0.09]",
       )}
     >
-      <span className={cn("w-1 shrink-0 self-stretch rounded-full", COLOR_BAR[card.color])} aria-hidden />
-      <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 items-center gap-1.5 text-xs">
-          <span className={cn("shrink-0 rounded-sm px-1 py-px font-medium", COLOR_CLASS[card.color])}>{card.no}</span>
-          <UnitIcon unit={card.unit} title={card.unit} className="size-4 shrink-0" />
-          <RarityMark rarity={card.rarity} className="shrink-0" />
-          <span className="min-w-0 flex-1 truncate font-bold text-fg">{card.name}</span>
-          <CostPips cost={card.cost} small />
-          <span className="shrink-0 tabular-nums text-fg">
-            {card.power}/{card.intel}
-          </span>
-        </div>
-        <div className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-faint">
-          <span className="shrink-0 text-muted">{card.period}</span>
-          <span className="min-w-0 truncate text-fg">{card.stratName}</span>
-          <span className="shrink-0 tabular-nums text-muted">【{card.stratCost}】</span>
-          <span className="shrink-0 tabular-nums text-muted">{dur.compact}</span>
-          {dur.cap ? <span className="shrink-0 text-[10px] text-faint">上限</span> : null}
-          {card.skills.length ? (
-            <span className="ml-auto flex shrink-0 items-center">
-              <SkillList ids={card.skills} short />
+      <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-left">
+        <span className={cn("w-1 shrink-0 self-stretch rounded-full", COLOR_BAR[card.color])} aria-hidden />
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-1.5 text-xs">
+            <span className={cn("shrink-0 rounded-sm px-1 py-px font-medium", COLOR_CLASS[card.color])}>{card.no}</span>
+            <UnitIcon unit={card.unit} title={card.unit} className="size-4 shrink-0" />
+            <RarityMark rarity={card.rarity} className="shrink-0" />
+            <span className="min-w-0 flex-1 truncate font-bold text-fg">{card.name}</span>
+            <CostPips cost={card.cost} small />
+            <span className="shrink-0 tabular-nums text-fg">
+              {card.power}/{card.intel}
             </span>
-          ) : null}
+          </div>
+          <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1 gap-y-0.5 text-xs text-faint">
+            <span className="shrink-0 text-muted">{card.period}</span>
+            <span className="min-w-[2.5rem] flex-1 truncate text-fg">{card.stratName}</span>
+            <span className="shrink-0 tabular-nums text-muted">【{card.stratCost}】</span>
+            <span className="shrink-0 tabular-nums text-muted">{dur.compact}</span>
+            {dur.cap ? <span className="shrink-0 text-[10px] text-faint">上限</span> : null}
+            {card.skills.length ? (
+              <span className="ml-auto flex shrink-0 items-center">
+                <SkillList ids={card.skills} short />
+              </span>
+            ) : null}
+          </div>
         </div>
-      </div>
-    </button>
+      </button>
+      <button
+        type="button"
+        data-no-swipe=""
+        aria-pressed={inDeck}
+        aria-label={inDeck ? `移出卡組 ${card.name}` : `加入卡組 ${card.name}`}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          toggleDeck(card.id);
+        }}
+        className={cn(
+          "my-0.5 flex w-11 shrink-0 items-center justify-center rounded-md text-xs font-semibold whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          inDeck ? "bg-cost text-black" : "bg-white/10 text-fg",
+        )}
+      >
+        {inDeck ? "已入" : "卡組"}
+      </button>
+    </div>
+  );
+}
+
+function DeckToast() {
+  const note = useScout((s) => s.deckNote);
+  const clearDeckNote = useScout((s) => s.clearDeckNote);
+  useEffect(() => {
+    if (!note) return;
+    const key = note.key;
+    const timer = window.setTimeout(() => clearDeckNote(key), 2800);
+    return () => window.clearTimeout(timer);
+  }, [note, clearDeckNote]);
+  if (!note) return null;
+  return (
+    <div className="pointer-events-none absolute inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-[65] flex justify-center px-4">
+      <p
+        role="status"
+        className={cn(
+          "max-w-sm rounded-full px-4 py-2 text-center text-sm shadow-lg",
+          note.tone === "warn" ? "bg-red-800 text-white" : "bg-[#2a241c] text-[#f6e7c1] ring-1 ring-[#c6a15a]/60",
+        )}
+      >
+        {note.text}
+      </p>
+    </div>
   );
 }
 

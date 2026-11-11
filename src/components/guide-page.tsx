@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronLeft, CircleHelp } from "lucide-react";
-import { COLORS, RARITY_CHIP, SKILLS } from "@/data/catalog";
+import { COLOR_BAR, COLORS, RARITY_CHIP, SKILLS } from "@/data/catalog";
 import { CostPips, RarityMark } from "@/components/card-identity";
 import {
   EIKON_GROUPS,
@@ -21,6 +21,7 @@ import {
 import { SkillChip, SkillExplain } from "@/components/skill-chip";
 import { UnitIcon } from "@/components/unit-icon";
 import { MoraleCalc } from "@/components/morale-calc";
+import { DeckSim } from "@/components/deck-sim";
 import { cn } from "@/lib/utils";
 import type { ColorName, UnitName } from "@/data/catalog";
 
@@ -41,14 +42,16 @@ const TOPICS: { id: GuideTopic; title: string; blurb: string }[] = [
   { id: "ryuha", title: "流派", blurb: "壱・弐・参の型。表為永久，裏多為時限。" },
 ];
 
-export type ToolId = "siege" | "morale";
+export type ToolId = "siege" | "morale" | "deck";
 
 export function ToolsPage({
   page,
   onPage,
+  onBrowse,
 }: {
   page: ToolId | null;
   onPage: (page: ToolId | null) => void;
+  onBrowse?: () => void;
 }) {
   const scroller = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -130,13 +133,50 @@ export function ToolsPage({
             ))}
           </div>
         </button>
+        <button
+          type="button"
+          onClick={() => onPage("deck")}
+          className="mt-3 block w-full overflow-hidden rounded-xl text-left"
+        >
+          <div className="flex h-2.5" aria-hidden>
+            {COLORS.map((color) => (
+              <span key={color} className={cn("h-full flex-1", COLOR_BAR[color])} />
+            ))}
+          </div>
+          <div className="flex h-[7.25rem] flex-col bg-[linear-gradient(to_bottom,#14110c_0%,#241c14_55%,#3a2a18_100%)] px-4 py-4">
+            <span className="block font-display text-xl text-[#f6e7c1]">卡組模擬器</span>
+            <span className="mt-1 block text-sm leading-relaxed text-pretty text-[#e7d3b0]/85">
+              組好最多 8 張，查看勢力、特技、成本與最大士氣。
+            </span>
+          </div>
+          <div className="flex h-14 items-center gap-1 bg-[#120e0a] px-3" aria-hidden>
+            {Array.from({ length: 8 }, (_, i) => (
+              <span
+                key={i}
+                className={cn(
+                  "h-8 flex-1 rounded-sm border border-[#c6a15a]/50",
+                  i < 3 ? "bg-[#c6a15a]/80" : "bg-[#1a140c]",
+                )}
+              />
+            ))}
+            <span className="ml-1 font-display text-xl leading-none tabular-nums text-[#f4efe4]">9</span>
+            <span className="text-[10px] leading-none text-[#c6a15a]">Cost</span>
+          </div>
+        </button>
       </div>
     );
   }
 
+  const locked = page === "morale" || page === "deck";
   return (
-    <div ref={scroller} className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden", page === "morale" ? "overflow-y-hidden" : "overflow-y-auto")}>
-      {page === "morale" ? <MoraleCalc onBack={() => onPage(null)} /> : <SiegeCalc onBack={() => onPage(null)} />}
+    <div ref={scroller} className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden", locked ? "overflow-y-hidden" : "overflow-y-auto")}>
+      {page === "morale" ? (
+        <MoraleCalc onBack={() => onPage(null)} />
+      ) : page === "deck" ? (
+        <DeckSim onBack={() => onPage(null)} onBrowse={onBrowse ?? (() => onPage(null))} />
+      ) : (
+        <SiegeCalc onBack={() => onPage(null)} />
+      )}
     </div>
   );
 }
