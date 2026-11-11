@@ -94,13 +94,9 @@ export function DeckSim({
             </span>
             <Metric label="最大士氣" value={summary.morale == null ? "—" : String(summary.morale)} />
             {summary.morale == null ? <span className="text-faint">尚未組卡</span> : null}
+            {warnings.overCost ? <span className="font-medium text-red-400">{DECK_WARN.cost}</span> : null}
+            {duplicateNames.size ? <span className="font-medium text-red-400">{DECK_WARN.name}</span> : null}
           </div>
-          {warnings.overCost || duplicateNames.size ? (
-            <p className="flex gap-3 pb-0.5 text-xs font-medium text-red-400">
-              {warnings.overCost ? <span>{DECK_WARN.cost}</span> : null}
-              {duplicateNames.size ? <span>{DECK_WARN.name}</span> : null}
-            </p>
-          ) : null}
           {cards.length ? (
             <div className="flex flex-col">
               <DataLine label="勢力">
