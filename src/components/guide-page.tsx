@@ -48,10 +48,12 @@ export function ToolsPage({
   page,
   onPage,
   onBrowse,
+  onOpenCard,
 }: {
   page: ToolId | null;
   onPage: (page: ToolId | null) => void;
   onBrowse?: () => void;
+  onOpenCard?: (id: string) => void;
 }) {
   const scroller = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -173,7 +175,11 @@ export function ToolsPage({
       {page === "morale" ? (
         <MoraleCalc onBack={() => onPage(null)} />
       ) : page === "deck" ? (
-        <DeckSim onBack={() => onPage(null)} onBrowse={onBrowse ?? (() => onPage(null))} />
+        <DeckSim
+          onBack={() => onPage(null)}
+          onBrowse={onBrowse ?? (() => onPage(null))}
+          onOpenCard={onOpenCard ?? (() => {})}
+        />
       ) : (
         <SiegeCalc onBack={() => onPage(null)} />
       )}

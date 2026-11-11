@@ -12,16 +12,23 @@ import {
   type Card,
   type UnitName,
 } from "@/data/catalog";
-import { CostPips, RarityMark } from "@/components/card-identity";
-import { SkillList } from "@/components/skill-chip";
+import { CardHitRow } from "@/components/card-hit-row";
 import { UnitIcon } from "@/components/unit-icon";
 import { DECK_MAX_COST, deckSkillLabel, summarizeDeck } from "@/lib/deck";
 import { useScout } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
-export function DeckSim({ onBack, onBrowse }: { onBack: () => void; onBrowse: () => void }) {
+export function DeckSim({
+  onBack,
+  onBrowse,
+  onOpenCard,
+}: {
+  onBack: () => void;
+  onBrowse: () => void;
+  onOpenCard: (id: string) => void;
+}) {
   const ids = useScout((s) => s.deck);
-  const removeDeck = useScout((s) => s.removeDeck);
+  const selectedId = useScout((s) => s.selectedId);
   const clearDeck = useScout((s) => s.clearDeck);
   const [askClear, setAskClear] = useState(false);
   const cards = useMemo(
@@ -165,49 +172,16 @@ export function DeckSim({ onBack, onBrowse }: { onBack: () => void; onBrowse: ()
           {cards.length ? (
             <ul className="px-2 py-2">
               {cards.map((card, index) => (
-                <li key={card.id} className="mb-1 flex items-center gap-2">
-                  <span className="w-6 shrink-0 text-center font-display text-2xl leading-none tabular-nums text-fg">
+                <li key={card.id} className="flex items-center gap-2">
+                  <span className="mb-1 w-6 shrink-0 text-center font-display text-2xl leading-none tabular-nums text-fg">
                     {index + 1}
                   </span>
-                  <div className="flex min-w-0 flex-1 items-center gap-2 rounded-sm bg-white/[0.06] py-1.5 pr-1 pl-2">
-                  <span
-                    className={cn("w-1 shrink-0 self-stretch rounded-full", COLOR_BAR[card.color])}
-                    aria-hidden
-                  />
                   <div className="min-w-0 flex-1">
-                    <div className="flex min-w-0 items-center gap-1.5 text-xs">
-                      <span
-                        className={cn(
-                          "shrink-0 rounded-sm px-1 py-px text-xs font-medium",
-                          COLOR_CLASS[card.color],
-                        )}
-                      >
-                        {card.no}
-                      </span>
-                      <UnitIcon unit={card.unit} title={card.unit} className="size-4 shrink-0" />
-                      <RarityMark rarity={card.rarity} className="shrink-0" />
-                      <span className="min-w-0 flex-1 truncate font-bold text-fg">{card.name}</span>
-                      <CostPips cost={card.cost} small />
-                    </div>
-                    <div className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-faint">
-                      <span className="shrink-0 text-muted">{card.period}</span>
-                      {card.skills.length ? (
-                        <span className="ml-auto flex shrink-0">
-                          <SkillList ids={card.skills} short />
-                        </span>
-                      ) : (
-                        <span className="ml-auto text-faint">無特技</span>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeDeck(card.id)}
-                    className="plain-press h-11 shrink-0 rounded-md bg-surface-3 px-2.5 text-xs text-fg"
-                    aria-label={`移出卡組 ${card.name}`}
-                  >
-                    移除
-                  </button>
+                    <CardHitRow
+                      card={card}
+                      active={card.id === selectedId}
+                      onOpen={() => onOpenCard(card.id)}
+                    />
                   </div>
                 </li>
               ))}
