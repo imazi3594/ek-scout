@@ -68,7 +68,7 @@ export function ToolsPage({
         <button
           type="button"
           onClick={() => onPage("deck")}
-          className="relative block w-full overflow-hidden rounded-xl text-left"
+          className="relative block w-full overflow-hidden rounded-none border-2 border-[#c6a15a] text-left"
         >
           <span className="absolute top-3 right-3 z-10">
             <DeckCountBadge count={deckCount} />
@@ -98,7 +98,7 @@ export function ToolsPage({
         <button
           type="button"
           onClick={() => onPage("siege")}
-          className="mt-3 block w-full overflow-hidden rounded-xl text-left"
+          className="mt-3 block w-full overflow-hidden rounded-none border-2 border-[#ea580c] text-left"
         >
           <div className="flex h-2.5 items-end gap-1 bg-[#2a160e] px-1" aria-hidden>
             {Array.from({ length: 14 }, (_, i) => (
@@ -123,7 +123,7 @@ export function ToolsPage({
         <button
           type="button"
           onClick={() => onPage("morale")}
-          className="mt-3 block w-full overflow-hidden rounded-xl text-left"
+          className="mt-3 block w-full overflow-hidden rounded-none border-2 border-[#f6e7c1] text-left"
         >
           <div className="flex h-2.5 items-end justify-between bg-[#120e0a] px-2" aria-hidden>
             {Array.from({ length: 21 }, (_, i) => (
