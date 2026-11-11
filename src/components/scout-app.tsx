@@ -29,6 +29,7 @@ import { UnitIcon } from "@/components/unit-icon";
 import { AboutPage } from "@/components/about-page";
 import { ChangelogPage } from "@/components/changelog-page";
 import { GuidePage, ToolsPage, type ToolId } from "@/components/guide-page";
+import { DeckCountBadge } from "@/components/deck-sim";
 import { cn } from "@/lib/utils";
 import { deviceKind, initInstallCapture, isStandalone, subscribeInstall, type BeforeInstall } from "@/lib/install";
 import type { GuideTopic } from "@/data/guide";
@@ -147,6 +148,7 @@ export function ScoutApp() {
   function closeMoreFilters() {
     setMorePhase((p) => (p === "closed" ? p : "closing"));
   }
+  const deckCount = useScout((s) => s.deck.length);
   const query = useScout((s) => s.query);
   const setQuery = useScout((s) => s.setQuery);
   const selectedId = useScout((s) => s.selectedId);
@@ -597,7 +599,7 @@ export function ScoutApp() {
         <nav className="mx-auto flex max-w-6xl gap-0 px-2 sm:gap-1 sm:px-6">
           <TabBtn id="search" tab={tab} setTab={goTab} icon={<Search className="size-4" />} label="速查" />
           <TabBtn id="recents" tab={tab} setTab={goTab} icon={<Clock className="size-4" />} label="最近" />
-          <TabBtn id="tools" tab={tab} setTab={goTab} icon={<Wrench className="size-4" />} label="工具" />
+          <TabBtn id="tools" tab={tab} setTab={goTab} icon={<Wrench className="size-4" />} label="工具" badge={deckCount} />
           <TabBtn id="skills" tab={tab} setTab={goTab} icon={<BookOpen className="size-4" />} label="資料" />
         </nav>
       </header>
@@ -1211,12 +1213,14 @@ function TabBtn({
   setTab,
   icon,
   label,
+  badge = 0,
 }: {
   id: Tab;
   tab: Tab;
   setTab: (t: Tab) => void;
   icon: ReactNode;
   label: string;
+  badge?: number;
 }) {
   const active = tab === id;
   return (
@@ -1224,12 +1228,15 @@ function TabBtn({
       type="button"
       onClick={() => setTab(id)}
       className={cn(
-        "flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 border-b-2 px-1.5 text-sm sm:h-11 sm:flex-none sm:px-3",
+        "relative flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 border-b-2 px-1.5 text-sm sm:h-11 sm:flex-none sm:px-3",
         active ? "border-accent text-fg" : "border-transparent text-muted hover:text-fg",
       )}
     >
       {icon}
       {label}
+      <span className="absolute top-0.5 right-0.5">
+        <DeckCountBadge count={badge} />
+      </span>
     </button>
   );
 }

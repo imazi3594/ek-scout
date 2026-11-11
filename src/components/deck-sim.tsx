@@ -232,6 +232,15 @@ export function DeckSim({
   );
 }
 
+export function DeckCountBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span className="inline-flex h-[1.125rem] min-w-[1.125rem] shrink-0 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-semibold leading-none tabular-nums text-white">
+      {count}
+    </span>
+  );
+}
+
 function Metric({ label, value, hot }: { label: string; value: string; hot?: boolean }) {
   return (
     <span className="inline-flex items-baseline gap-1">
