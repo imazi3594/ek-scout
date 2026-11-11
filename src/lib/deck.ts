@@ -1,4 +1,4 @@
-/** 英傑大戰卡組：最多 8 張、成本合計最多 9、同名武將不可重複。 */
+/** 英傑大戰卡組：最多 8 張。同名與成本超過 9 仍可加入，由畫面紅字警示。 */
 
 export const DECK_MAX_CARDS = 8;
 export const DECK_MAX_COST = 9;
@@ -6,9 +6,12 @@ export const DECK_MAX_COST = 9;
 export const DECK_NOTE = {
   added: "已加入卡組",
   removed: "已移出卡組",
-  name: "不可加入同名武將",
   full: "卡組已滿（最多 8 張）",
-  cost: "成本合計不可超過 9",
+} as const;
+
+export const DECK_WARN = {
+  cost: "成本超過 9",
+  name: "含同名武將",
 } as const;
 
 export type DeckNoteTone = "info" | "warn";
@@ -23,19 +26,14 @@ export type DeckCard = {
   skills: number[];
 };
 
-export type DeckBlock = "name" | "full" | "cost";
-
 export function roundCost(n: number): number {
   return Math.round((n + Number.EPSILON) * 10) / 10;
 }
 
 /** 這張卡為何不能加入。同 id 已在組內時不算違規，交給切換邏輯移出。 */
-export function deckRefusal(cards: DeckCard[], card: DeckCard): DeckBlock | null {
+export function deckRefusal(cards: DeckCard[], card: DeckCard): "full" | null {
   const others = cards.filter((item) => item.id !== card.id);
-  if (others.some((item) => item.name === card.name)) return "name";
   if (others.length >= DECK_MAX_CARDS) return "full";
-  const cost = roundCost(others.reduce((sum, item) => sum + item.cost, 0) + card.cost);
-  if (cost > DECK_MAX_COST) return "cost";
   return null;
 }
 
@@ -44,10 +42,20 @@ export function deckSkillLabel(name: string, count: number): string {
   return `${name} x ${count}`;
 }
 
-export function deckBlockText(block: DeckBlock): string {
-  if (block === "name") return DECK_NOTE.name;
-  if (block === "full") return DECK_NOTE.full;
-  return DECK_NOTE.cost;
+export type DeckWarnings = {
+  overCost: boolean;
+  duplicateNames: string[];
+};
+
+/** 同名、成本超過 9 不擋加入，只回傳要標紅的項目。 */
+export function deckWarnings(cards: DeckCard[]): DeckWarnings {
+  const cost = roundCost(cards.reduce((sum, card) => sum + card.cost, 0));
+  const counts = new Map<string, number>();
+  for (const card of cards) counts.set(card.name, (counts.get(card.name) ?? 0) + 1);
+  return {
+    overCost: cost > DECK_MAX_COST,
+    duplicateNames: [...counts.entries()].filter(([, n]) => n > 1).map(([name]) => name),
+  };
 }
 
 export function applyDeckToggle<T extends DeckCard>(
@@ -61,12 +69,11 @@ export function applyDeckToggle<T extends DeckCard>(
       tone: "info",
     };
   }
-  const block = deckRefusal(cards, card);
-  if (block) return { deck: cards, note: deckBlockText(block), tone: "warn" };
+  if (deckRefusal(cards, card)) return { deck: cards, note: DECK_NOTE.full, tone: "warn" };
   return { deck: [...cards, card], note: DECK_NOTE.added, tone: "info" };
 }
 
-/** 丟掉壞掉或違規的儲存資料，留下仍符合規則的前段。同名只留先加入的那張。 */
+/** 同一張卡只留一張，超過 8 張的丢掉。同名與超成本保留。 */
 export function sanitizeDeck<T extends DeckCard>(cards: T[]): T[] {
   const kept: T[] = [];
   for (const card of cards) {

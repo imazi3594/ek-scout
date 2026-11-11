@@ -14,10 +14,12 @@ export function CardHitRow({
   card,
   active,
   onOpen,
+  warn,
 }: {
   card: Card;
   active: boolean;
   onOpen: () => void;
+  warn?: boolean;
 }) {
   const dur = formatStratDuration(card);
   const inDeck = useScout((s) => s.deck.includes(card.id));
@@ -27,6 +29,7 @@ export function CardHitRow({
       className={cn(
         "list-row mb-1 flex w-full items-stretch gap-1 rounded-sm bg-white/[0.06] py-1 pr-1 pl-2",
         active ? "bg-white/[0.14]" : "hover:bg-white/[0.09]",
+        warn && "ring-1 ring-inset ring-red-500",
       )}
     >
       <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-left">
@@ -36,7 +39,9 @@ export function CardHitRow({
             <span className={cn("shrink-0 rounded-sm px-1 py-px font-medium", COLOR_CLASS[card.color])}>{card.no}</span>
             <UnitIcon unit={card.unit} title={card.unit} className="size-4 shrink-0" />
             <RarityMark rarity={card.rarity} className="shrink-0" />
-            <span className="min-w-0 flex-1 truncate font-bold text-fg">{card.name}</span>
+            <span className={cn("min-w-0 flex-1 truncate font-bold", warn ? "text-red-400" : "text-fg")}>
+              {card.name}
+            </span>
             <CostPips cost={card.cost} small />
             <span className="shrink-0 tabular-nums text-fg">
               {card.power}/{card.intel}

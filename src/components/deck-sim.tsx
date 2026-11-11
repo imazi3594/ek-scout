@@ -14,7 +14,7 @@ import {
 } from "@/data/catalog";
 import { CardHitRow } from "@/components/card-hit-row";
 import { UnitIcon } from "@/components/unit-icon";
-import { DECK_MAX_COST, deckSkillLabel, summarizeDeck } from "@/lib/deck";
+import { DECK_MAX_COST, DECK_WARN, deckSkillLabel, deckWarnings, summarizeDeck } from "@/lib/deck";
 import { useScout } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +36,8 @@ export function DeckSim({
     [ids],
   );
   const summary = useMemo(() => summarizeDeck(cards), [cards]);
+  const warnings = useMemo(() => deckWarnings(cards), [cards]);
+  const duplicateNames = useMemo(() => new Set(warnings.duplicateNames), [warnings]);
   const periods = useMemo(() => {
     const known = new Set<string>(PERIODS);
     const extra = [...summary.periods.keys()].filter((period) => !known.has(period));
@@ -82,18 +84,23 @@ export function DeckSim({
       <div className="deck-body">
         <section className="deck-pane deck-pane-stats px-3 py-1.5" aria-label="卡組統計">
           <div className="flex h-8 min-w-0 items-center gap-x-3 overflow-x-auto text-xs whitespace-nowrap">
-            <Metric
-              label="成本"
-              value={`${formatCost(summary.cost)}/${DECK_MAX_COST}`}
-              hot={summary.remain <= 0 && summary.count > 0}
-            />
-            {summary.remain > 0 ? <Metric label="剩餘" value={formatCost(summary.remain)} /> : null}
-            <Metric
-              label="最大士氣"
-              value={summary.morale == null ? "—" : String(summary.morale)}
-            />
+            <span
+              className={cn(
+                "font-display text-sm tabular-nums",
+                warnings.overCost ? "text-red-400" : "text-fg",
+              )}
+            >
+              {formatCost(summary.cost)}/{DECK_MAX_COST}
+            </span>
+            <Metric label="最大士氣" value={summary.morale == null ? "—" : String(summary.morale)} />
             {summary.morale == null ? <span className="text-faint">尚未組卡</span> : null}
           </div>
+          {warnings.overCost || duplicateNames.size ? (
+            <p className="flex gap-3 pb-0.5 text-xs font-medium text-red-400">
+              {warnings.overCost ? <span>{DECK_WARN.cost}</span> : null}
+              {duplicateNames.size ? <span>{DECK_WARN.name}</span> : null}
+            </p>
+          ) : null}
           {cards.length ? (
             <div className="flex flex-col">
               <DataLine label="勢力">
@@ -163,13 +170,19 @@ export function DeckSim({
             <ul className="px-2 py-2">
               {cards.map((card, index) => (
                 <li key={card.id} className="flex items-center gap-2">
-                  <span className="mb-1 w-6 shrink-0 text-center font-display text-2xl leading-none tabular-nums text-fg">
+                  <span
+                    className={cn(
+                      "mb-1 w-6 shrink-0 text-center font-display text-2xl leading-none tabular-nums",
+                      duplicateNames.has(card.name) ? "text-red-400" : "text-fg",
+                    )}
+                  >
                     {index + 1}
                   </span>
                   <div className="min-w-0 flex-1">
                     <CardHitRow
                       card={card}
                       active={card.id === selectedId}
+                      warn={duplicateNames.has(card.name)}
                       onOpen={() => onOpenCard(card.id)}
                     />
                   </div>

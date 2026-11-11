@@ -2,8 +2,10 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   DECK_NOTE,
+  DECK_WARN,
   applyDeckToggle,
   deckSkillLabel,
+  deckWarnings,
   factionMorale,
   sanitizeDeck,
   summarizeDeck,
@@ -36,16 +38,16 @@ describe("applyDeckToggle", () => {
     assert.deepEqual(removed.deck, []);
   });
 
-  it("refuses a different printing of the same name", () => {
+  it("allows a different printing of the same name", () => {
     const first = card({ id: "a", name: "織田信長", cost: 3, color: "蒼" });
     const second = card({ id: "b", name: "織田信長", cost: 2.5, color: "紫" });
     const result = applyDeckToggle([first], second);
-    assert.equal(result.note, DECK_NOTE.name);
-    assert.equal(result.tone, "warn");
+    assert.equal(result.note, DECK_NOTE.added);
     assert.deepEqual(
       result.deck.map((item) => item.id),
-      ["a"],
+      ["a", "b"],
     );
+    assert.deepEqual(deckWarnings(result.deck).duplicateNames, ["織田信長"]);
   });
 
   it("stops at 8 cards", () => {
@@ -57,7 +59,7 @@ describe("applyDeckToggle", () => {
     assert.equal(result.deck.length, 8);
   });
 
-  it("allows cost 9 and refuses anything past it", () => {
+  it("allows cost 9 and also allows going past it", () => {
     const deck = [
       card({ id: "a", name: "甲", cost: 2.5 }),
       card({ id: "b", name: "乙", cost: 2.5 }),
@@ -66,36 +68,42 @@ describe("applyDeckToggle", () => {
     const fit = applyDeckToggle(deck, card({ id: "d", name: "丁", cost: 2 }));
     assert.equal(fit.note, DECK_NOTE.added);
     assert.equal(summarizeDeck(fit.deck).cost, 9);
-    assert.equal(summarizeDeck(fit.deck).remain, 0);
+    assert.equal(deckWarnings(fit.deck).overCost, false);
 
     const over = applyDeckToggle(deck, card({ id: "e", name: "戊", cost: 2.5 }));
-    assert.equal(over.note, DECK_NOTE.cost);
-    assert.equal(over.deck.length, 3);
+    assert.equal(over.note, DECK_NOTE.added);
+    assert.equal(over.deck.length, 4);
+    assert.equal(deckWarnings(over.deck).overCost, true);
   });
 
-  it("names the same-name rule before the 8-card cap", () => {
+  it("still refuses a ninth card even when the name is already in the deck", () => {
     const deck = [
       card({ id: "dup", name: "織田信長", cost: 1 }),
       ...Array.from({ length: 7 }, (_, i) => card({ id: `c${i}`, name: `武將${i}`, cost: 1 })),
     ];
     const result = applyDeckToggle(deck, card({ id: "other", name: "織田信長", cost: 1 }));
-    assert.equal(result.note, DECK_NOTE.name);
+    assert.equal(result.note, DECK_NOTE.full);
+    assert.equal(result.deck.length, 8);
   });
 });
 
 describe("sanitizeDeck", () => {
-  it("drops unknown duplicates, same names, and cards that break the cost cap", () => {
+  it("drops a repeated copy of the same card and keeps same names over the cost cap", () => {
     const kept = sanitizeDeck([
       card({ id: "a", name: "織田信長", cost: 3 }),
       card({ id: "a", name: "織田信長", cost: 3 }),
-      card({ id: "b", name: "織田信長", cost: 2 }),
+      card({ id: "b", name: "織田信長", cost: 4 }),
       card({ id: "c", name: "豐臣秀吉", cost: 4 }),
-      card({ id: "d", name: "德川家康", cost: 3 }),
     ]);
     assert.deepEqual(
       kept.map((item) => item.id),
-      ["a", "c"],
+      ["a", "b", "c"],
     );
+    const warnings = deckWarnings(kept);
+    assert.equal(warnings.overCost, true);
+    assert.deepEqual(warnings.duplicateNames, ["織田信長"]);
+    assert.equal(DECK_WARN.cost, "成本超過 9");
+    assert.equal(DECK_WARN.name, "含同名武將");
   });
 });
 
