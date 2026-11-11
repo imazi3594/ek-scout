@@ -165,19 +165,22 @@ export function DeckSim({ onBack, onBrowse }: { onBack: () => void; onBrowse: ()
           {cards.length ? (
             <ul className="px-2 py-2">
               {cards.map((card, index) => (
-                <li
-                  key={card.id}
-                  className="mb-1 flex items-center gap-2 rounded-sm bg-white/[0.06] py-1.5 pr-1 pl-2"
-                >
+                <li key={card.id} className="mb-1 flex items-center gap-2">
+                  <span className="flex shrink-0 items-baseline gap-1.5">
+                    <span className="font-display text-2xl leading-none tabular-nums text-fg">
+                      {index + 1}
+                    </span>
+                    <span className="font-display text-2xl leading-none tabular-nums text-fg">
+                      {cardNumber(card)}
+                    </span>
+                  </span>
+                  <div className="flex min-w-0 flex-1 items-center gap-2 rounded-sm bg-white/[0.06] py-1.5 pr-1 pl-2">
                   <span
                     className={cn("w-1 shrink-0 self-stretch rounded-full", COLOR_BAR[card.color])}
                     aria-hidden
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex min-w-0 items-center gap-1.5 text-xs">
-                      <span className="shrink-0 font-display text-lg leading-none tabular-nums text-fg">
-                        {index + 1}
-                      </span>
                       <span
                         className={cn(
                           "inline-flex h-5 shrink-0 items-center rounded-sm px-1.5 text-xs font-medium",
@@ -185,9 +188,6 @@ export function DeckSim({ onBack, onBrowse }: { onBack: () => void; onBrowse: ()
                         )}
                       >
                         {card.color}
-                      </span>
-                      <span className="shrink-0 font-display text-lg leading-none tabular-nums text-fg">
-                        {cardNumber(card)}
                       </span>
                       <UnitIcon unit={card.unit} title={card.unit} className="size-4 shrink-0" />
                       <RarityMark rarity={card.rarity} className="shrink-0" />
@@ -213,6 +213,7 @@ export function DeckSim({ onBack, onBrowse }: { onBack: () => void; onBrowse: ()
                   >
                     移除
                   </button>
+                  </div>
                 </li>
               ))}
             </ul>
