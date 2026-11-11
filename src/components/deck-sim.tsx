@@ -10,13 +10,12 @@ import {
   UNITS,
   formatCost,
   type Card,
-  type ColorName,
   type UnitName,
 } from "@/data/catalog";
 import { CostPips, RarityMark } from "@/components/card-identity";
-import { SkillChip, SkillList } from "@/components/skill-chip";
+import { SkillList } from "@/components/skill-chip";
 import { UnitIcon } from "@/components/unit-icon";
-import { DECK_MAX_CARDS, DECK_MAX_COST, summarizeDeck } from "@/lib/deck";
+import { DECK_MAX_CARDS, DECK_MAX_COST, deckSkillLabel, summarizeDeck } from "@/lib/deck";
 import { useScout } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +41,8 @@ export function DeckSim({ onBack, onBrowse }: { onBack: () => void; onBrowse: ()
         ? `${summary.factions} 個勢力`
         : "";
   const deckSkills = SKILLS.filter((skill) => (summary.skills.get(skill.id) ?? 0) > 0);
+  const colors = COLORS.filter((color) => (summary.colors.get(color) ?? 0) > 0);
+  const units = UNITS.filter((unit) => (summary.units.get(unit) ?? 0) > 0);
 
   return (
     <div className="deck-layout relative bg-bg">
@@ -78,51 +79,90 @@ export function DeckSim({ onBack, onBrowse }: { onBack: () => void; onBrowse: ()
       </div>
 
       <div className="deck-body">
-        <section className="deck-pane deck-pane-cards" aria-label="卡組">
-          <div className="sticky top-0 z-10 border-b border-border bg-bg px-4 py-3">
-            <dl className="grid grid-cols-4 gap-1">
-              <Stat
-                label="張數"
-                value={`${summary.count}/${DECK_MAX_CARDS}`}
-                hot={summary.count >= DECK_MAX_CARDS}
-              />
-              <Stat
-                label="成本"
-                value={
-                  <>
-                    {formatCost(summary.cost)}
-                    <span className="text-xs font-normal text-muted">/{DECK_MAX_COST}</span>
-                  </>
-                }
-                hot={summary.remain <= 0 && summary.count > 0}
-              />
-              <Stat label="剩餘" value={formatCost(summary.remain)} />
-              <Stat
-                label="最大士氣"
-                value={summary.morale == null ? "—" : String(summary.morale)}
-              />
-            </dl>
-            <p className="mt-2 text-[11px] leading-relaxed text-faint">
-              勢力ボーナス：1 個 12、2 個 10、3 個 8、4 個以上 6。
-              {summary.morale == null ? "尚未組卡。" : `現為${factionLabel}。`}
-            </p>
-            {summary.count > 0 ? (
-              <div className="mt-2 flex h-1.5 overflow-hidden rounded-full" aria-hidden>
-                {COLORS.map((color) => {
-                  const count = summary.colors.get(color) ?? 0;
-                  if (!count) return null;
-                  return (
+        <section className="deck-pane deck-pane-stats px-3 py-1.5" aria-label="卡組統計">
+          <div className="flex h-8 min-w-0 items-center gap-x-3 overflow-x-auto text-xs whitespace-nowrap">
+            <Metric
+              label="張數"
+              value={`${summary.count}/${DECK_MAX_CARDS}`}
+              hot={summary.count >= DECK_MAX_CARDS}
+            />
+            <Metric
+              label="成本"
+              value={`${formatCost(summary.cost)}/${DECK_MAX_COST}`}
+              hot={summary.remain <= 0 && summary.count > 0}
+            />
+            <Metric label="剩餘" value={formatCost(summary.remain)} />
+            <Metric
+              label="最大士氣"
+              value={summary.morale == null ? "—" : String(summary.morale)}
+            />
+            <span className="text-faint">{summary.morale == null ? "尚未組卡" : factionLabel}</span>
+          </div>
+          {cards.length ? (
+            <div className="flex flex-col">
+              <DataLine label="勢力">
+                {colors.length ? (
+                  colors.map((color) => (
                     <span
                       key={color}
-                      className={cn("h-full", COLOR_BAR[color])}
-                      style={{ width: `${(count / summary.count) * 100}%` }}
-                    />
-                  );
-                })}
-              </div>
-            ) : null}
-          </div>
+                      className={cn(
+                        "inline-flex h-5 items-center gap-1 rounded-sm px-1.5 text-xs font-medium",
+                        COLOR_CLASS[color],
+                      )}
+                    >
+                      {color}
+                      <span className="tabular-nums">{summary.colors.get(color)}</span>
+                    </span>
+                  ))
+                ) : (
+                  <EmptyMark />
+                )}
+              </DataLine>
+              <DataLine label="時代">
+                {periods.length ? (
+                  periods.map((period) => (
+                    <span key={period} className="text-xs text-fg">
+                      {period} <span className="tabular-nums">{summary.periods.get(period)}</span>
+                    </span>
+                  ))
+                ) : (
+                  <EmptyMark />
+                )}
+              </DataLine>
+              <DataLine label="兵種">
+                {units.length ? (
+                  units.map((unit) => (
+                    <span key={unit} className="inline-flex items-center gap-1 text-xs text-fg">
+                      <UnitIcon unit={unit} title={unit} className="size-4" />
+                      {unitLabel(unit)}{" "}
+                      <span className="tabular-nums">{summary.units.get(unit)}</span>
+                    </span>
+                  ))
+                ) : (
+                  <EmptyMark />
+                )}
+              </DataLine>
+              <DataLine label="特技">
+                {deckSkills.length ? (
+                  deckSkills.map((skill) => (
+                    <span
+                      key={skill.id}
+                      className="inline-flex h-5 items-center rounded-sm border border-black bg-cost px-1.5 text-xs font-medium text-black"
+                    >
+                      {deckSkillLabel(skill.name, summary.skills.get(skill.id) ?? 0)}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-muted">無特技</span>
+                )}
+              </DataLine>
+            </div>
+          ) : (
+            <p className="py-1 text-xs text-muted">到速查或最近，按列尾的「卡組」加入武將。</p>
+          )}
+        </section>
 
+        <section className="deck-pane deck-pane-cards" aria-label="卡組">
           {cards.length ? (
             <ul className="px-2 py-2">
               {cards.map((card, index) => (
@@ -185,84 +225,6 @@ export function DeckSim({ onBack, onBrowse }: { onBack: () => void; onBrowse: ()
             </div>
           )}
         </section>
-
-        <section className="deck-pane px-4 py-4" aria-label="卡組統計">
-          {cards.length ? (
-            <div className="flex flex-col gap-5">
-              <div>
-                <DeckRule label="勢力" />
-                <ul className="mt-2 grid grid-cols-4 gap-1.5">
-                  {COLORS.map((color) => (
-                    <ColorCount key={color} color={color} count={summary.colors.get(color) ?? 0} />
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <DeckRule label="時代" />
-                <ul className="mt-2 flex flex-col gap-1">
-                  {periods.map((period) => (
-                    <li
-                      key={period}
-                      className="flex items-center justify-between rounded-md bg-surface-2 px-2.5 py-2"
-                    >
-                      <span className="text-sm text-fg">{period}</span>
-                      <span className="font-display text-base tabular-nums text-fg">
-                        {summary.periods.get(period)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <DeckRule label="兵種" />
-                <ul className="mt-2 grid grid-cols-5 gap-1">
-                  {UNITS.map((unit) => {
-                    const count = summary.units.get(unit) ?? 0;
-                    return (
-                      <li
-                        key={unit}
-                        className={cn(
-                          "flex flex-col items-center gap-1 rounded-md bg-surface-2 px-1 py-2",
-                          count === 0 && "opacity-40",
-                        )}
-                      >
-                        <UnitIcon unit={unit} title={unit} className="size-6" />
-                        <span className="text-center text-[10px] leading-tight text-muted">
-                          {unitLabel(unit)}
-                        </span>
-                        <span className="font-display text-base leading-none tabular-nums text-fg">
-                          {count}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-              <div>
-                <DeckRule label="特技" />
-                <div className="mt-2">
-                  {deckSkills.length ? (
-                    <div className="flex flex-wrap gap-1.5">
-                      {deckSkills.map((skill) => (
-                        <SkillChip
-                          key={skill.id}
-                          id={skill.id}
-                          count={summary.skills.get(skill.id)}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted">無特技</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <p className="px-2 py-6 text-center text-sm leading-relaxed text-pretty text-muted">
-              到速查或最近，按列尾的「卡組」加入武將。這裡會列出勢力、時代、兵種與特技。
-            </p>
-          )}
-        </section>
       </div>
 
       {askClear ? (
@@ -295,45 +257,32 @@ export function DeckSim({ onBack, onBrowse }: { onBack: () => void; onBrowse: ()
   );
 }
 
-function Stat({ label, value, hot }: { label: string; value: ReactNode; hot?: boolean }) {
+function Metric({ label, value, hot }: { label: string; value: string; hot?: boolean }) {
   return (
-    <div className="min-w-0 rounded-md bg-surface-2 px-1.5 py-2">
-      <dt className="truncate text-[11px] text-faint">{label}</dt>
-      <dd
-        className={cn(
-          "mt-1 truncate font-display text-lg leading-none tabular-nums",
-          hot ? "text-faction-ko" : "text-fg",
-        )}
+    <span className="inline-flex items-baseline gap-1">
+      <span className="text-faint">{label}</span>
+      <span
+        className={cn("font-display text-sm tabular-nums", hot ? "text-faction-ko" : "text-fg")}
       >
         {value}
-      </dd>
-    </div>
-  );
-}
-
-function DeckRule({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      <h3 className="shrink-0 text-xs text-faint">{label}</h3>
-      <span className="h-px min-w-4 flex-1 bg-border" aria-hidden />
-    </div>
-  );
-}
-
-function ColorCount({ color, count }: { color: ColorName; count: number }) {
-  return (
-    <li
-      className={cn(
-        "flex items-center justify-between rounded-md bg-surface-2 px-2 py-1.5",
-        count === 0 && "opacity-40",
-      )}
-    >
-      <span className={cn("rounded-sm px-1.5 py-px text-xs font-medium", COLOR_CLASS[color])}>
-        {color}
       </span>
-      <span className="font-display text-base tabular-nums text-fg">{count}</span>
-    </li>
+    </span>
   );
+}
+
+function DataLine({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex h-8 min-w-0 items-center gap-2">
+      <h3 className="w-8 shrink-0 text-xs text-faint">{label}</h3>
+      <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto whitespace-nowrap">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function EmptyMark() {
+  return <span className="text-xs text-muted">無</span>;
 }
 
 function unitLabel(unit: UnitName): string {

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   DECK_NOTE,
   applyDeckToggle,
+  deckSkillLabel,
   factionMorale,
   sanitizeDeck,
   summarizeDeck,
@@ -95,6 +96,13 @@ describe("sanitizeDeck", () => {
       kept.map((item) => item.id),
       ["a", "c"],
     );
+  });
+});
+
+describe("deckSkillLabel", () => {
+  it("keeps the count even when a skill appears once", () => {
+    assert.equal(deckSkillLabel("伏兵", 1), "伏兵 x 1");
+    assert.equal(deckSkillLabel("昂揚", 2), "昂揚 x 2");
   });
 });
 

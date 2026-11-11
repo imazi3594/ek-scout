@@ -39,6 +39,11 @@ export function deckRefusal(cards: DeckCard[], card: DeckCard): DeckBlock | null
   return null;
 }
 
+/** 特技列：個數一律寫出，單次也是「x 1」。 */
+export function deckSkillLabel(name: string, count: number): string {
+  return `${name} x ${count}`;
+}
+
 export function deckBlockText(block: DeckBlock): string {
   if (block === "name") return DECK_NOTE.name;
   if (block === "full") return DECK_NOTE.full;

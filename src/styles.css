@@ -23,8 +23,12 @@
   --color-faction-ou: #c4a000;
   --color-cost: #e2c15a;
   --color-rarity-r: #c5c9d2;
-  --font-sans: "Noto Sans HK", "Noto Sans JP", "PingFang TC", "PingFang HK", "Hiragino Sans CNS", "Noto Sans CJK TC", "Microsoft JhengHei", sans-serif;
-  --font-display: "Noto Sans HK", "Noto Sans JP", "PingFang TC", "PingFang HK", "Hiragino Sans CNS", "Microsoft JhengHei", sans-serif;
+  --font-sans:
+    "Noto Sans HK", "Noto Sans JP", "PingFang TC", "PingFang HK", "Hiragino Sans CNS",
+    "Noto Sans CJK TC", "Microsoft JhengHei", sans-serif;
+  --font-display:
+    "Noto Sans HK", "Noto Sans JP", "PingFang TC", "PingFang HK", "Hiragino Sans CNS",
+    "Microsoft JhengHei", sans-serif;
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
@@ -388,10 +392,13 @@
     overscroll-behavior: contain;
   }
 
-  .deck-pane-cards {
-    flex: 0 1 auto;
-    max-height: 52%;
+  .deck-pane-stats {
+    flex: 0 0 auto;
     border-bottom: 1px solid var(--color-border);
+  }
+
+  .deck-pane-cards {
+    flex: 1 1 0;
   }
 
   @container (min-width: 640px) {
@@ -400,19 +407,28 @@
     }
 
     .deck-pane-cards {
+      order: 1;
       flex: none;
       width: min(24rem, 46%);
-      max-height: none;
       align-self: stretch;
+    }
+
+    .deck-pane-stats {
+      order: 2;
+      flex: 1 1 0;
       border-bottom: 0;
-      border-right: 1px solid var(--color-border);
+      border-left: 1px solid var(--color-border);
     }
   }
 }
 
 @keyframes result-marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 .result-marquee {
