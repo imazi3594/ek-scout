@@ -37,7 +37,7 @@ export function DeckSim({ onBack, onBrowse }: { onBack: () => void; onBrowse: ()
   const factionLabel =
     summary.factions >= 4
       ? "4 個以上勢力"
-      : summary.factions > 0
+      : summary.factions >= 2
         ? `${summary.factions} 個勢力`
         : "";
   const deckSkills = SKILLS.filter((skill) => (summary.skills.get(skill.id) ?? 0) > 0);
@@ -91,12 +91,16 @@ export function DeckSim({ onBack, onBrowse }: { onBack: () => void; onBrowse: ()
               value={`${formatCost(summary.cost)}/${DECK_MAX_COST}`}
               hot={summary.remain <= 0 && summary.count > 0}
             />
-            <Metric label="剩餘" value={formatCost(summary.remain)} />
+            {summary.remain > 0 ? <Metric label="剩餘" value={formatCost(summary.remain)} /> : null}
             <Metric
               label="最大士氣"
               value={summary.morale == null ? "—" : String(summary.morale)}
             />
-            <span className="text-faint">{summary.morale == null ? "尚未組卡" : factionLabel}</span>
+            {summary.morale == null ? (
+              <span className="text-faint">尚未組卡</span>
+            ) : factionLabel ? (
+              <span className="text-faint">{factionLabel}</span>
+            ) : null}
           </div>
           {cards.length ? (
             <div className="flex flex-col">
