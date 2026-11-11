@@ -15,7 +15,7 @@ import {
 import { CostPips, RarityMark } from "@/components/card-identity";
 import { SkillList } from "@/components/skill-chip";
 import { UnitIcon } from "@/components/unit-icon";
-import { DECK_MAX_CARDS, DECK_MAX_COST, deckSkillLabel, summarizeDeck } from "@/lib/deck";
+import { DECK_MAX_COST, summarizeDeck } from "@/lib/deck";
 import { useScout } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -82,11 +82,6 @@ export function DeckSim({ onBack, onBrowse }: { onBack: () => void; onBrowse: ()
         <section className="deck-pane deck-pane-stats px-3 py-1.5" aria-label="卡組統計">
           <div className="flex h-8 min-w-0 items-center gap-x-3 overflow-x-auto text-xs whitespace-nowrap">
             <Metric
-              label="張數"
-              value={`${summary.count}/${DECK_MAX_CARDS}`}
-              hot={summary.count >= DECK_MAX_CARDS}
-            />
-            <Metric
               label="成本"
               value={`${formatCost(summary.cost)}/${DECK_MAX_COST}`}
               hot={summary.remain <= 0 && summary.count > 0}
@@ -107,16 +102,16 @@ export function DeckSim({ onBack, onBrowse }: { onBack: () => void; onBrowse: ()
               <DataLine label="勢力">
                 {colors.length ? (
                   colors.map((color) => (
-                    <span
-                      key={color}
-                      className={cn(
-                        "inline-flex h-5 items-center gap-1 rounded-sm px-1.5 text-xs font-medium",
-                        COLOR_CLASS[color],
-                      )}
-                    >
-                      {color}
-                      <span className="tabular-nums">{summary.colors.get(color)}</span>
-                    </span>
+                    <CountItem key={color} count={summary.colors.get(color) ?? 0}>
+                      <span
+                        className={cn(
+                          "inline-flex h-5 items-center rounded-sm px-1.5 text-xs font-medium",
+                          COLOR_CLASS[color],
+                        )}
+                      >
+                        {color}
+                      </span>
+                    </CountItem>
                   ))
                 ) : (
                   <EmptyMark />
@@ -125,9 +120,9 @@ export function DeckSim({ onBack, onBrowse }: { onBack: () => void; onBrowse: ()
               <DataLine label="時代">
                 {periods.length ? (
                   periods.map((period) => (
-                    <span key={period} className="text-xs text-fg">
-                      {period} <span className="tabular-nums">{summary.periods.get(period)}</span>
-                    </span>
+                    <CountItem key={period} count={summary.periods.get(period) ?? 0}>
+                      <span className="text-xs text-fg">{period}</span>
+                    </CountItem>
                   ))
                 ) : (
                   <EmptyMark />
@@ -136,11 +131,12 @@ export function DeckSim({ onBack, onBrowse }: { onBack: () => void; onBrowse: ()
               <DataLine label="兵種">
                 {units.length ? (
                   units.map((unit) => (
-                    <span key={unit} className="inline-flex items-center gap-1 text-xs text-fg">
-                      <UnitIcon unit={unit} title={unit} className="size-4" />
-                      {unitLabel(unit)}{" "}
-                      <span className="tabular-nums">{summary.units.get(unit)}</span>
-                    </span>
+                    <CountItem key={unit} count={summary.units.get(unit) ?? 0}>
+                      <span className="inline-flex items-center gap-1 text-xs text-fg">
+                        <UnitIcon unit={unit} title={unit} className="size-4" />
+                        {unitLabel(unit)}
+                      </span>
+                    </CountItem>
                   ))
                 ) : (
                   <EmptyMark />
@@ -149,12 +145,11 @@ export function DeckSim({ onBack, onBrowse }: { onBack: () => void; onBrowse: ()
               <DataLine label="特技">
                 {deckSkills.length ? (
                   deckSkills.map((skill) => (
-                    <span
-                      key={skill.id}
-                      className="inline-flex h-5 items-center rounded-sm border border-black bg-cost px-1.5 text-xs font-medium text-black"
-                    >
-                      {deckSkillLabel(skill.name, summary.skills.get(skill.id) ?? 0)}
-                    </span>
+                    <CountItem key={skill.id} count={`x ${summary.skills.get(skill.id) ?? 0}`}>
+                      <span className="inline-flex h-5 items-center rounded-sm border border-black bg-cost px-1.5 text-xs font-medium text-black">
+                        {skill.name}
+                      </span>
+                    </CountItem>
                   ))
                 ) : (
                   <span className="text-xs text-muted">無特技</span>
@@ -274,9 +269,18 @@ function Metric({ label, value, hot }: { label: string; value: string; hot?: boo
   );
 }
 
+function CountItem({ count, children }: { count: ReactNode; children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1">
+      {children}
+      <span className="font-display text-lg leading-none tabular-nums text-fg">{count}</span>
+    </span>
+  );
+}
+
 function DataLine({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex h-8 min-w-0 items-center gap-2">
+    <div className="flex min-h-8 min-w-0 items-center gap-2">
       <h3 className="w-8 shrink-0 text-xs text-faint">{label}</h3>
       <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto whitespace-nowrap">
         {children}
