@@ -166,13 +166,8 @@ export function DeckSim({ onBack, onBrowse }: { onBack: () => void; onBrowse: ()
             <ul className="px-2 py-2">
               {cards.map((card, index) => (
                 <li key={card.id} className="mb-1 flex items-center gap-2">
-                  <span className="flex shrink-0 items-baseline gap-1.5">
-                    <span className="font-display text-2xl leading-none tabular-nums text-fg">
-                      {index + 1}
-                    </span>
-                    <span className="font-display text-2xl leading-none tabular-nums text-fg">
-                      {cardNumber(card)}
-                    </span>
+                  <span className="w-6 shrink-0 text-center font-display text-2xl leading-none tabular-nums text-fg">
+                    {index + 1}
                   </span>
                   <div className="flex min-w-0 flex-1 items-center gap-2 rounded-sm bg-white/[0.06] py-1.5 pr-1 pl-2">
                   <span
@@ -183,11 +178,11 @@ export function DeckSim({ onBack, onBrowse }: { onBack: () => void; onBrowse: ()
                     <div className="flex min-w-0 items-center gap-1.5 text-xs">
                       <span
                         className={cn(
-                          "inline-flex h-5 shrink-0 items-center rounded-sm px-1.5 text-xs font-medium",
+                          "shrink-0 rounded-sm px-1 py-px text-xs font-medium",
                           COLOR_CLASS[card.color],
                         )}
                       >
-                        {card.color}
+                        {card.no}
                       </span>
                       <UnitIcon unit={card.unit} title={card.unit} className="size-4 shrink-0" />
                       <RarityMark rarity={card.rarity} className="shrink-0" />
@@ -273,10 +268,6 @@ function Metric({ label, value, hot }: { label: string; value: string; hot?: boo
       </span>
     </span>
   );
-}
-
-function cardNumber(card: Card): string {
-  return card.no.startsWith(card.color) ? card.no.slice(card.color.length) : card.no;
 }
 
 function DataLine({ label, children }: { label: string; children: ReactNode }) {
