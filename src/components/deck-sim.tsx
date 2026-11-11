@@ -41,12 +41,6 @@ export function DeckSim({
     const extra = [...summary.periods.keys()].filter((period) => !known.has(period));
     return [...PERIODS, ...extra].filter((period) => (summary.periods.get(period) ?? 0) > 0);
   }, [summary]);
-  const factionLabel =
-    summary.factions >= 4
-      ? "4 個以上勢力"
-      : summary.factions >= 2
-        ? `${summary.factions} 個勢力`
-        : "";
   const deckSkills = SKILLS.filter((skill) => (summary.skills.get(skill.id) ?? 0) > 0);
   const colors = COLORS.filter((color) => (summary.colors.get(color) ?? 0) > 0);
   const units = UNITS.filter((unit) => (summary.units.get(unit) ?? 0) > 0);
@@ -98,11 +92,7 @@ export function DeckSim({
               label="最大士氣"
               value={summary.morale == null ? "—" : String(summary.morale)}
             />
-            {summary.morale == null ? (
-              <span className="text-faint">尚未組卡</span>
-            ) : factionLabel ? (
-              <span className="text-faint">{factionLabel}</span>
-            ) : null}
+            {summary.morale == null ? <span className="text-faint">尚未組卡</span> : null}
           </div>
           {cards.length ? (
             <div className="flex flex-col">
