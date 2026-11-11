@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronLeft, CircleHelp } from "lucide-react";
-import { COLOR_BAR, COLORS, RARITY_CHIP, SKILLS } from "@/data/catalog";
+import { COLORS, RARITY_CHIP, SKILLS } from "@/data/catalog";
 import { CostPips, RarityMark } from "@/components/card-identity";
 import {
   EIKON_GROUPS,
@@ -45,8 +45,6 @@ const TOPICS: { id: GuideTopic; title: string; blurb: string }[] = [
 export type ToolId = "siege" | "morale" | "deck";
 
 export function ToolsPage({
-  page,
-  onPage,
   onBrowse,
   onOpenCard,
 }: {
@@ -55,134 +53,19 @@ export function ToolsPage({
   onBrowse?: () => void;
   onOpenCard?: (id: string) => void;
 }) {
-  const scroller = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    scroller.current?.scrollTo(0, 0);
-  }, [page]);
-
-  if (!page) {
-    return (
-      <div ref={scroller} className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 py-6 sm:px-6">
-        <p className="text-sm leading-relaxed text-pretty text-muted">請選擇工具。</p>
-        <button
-          type="button"
-          onClick={() => onPage("siege")}
-          className="mt-4 block w-full overflow-hidden rounded-xl text-left"
-        >
-          <div className="flex h-2.5 items-end gap-1 bg-[#2a160e] px-1" aria-hidden>
-            {Array.from({ length: 14 }, (_, i) => (
-              <span key={i} className={cn("h-2 flex-1 bg-[#c46a32]", i % 2 ? "opacity-0" : "opacity-90")} />
-            ))}
-          </div>
-          <div className="flex h-[7.25rem] flex-col bg-[linear-gradient(to_bottom,#1a120e_0%,#3a1a12_58%,#6a2a14_100%)] px-4 py-4">
-            <span className="block font-display text-xl text-[#f6e7c1]">攻城力計算器</span>
-            <span className="mt-1 block text-sm leading-relaxed text-pretty text-[#e7c39a]/85">
-              按兵種、武力、成本與加成，估算城牆與城門傷害。
-            </span>
-          </div>
-          <div className="relative h-14 overflow-hidden bg-[#6a2a14]">
-            <svg className="absolute inset-y-0 left-0 h-full w-[130%]" viewBox="0 0 400 48" preserveAspectRatio="none" aria-hidden>
-              <path fill="#ea580c" opacity="0.9" d="M0 48V22C16 28 22 8 40 18C54 26 64 4 82 16C96 26 108 12 126 22C144 10 156 4 174 16C190 26 202 12 220 22C238 10 250 6 268 16C284 26 298 14 316 22C334 10 348 6 366 18C382 26 392 16 400 12V48Z" />
-            </svg>
-            <svg className="absolute inset-y-0 left-0 h-full w-[130%]" viewBox="0 0 400 48" preserveAspectRatio="none" aria-hidden>
-              <path fill="#fbbf24" opacity="0.75" d="M0 48V36C20 36 28 28 46 32C62 36 74 26 92 32C108 38 122 42 140 34C158 28 172 32 190 38C208 42 222 28 240 34C258 40 274 34 292 30C310 26 326 36 344 32C362 28 380 36 400 32V48Z" />
-            </svg>
-          </div>
-        </button>
-        <button
-          type="button"
-          onClick={() => onPage("morale")}
-          className="mt-3 block w-full overflow-hidden rounded-xl text-left"
-        >
-          <div className="flex h-2.5 items-end justify-between bg-[#120e0a] px-2" aria-hidden>
-            {Array.from({ length: 21 }, (_, i) => (
-              <span key={i} className={cn("w-px bg-[#c6a15a]", i % 5 === 0 ? "h-2.5 opacity-90" : "h-1.5 opacity-45")} />
-            ))}
-          </div>
-          <div className="flex h-[7.25rem] flex-col bg-[linear-gradient(to_bottom,#14110c_0%,#241c14_58%,#3a2c1c_100%)] px-4 py-4">
-            <span className="block font-display text-xl text-[#f6e7c1]">士氣計算器</span>
-            <span className="mt-1 block text-sm leading-relaxed text-pretty text-[#e7d3b0]/85">
-              運用時間軸，透過安排計略、流派和戰器，預先計算可用士氣數量。
-            </span>
-          </div>
-          <div className="relative flex h-8 items-center gap-2 bg-[#120e0a] px-3" aria-hidden>
-            <span className="font-display text-2xl leading-none tabular-nums text-[#f4efe4]">99</span>
-            <span className="text-[10px] leading-none text-[#c6a15a]">剩餘</span>
-            <div className="relative h-full min-w-0 flex-1">
-              <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[#c6a15a]/55" />
-              {Array.from({ length: 9 }, (_, i) => (
-                <span
-                  key={i}
-                  className={cn("absolute top-1/2 w-px -translate-y-1/2 bg-[#c6a15a]", i % 2 === 0 ? "h-3 opacity-80" : "h-1.5 opacity-45")}
-                  style={{ left: `${(i / 8) * 100}%` }}
-                />
-              ))}
-              <span className="absolute top-1/2 left-[62%] h-5 w-px -translate-y-1/2 bg-[#f5d84a]/80" />
-              <span className="absolute top-1/2 left-[8%] -translate-y-1/2 rounded bg-[#3d321c] px-1 py-px text-[9px] leading-none text-[#f3dd9a]">
-                計略 −6
-              </span>
-            </div>
-          </div>
-          <div className="flex h-6 items-center justify-center gap-1 bg-[#1a140c]" aria-hidden>
-            {Array.from({ length: 10 }, (_, i) => (
-              <span
-                key={i}
-                className={cn(
-                  "size-3 rounded-full border border-[#c6a15a]",
-                  i < 4 ? "bg-[#ff6a22] shadow-[0_0_4px_#ff6a22]" : "bg-[#120e0a]",
-                )}
-              />
-            ))}
-          </div>
-        </button>
-        <button
-          type="button"
-          onClick={() => onPage("deck")}
-          className="mt-3 block w-full overflow-hidden rounded-xl text-left"
-        >
-          <div className="flex h-2.5" aria-hidden>
-            {COLORS.map((color) => (
-              <span key={color} className={cn("h-full flex-1", COLOR_BAR[color])} />
-            ))}
-          </div>
-          <div className="flex h-[7.25rem] flex-col bg-[linear-gradient(to_bottom,#14110c_0%,#241c14_55%,#3a2a18_100%)] px-4 py-4">
-            <span className="block font-display text-xl text-[#f6e7c1]">卡組模擬器</span>
-            <span className="mt-1 block text-sm leading-relaxed text-pretty text-[#e7d3b0]/85">
-              組好最多 8 張，查看勢力、特技、成本與最大士氣。
-            </span>
-          </div>
-          <div className="flex h-14 items-center gap-1 bg-[#120e0a] px-3" aria-hidden>
-            {Array.from({ length: 8 }, (_, i) => (
-              <span
-                key={i}
-                className={cn(
-                  "h-8 flex-1 rounded-sm border border-[#c6a15a]/50",
-                  i < 3 ? "bg-[#c6a15a]/80" : "bg-[#1a140c]",
-                )}
-              />
-            ))}
-            <span className="ml-1 font-display text-xl leading-none tabular-nums text-[#f4efe4]">9</span>
-            <span className="text-[10px] leading-none text-[#c6a15a]">Cost</span>
-          </div>
-        </button>
-      </div>
-    );
-  }
-
-  const locked = page === "morale" || page === "deck";
   return (
-    <div ref={scroller} className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden", locked ? "overflow-y-hidden" : "overflow-y-auto")}>
-      {page === "morale" ? (
-        <MoraleCalc onBack={() => onPage(null)} />
-      ) : page === "deck" ? (
-        <DeckSim
-          onBack={() => onPage(null)}
-          onBrowse={onBrowse ?? (() => onPage(null))}
-          onOpenCard={onOpenCard ?? (() => {})}
-        />
-      ) : (
-        <SiegeCalc onBack={() => onPage(null)} />
-      )}
+    <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+      <section className="flex h-full min-h-[28rem] flex-col">
+        <DeckSim onBrowse={onBrowse ?? (() => {})} onOpenCard={onOpenCard ?? (() => {})} />
+      </section>
+      <section className="border-t border-border">
+        <h2 className="px-4 pt-4 font-display text-lg text-fg">攻城力計算器</h2>
+        <SiegeCalc />
+      </section>
+      <section className="flex h-full min-h-[36rem] flex-col border-t border-border">
+        <h2 className="bg-[#120e0a] px-4 pt-4 font-display text-lg text-[#f6e7c1]">士氣計算器</h2>
+        <MoraleCalc />
+      </section>
     </div>
   );
 }

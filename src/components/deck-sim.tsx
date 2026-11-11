@@ -23,7 +23,7 @@ export function DeckSim({
   onBrowse,
   onOpenCard,
 }: {
-  onBack: () => void;
+  onBack?: () => void;
   onBrowse: () => void;
   onOpenCard: (id: string) => void;
 }) {
@@ -55,14 +55,16 @@ export function DeckSim({
         ))}
       </div>
       <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2.5">
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex h-8 shrink-0 items-center gap-0.5 rounded-md bg-surface-2 px-2 text-xs text-fg"
-        >
-          <ChevronLeft className="size-3.5" />
-          返回
-        </button>
+        {onBack ? (
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex h-8 shrink-0 items-center gap-0.5 rounded-md bg-surface-2 px-2 text-xs text-fg"
+          >
+            <ChevronLeft className="size-3.5" />
+            返回
+          </button>
+        ) : null}
         <h2 className="min-w-0 flex-1 truncate font-display text-lg text-fg">卡組模擬器</h2>
         <button
           type="button"
