@@ -45,6 +45,11 @@ const TOPICS: { id: GuideTopic; title: string; blurb: string }[] = [
 
 export type ToolId = "siege" | "morale" | "deck";
 
+function DeckBannerCount() {
+  const count = useScout((s) => s.deck.length);
+  return <DeckCountBadge count={count} />;
+}
+
 export function ToolsPage({
   page,
   onPage,
@@ -56,7 +61,6 @@ export function ToolsPage({
   onBrowse?: () => void;
   onOpenCard?: (id: string) => void;
 }) {
-  const deckCount = useScout((s) => s.deck.length);
   const scroller = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     scroller.current?.scrollTo(0, 0);
@@ -71,7 +75,7 @@ export function ToolsPage({
           className="relative block w-full overflow-hidden rounded-none border-2 border-[#c6a15a] text-left"
         >
           <span className="absolute top-3 right-3 z-10">
-            <DeckCountBadge count={deckCount} />
+            <DeckBannerCount />
           </span>
           <div className="flex h-2.5" aria-hidden>
             {COLORS.map((color) => (

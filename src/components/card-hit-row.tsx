@@ -1,3 +1,4 @@
+import { memo } from "react";
 import {
   COLOR_BAR,
   COLOR_CLASS,
@@ -10,7 +11,7 @@ import { UnitIcon } from "@/components/unit-icon";
 import { useScout } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
-export function CardHitRow({
+export const CardHitRow = memo(function CardHitRow({
   card,
   active,
   onOpen,
@@ -18,12 +19,11 @@ export function CardHitRow({
 }: {
   card: Card;
   active: boolean;
-  onOpen: () => void;
+  onOpen: (id: string) => void;
   warn?: boolean;
 }) {
   const dur = formatStratDuration(card);
   const inDeck = useScout((s) => s.deck.includes(card.id));
-  const toggleDeck = useScout((s) => s.toggleDeck);
   return (
     <div
       className={cn(
@@ -32,7 +32,7 @@ export function CardHitRow({
         warn && "ring-1 ring-inset ring-red-500",
       )}
     >
-      <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-left">
+      <button type="button" onClick={() => onOpen(card.id)} className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-left">
         <span className={cn("w-1 shrink-0 self-stretch rounded-full", COLOR_BAR[card.color])} aria-hidden />
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-1.5 text-xs">
@@ -69,7 +69,7 @@ export function CardHitRow({
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
-          toggleDeck(card.id);
+          useScout.getState().toggleDeck(card.id);
         }}
         className={cn(
           "my-0.5 flex w-11 shrink-0 items-center justify-center rounded-md text-xs font-semibold whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -80,4 +80,4 @@ export function CardHitRow({
       </button>
     </div>
   );
-}
+});

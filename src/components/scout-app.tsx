@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { BookOpen, ChevronDown, ChevronUp, Clock, Dices, Download, Info, Search, Wrench, X } from "lucide-react";
 import {
   CARD_BY_ID,
@@ -33,6 +33,8 @@ import { DeckCountBadge } from "@/components/deck-sim";
 import { cn } from "@/lib/utils";
 import { deviceKind, initInstallCapture, isStandalone, subscribeInstall, type BeforeInstall } from "@/lib/install";
 import type { GuideTopic } from "@/data/guide";
+
+const StableCardDetail = memo(CardDetail);
 
 initInstallCapture();
 
@@ -109,6 +111,8 @@ export function ScoutApp() {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const openCardRef = useRef<(id: string) => void>(() => {});
+  const openHit = useCallback((id: string) => openCardRef.current(id), []);
 
   useEffect(() => {
     setStatMode(localStorage.getItem("ek-stat-mode") === "1");
@@ -148,7 +152,6 @@ export function ScoutApp() {
   function closeMoreFilters() {
     setMorePhase((p) => (p === "closed" ? p : "closing"));
   }
-  const deckCount = useScout((s) => s.deck.length);
   const query = useScout((s) => s.query);
   const setQuery = useScout((s) => s.setQuery);
   const selectedId = useScout((s) => s.selectedId);
@@ -557,6 +560,7 @@ export function ScoutApp() {
     setSheetOpen(true);
     pushView({ v: "card", id });
   }
+  openCardRef.current = openCard;
 
   function openRandom() {
     const pool = (hits.length ? hits : CARDS).filter((card) => card.id !== selectedId);
@@ -599,7 +603,7 @@ export function ScoutApp() {
         <nav className="mx-auto flex max-w-6xl gap-0 px-2 sm:gap-1 sm:px-6">
           <TabBtn id="search" tab={tab} setTab={goTab} icon={<Search className="size-4" />} label="速查" />
           <TabBtn id="recents" tab={tab} setTab={goTab} icon={<Clock className="size-4" />} label="最近" />
-          <TabBtn id="tools" tab={tab} setTab={goTab} icon={<Wrench className="size-4" />} label="工具" badge={deckCount} />
+          <TabBtn id="tools" tab={tab} setTab={goTab} icon={<Wrench className="size-4" />} label="工具" />
           <TabBtn id="skills" tab={tab} setTab={goTab} icon={<BookOpen className="size-4" />} label="資料" />
         </nav>
       </header>
@@ -793,11 +797,7 @@ export function ScoutApp() {
                   ) : (
                     hits.map((card) => (
                       <li key={card.id}>
-                        <CardHitRow
-                          card={card}
-                          active={card.id === selectedId}
-                          onOpen={() => openCard(card.id)}
-                        />
+                        <CardHitRow card={card} active={card.id === selectedId} onOpen={openHit} />
                       </li>
                     ))
                   )}
@@ -934,11 +934,7 @@ export function ScoutApp() {
               {recentCards.length ? (
                 recentCards.map((card) => (
                   <li key={card.id}>
-                    <CardHitRow
-                      card={card}
-                      active={card.id === selectedId}
-                      onOpen={() => openCard(card.id)}
-                    />
+                    <CardHitRow card={card} active={card.id === selectedId} onOpen={openHit} />
                   </li>
                 ))
               ) : (
@@ -961,7 +957,7 @@ export function ScoutApp() {
           {selected ? <CardThemeBackdrop card={selected} /> : null}
           <div className="relative z-10 h-full overflow-y-auto p-5">
             {selected ? (
-              <CardDetail card={selected} />
+              <StableCardDetail card={selected} />
             ) : (
               <p className="text-sm leading-relaxed text-pretty text-muted">
                 選擇一張武將，即可查看計略時長與效果值。
@@ -999,7 +995,7 @@ export function ScoutApp() {
             <X className="size-5" />
           </button>
           <div className="relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-[max(3rem,calc(env(safe-area-inset-top)+2.5rem))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-            <CardDetail card={selected} />
+            <StableCardDetail card={selected} />
           </div>
           </div>
         </div>
@@ -1207,20 +1203,27 @@ function DeckToast() {
   );
 }
 
+function ToolsDeckBadge() {
+  const count = useScout((s) => s.deck.length);
+  return (
+    <span className="absolute top-0.5 right-0.5">
+      <DeckCountBadge count={count} />
+    </span>
+  );
+}
+
 function TabBtn({
   id,
   tab,
   setTab,
   icon,
   label,
-  badge = 0,
 }: {
   id: Tab;
   tab: Tab;
   setTab: (t: Tab) => void;
   icon: ReactNode;
   label: string;
-  badge?: number;
 }) {
   const active = tab === id;
   return (
@@ -1234,9 +1237,7 @@ function TabBtn({
     >
       {icon}
       {label}
-      <span className="absolute top-0.5 right-0.5">
-        <DeckCountBadge count={badge} />
-      </span>
+      {id === "tools" ? <ToolsDeckBadge /> : null}
     </button>
   );
 }
