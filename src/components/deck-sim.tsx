@@ -181,7 +181,7 @@ export function DeckSim({
                       card={card}
                       active={card.id === selectedId}
                       warn={duplicateNames.has(card.name)}
-                      onOpen={() => onOpenCard(card.id)}
+                      onOpen={onOpenCard}
                     />
                   </div>
                 </li>
