@@ -23,7 +23,6 @@ export const CardHitRow = memo(function CardHitRow({
   warn?: boolean;
 }) {
   const dur = formatStratDuration(card);
-  const inDeck = useScout((s) => s.deck.includes(card.id));
   return (
     <div
       className={cn(
@@ -61,23 +60,30 @@ export const CardHitRow = memo(function CardHitRow({
           </div>
         </div>
       </button>
-      <button
-        type="button"
-        data-no-swipe=""
-        aria-pressed={inDeck}
-        aria-label={inDeck ? `移出卡組 ${card.name}` : `加入卡組 ${card.name}`}
-        onClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          useScout.getState().toggleDeck(card.id);
-        }}
-        className={cn(
-          "my-0.5 flex w-11 shrink-0 items-center justify-center rounded-md text-xs font-semibold whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          inDeck ? "bg-faction-gen text-white" : "bg-[#0b4f6c] text-white",
-        )}
-      >
-        {inDeck ? "移除" : "卡組"}
-      </button>
+      <DeckToggle card={card} />
     </div>
   );
 });
+
+function DeckToggle({ card }: { card: Card }) {
+  const inDeck = useScout((s) => s.deck.includes(card.id));
+  return (
+    <button
+      type="button"
+      data-no-swipe=""
+      aria-pressed={inDeck}
+      aria-label={inDeck ? `移出卡組 ${card.name}` : `加入卡組 ${card.name}`}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        useScout.getState().toggleDeck(card.id);
+      }}
+      className={cn(
+        "my-0.5 flex w-11 shrink-0 items-center justify-center rounded-md text-xs font-semibold whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        inDeck ? "bg-faction-gen text-white" : "bg-[#0b4f6c] text-white",
+      )}
+    >
+      {inDeck ? "移除" : "卡組"}
+    </button>
+  );
+}
