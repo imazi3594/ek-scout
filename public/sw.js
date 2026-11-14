@@ -1,4 +1,4 @@
-const CACHE = "ek-scout-v12";
+const CACHE = "ek-scout-v13";
 const NETWORK_TIMEOUT = 8000;
 const REVALIDATE_TIMEOUT = 8000;
 const UPDATE_AFTER_MS = 10_000;
@@ -323,11 +323,46 @@ self.addEventListener("message", (event) => {
   event.waitUntil(revalidate());
 });
 
+// Installed Android PWAs are keyed to this URL (id "/"). Answer it here so a
+// cached "Grok App" manifest cannot win after the service worker updates.
+function ekScoutPlatformManifest() {
+  const manifest = {
+    name: "英傑大戦⚡️速查",
+    short_name: "英傑⚡️速查",
+    id: "/",
+    start_url: "/",
+    scope: "/",
+    display: "standalone",
+    background_color: "#0c0b0a",
+    theme_color: "#0c0b0a",
+    icons: [
+      { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/apple-touch-icon.png", sizes: "180x180", type: "image/png", purpose: "any" },
+      { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+    ],
+  };
+  return new Response(JSON.stringify(manifest), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/manifest+json; charset=utf-8",
+      "Cache-Control": "no-cache",
+    },
+  });
+}
+
 self.addEventListener("fetch", (event) => {
   if (devMode) return;
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
+  if (
+    url.pathname === "/__grok/manifest.webmanifest" ||
+    url.pathname === "/__grok/manifest.json"
+  ) {
+    event.respondWith(ekScoutPlatformManifest());
+    return;
+  }
   if (
     url.pathname.startsWith("/@") ||
     url.pathname.startsWith("/src/") ||
