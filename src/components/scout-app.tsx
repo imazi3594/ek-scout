@@ -1005,6 +1005,50 @@ export function ScoutApp() {
   );
 }
 
+const paneScroll = new WeakMap<HTMLElement, [HTMLElement, number, number][]>();
+
+function rememberScroll(pane: HTMLElement) {
+  const saved: [HTMLElement, number, number][] = [];
+  const walk = (el: HTMLElement) => {
+    if (el.scrollTop || el.scrollLeft) saved.push([el, el.scrollTop, el.scrollLeft]);
+    if (el !== pane && el.classList.contains("list-row")) return;
+    for (const child of el.children) {
+      if (child instanceof HTMLElement) walk(child);
+    }
+  };
+  walk(pane);
+  paneScroll.set(pane, saved);
+}
+
+function restoreScroll(pane: HTMLElement) {
+  const saved = paneScroll.get(pane);
+  if (!saved) return;
+  for (const [el, top, left] of saved) {
+    if (!el.isConnected) continue;
+    if (top) el.scrollTop = top;
+    if (left) el.scrollLeft = left;
+  }
+}
+
+/** Keep off-screen tab panes mounted, but skip their layout and paint. */
+function showPanes(track: HTMLElement, keep: number[]) {
+  const visible = new Set(keep);
+  const panes = track.children;
+  for (let i = 0; i < panes.length; i++) {
+    const pane = panes[i];
+    if (!(pane instanceof HTMLElement)) continue;
+    const want = visible.has(i);
+    const culled = pane.hasAttribute("data-cull");
+    if (!want && !culled) {
+      rememberScroll(pane);
+      pane.setAttribute("data-cull", "");
+    } else if (want && culled) {
+      pane.removeAttribute("data-cull");
+      restoreScroll(pane);
+    }
+  }
+}
+
 function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
   const rootRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -1012,6 +1056,7 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
   const goRef = useRef(goTab);
   const skipScroll = useRef(false);
   const busy = useRef(false);
+  const shownRef = useRef<number[]>([0]);
   tabRef.current = tab;
   goRef.current = goTab;
 
@@ -1021,6 +1066,13 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
     track.style.transition = animate ? "transform 260ms cubic-bezier(0.22, 1, 0.36, 1)" : "none";
     track.style.transform = `translate3d(${x}px,0,0)`;
   }
+
+  useLayoutEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const next = Math.max(0, TABS.indexOf(tab));
+    showPanes(track, [...new Set([...shownRef.current, next])]);
+  }, [tab]);
 
   useEffect(() => {
     const track = trackRef.current;
@@ -1038,6 +1090,9 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
       if (done) return;
       done = true;
       busy.current = false;
+      const next = Math.max(0, TABS.indexOf(tabRef.current));
+      shownRef.current = [next];
+      showPanes(track, [next]);
     };
     track.addEventListener("transitionend", finish);
     const timer = window.setTimeout(finish, 320);
@@ -1069,6 +1124,8 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
         if (done) return;
         done = true;
         busy.current = false;
+        shownRef.current = [i];
+        showPanes(track, [i]);
         const next = TABS[i];
         if (next && next !== tabRef.current) {
           skipScroll.current = true;
@@ -1119,6 +1176,10 @@ function useTabScroller(tab: Tab, goTab: (next: Tab) => void) {
         blockClick = true;
         busy.current = true;
         track.style.transition = "none";
+        const i0 = Math.max(0, TABS.indexOf(tabRef.current));
+        const near = [i0 - 1, i0, i0 + 1];
+        shownRef.current = near;
+        showPanes(track, near);
       }
       if (axis !== "h") return;
       e.preventDefault();
