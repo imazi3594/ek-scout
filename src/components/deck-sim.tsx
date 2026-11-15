@@ -85,7 +85,7 @@ export function DeckSim({
 
       <div className="deck-body">
         <section className="deck-pane deck-pane-stats px-3 py-1.5" aria-label="卡組統計">
-          <div className="flex h-8 min-w-0 items-center gap-x-3 overflow-x-auto text-xs whitespace-nowrap">
+          <div className="flex min-h-8 min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs whitespace-nowrap">
             <span
               className={cn(
                 "font-display text-sm tabular-nums",
@@ -94,10 +94,16 @@ export function DeckSim({
             >
               {formatCost(summary.cost)}/{formatCost(DECK_MAX_COST)}
             </span>
+            <Metric label="武力" value={String(summary.power)} />
+            <Metric label="知力" value={String(summary.intel)} />
             <Metric label="最大士氣" value={summary.morale == null ? "—" : String(summary.morale)} />
             {summary.morale == null ? <span className="text-faint">尚未組卡</span> : null}
-            {warnings.overCost ? <span className="font-medium text-red-400">{DECK_WARN.cost}</span> : null}
-            {duplicateNames.size ? <span className="font-medium text-red-400">{DECK_WARN.name}</span> : null}
+            {warnings.overCost || duplicateNames.size ? (
+              <span className="inline-flex items-center gap-x-3">
+                {warnings.overCost ? <span className="font-medium text-red-400">{DECK_WARN.cost}</span> : null}
+                {duplicateNames.size ? <span className="font-medium text-red-400">{DECK_WARN.name}</span> : null}
+              </span>
+            ) : null}
           </div>
           {cards.length ? (
             <div className="flex flex-col">

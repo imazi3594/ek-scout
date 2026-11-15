@@ -18,6 +18,8 @@ function card(partial: Partial<DeckCard> & Pick<DeckCard, "id" | "name" | "cost"
     period: "戦国",
     unit: "騎兵",
     skills: [],
+    power: 0,
+    intel: 0,
     ...partial,
   };
 }
@@ -141,5 +143,29 @@ describe("faction morale", () => {
     assert.equal(mixed.skills.get(12), 1);
     assert.equal(mixed.periods.get("平安"), 1);
     assert.equal(mixed.units.get("槍兵"), 1);
+  });
+});
+
+describe("deck power and intel", () => {
+  it("sums every card and stays at zero when the deck is empty", () => {
+    const empty = summarizeDeck([]);
+    assert.equal(empty.power, 0);
+    assert.equal(empty.intel, 0);
+
+    const second = card({ id: "b", name: "乙", cost: 2.5, power: 8, intel: 11 });
+    const deck = [
+      card({ id: "a", name: "甲", cost: 3, power: 9, intel: 7 }),
+      second,
+      card({ id: "c", name: "丙", cost: 1, power: 12, intel: 4 }),
+    ];
+    const summary = summarizeDeck(deck);
+    assert.equal(summary.power, 29);
+    assert.equal(summary.intel, 22);
+
+    const removed = applyDeckToggle(deck, second);
+    const after = summarizeDeck(removed.deck);
+    assert.equal(removed.note, DECK_NOTE.removed);
+    assert.equal(after.power, 21);
+    assert.equal(after.intel, 11);
   });
 });

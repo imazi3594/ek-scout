@@ -24,6 +24,8 @@ export type DeckCard = {
   period: string;
   unit: string;
   skills: number[];
+  power: number;
+  intel: number;
 };
 
 export function roundCost(n: number): number {
@@ -96,6 +98,10 @@ export function factionMorale(factions: number): number | null {
 export type DeckSummary = {
   count: number;
   cost: number;
+  /** 卡組武力合計。空卡組為 0。 */
+  power: number;
+  /** 卡組知力合計。空卡組為 0。 */
+  intel: number;
   remain: number;
   factions: number;
   morale: number | null;
@@ -125,6 +131,8 @@ export function summarizeDeck(cards: DeckCard[]): DeckSummary {
   return {
     count: cards.length,
     cost,
+    power: cards.reduce((sum, card) => sum + card.power, 0),
+    intel: cards.reduce((sum, card) => sum + card.intel, 0),
     remain: roundCost(Math.max(0, DECK_MAX_COST - cost)),
     factions,
     morale: cards.length ? factionMorale(factions) : null,
