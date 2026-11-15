@@ -5,7 +5,6 @@ import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "英傑大戦⚡️速查";
-const APP_SHORT = "英傑⚡️速查";
 const NOTO =
   "https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
 
@@ -26,10 +25,9 @@ function LockAppName() {
         link.href = "/apple-touch-icon.png";
         document.head.appendChild(link);
       }
-      document.querySelectorAll('link[rel="manifest"]').forEach((node) => {
-        const href = node.getAttribute("href") ?? "";
-        if (href.includes("/__grok/")) node.setAttribute("href", "/manifest.json");
-      });
+      // Keep /__grok/manifest.* — that URL is the installed Android app id.
+      // Retargeting it to /manifest.json (id /eiketsu-scout/) makes Chrome
+      // treat the update as a different app and keep applying "Grok App".
       if (!document.querySelector('link[rel="manifest"]')) {
         const link = document.createElement("link");
         link.rel = "manifest";

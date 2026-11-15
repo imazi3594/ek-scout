@@ -1,6 +1,6 @@
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import type { Plugin } from "vite";
+import type { Plugin, ViteDevServer } from "vite";
 import { defineConfig } from "vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
@@ -8,6 +8,11 @@ import tailwindcss from "@tailwindcss/vite";
 import { nitro } from "nitro/vite";
 // @ts-expect-error JS plugin alongside the TS vite config
 import { grokPwaPlugin } from "./scripts/grok-pwa-plugin.mjs";
+// @ts-expect-error JS module alongside the TS vite config
+import {
+  isAppPlatformManifestPath,
+  renderAppPlatformManifest,
+} from "./server/app-pwa-identity.mjs";
 // @ts-expect-error JS plugin alongside the TS vite config
 import { appEnvPlugin } from "./scripts/app-env-plugin.mjs";
 import { isMigrationFile } from "./scripts/migration-plan.mjs";
@@ -142,6 +147,39 @@ function authPopupPlugin(): Plugin {
   };
 }
 
+/**
+ * Answer `/__grok/manifest.webmanifest` before the platform plugin. Dev and
+ * preview only — production uses `server/middleware/0.app-pwa-identity.mjs`,
+ * which stays in place when Export from Grok resets the platform files.
+ */
+function appPwaIdentityPlugin(): Plugin {
+  const attach = (middlewares: ViteDevServer["middlewares"]) => {
+    middlewares.use((req, res, next) => {
+      const pathOnly = (req.url ?? "").split("?", 1)[0] ?? "";
+      if ((req.method ?? "GET").toUpperCase() !== "GET" || !isAppPlatformManifestPath(pathOnly)) {
+        next();
+        return;
+      }
+      const body = Buffer.from(renderAppPlatformManifest(), "utf8");
+      res.statusCode = 200;
+      res.setHeader("content-type", "application/manifest+json; charset=utf-8");
+      res.setHeader("cache-control", "no-cache");
+      res.setHeader("content-length", String(body.byteLength));
+      res.end(body);
+    });
+  };
+  return {
+    name: "app-pwa-identity",
+    enforce: "pre",
+    configureServer(server) {
+      attach(server.middlewares);
+    },
+    configurePreviewServer(server) {
+      attach(server.middlewares);
+    },
+  };
+}
+
 // `0.0.0.0:8080` is the live-preview contract — don't change host/port.
 // The dev server starts once `src/router.tsx` and `src/routes/` exist — see
 // AGENTS.md § "First scaffold".
@@ -163,6 +201,8 @@ export default defineConfig(({ command, isPreview }) => ({
     authPopupPlugin(),
     // Dev-only /__app-env, read by scripts/check-auth-invariant.mjs.
     appEnvPlugin(),
+    // Before grokPwaPlugin so /__grok/manifest.* is this app, not "Grok App".
+    appPwaIdentityPlugin(),
     // PWA head + ?install=1 tutorial page; runs before Start/Nitro.
     grokPwaPlugin(),
     tailwindcss(),
