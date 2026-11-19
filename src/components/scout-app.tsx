@@ -586,6 +586,7 @@ export function ScoutApp() {
           <div className="min-w-0">
             <p className="hidden text-xs tracking-widest text-faint sm:block">EIKETSU TAISEN</p>
             <h1 className="font-display text-xl tracking-tight text-balance sm:text-3xl">英傑大戦⚡️速查</h1>
+            <p className="text-[11px] leading-tight text-faint">英傑大戰中文資料庫</p>
           </div>
           <button
             type="button"

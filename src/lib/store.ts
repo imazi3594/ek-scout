@@ -67,6 +67,8 @@ export const useScout = create<ScoutState>()(
         if (!card) return;
         const cards = cardsFromIds(get().deck);
         const result = applyDeckToggle(cards, card);
+        const added = !cards.some((item) => item.id === id) && result.deck.some((item) => item.id === id);
+        if (added) get().touchRecent(id);
         set({
           deck: result.deck.map((item) => item.id),
           deckNote: note(result.note, result.tone),

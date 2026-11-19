@@ -1,6 +1,7 @@
 {
   "title": "英傑大戦⚡️速查",
   "short_name": "英傑⚡️速查",
+  "description": "英傑大戰中文資料庫。以繁體中文查英傑大戦武將計略時長（C）、效果值、士氣同卡組。",
   "card": "custom",
   "color": "0c0b0a"
 }

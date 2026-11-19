@@ -5,6 +5,9 @@ import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "英傑大戦⚡️速查";
+const SEO_TITLE = "英傑大戰中文資料庫｜英傑大戦⚡️速查";
+const SEO_DESCRIPTION =
+  "英傑大戰中文資料庫。以繁體中文查英傑大戦武將計略時長（C）、效果值、士氣同卡組。";
 const APP_SHORT = "英傑⚡️速查";
 const NOTO =
   "https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap";
@@ -12,7 +15,7 @@ const NOTO =
 function LockAppName() {
   useEffect(() => {
     const apply = () => {
-      if (document.title !== APP_NAME) document.title = APP_NAME;
+      if (document.title !== SEO_TITLE) document.title = SEO_TITLE;
       const meta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
       if (meta && meta.getAttribute("content") !== APP_NAME) meta.setAttribute("content", APP_NAME);
       document.querySelectorAll('link[rel="apple-touch-icon"]').forEach((node) => {
@@ -79,7 +82,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: APP_NAME },
+      { title: SEO_TITLE },
       { name: "theme-color", content: "#0c0b0a" },
       { name: "apple-mobile-web-app-title", content: APP_NAME },
       { name: "apple-mobile-web-app-capable", content: "yes" },
@@ -87,7 +90,7 @@ export const Route = createRootRoute({
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       {
         name: "description",
-        content: "輸入英傑大戦武將名稱、卡號或計略，即時查看計略時長（C）與效果值。繁中對照。",
+        content: SEO_DESCRIPTION,
       },
     ],
     links: [

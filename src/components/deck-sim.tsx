@@ -86,16 +86,19 @@ export function DeckSim({
       <div className="deck-body">
         <section className="deck-pane deck-pane-stats px-3 py-1.5" aria-label="卡組統計">
           <div className="flex min-h-8 min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs whitespace-nowrap">
-            <span
-              className={cn(
-                "font-display text-sm tabular-nums",
-                warnings.overCost ? "text-red-400" : "text-fg",
-              )}
-            >
-              {formatCost(summary.cost)}/{formatCost(DECK_MAX_COST)}
+            <span className="inline-flex items-baseline gap-1">
+              <span className="text-faint">成本</span>
+              <span
+                className={cn(
+                  "font-display text-sm tabular-nums",
+                  warnings.overCost ? "text-red-400" : "text-fg",
+                )}
+              >
+                {formatCost(summary.cost)}/{formatCost(DECK_MAX_COST)}
+              </span>
             </span>
-            <Metric label="武力" value={String(summary.power)} />
-            <Metric label="知力" value={String(summary.intel)} />
+            <Metric label="總武力" value={String(summary.power)} />
+            <Metric label="總知力" value={String(summary.intel)} />
             <Metric label="最大士氣" value={summary.morale == null ? "—" : String(summary.morale)} />
             {summary.morale == null ? <span className="text-faint">尚未組卡</span> : null}
             {warnings.overCost || duplicateNames.size ? (

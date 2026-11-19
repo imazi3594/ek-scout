@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://imazi3594.github.io/ek-scout/sitemap.xml

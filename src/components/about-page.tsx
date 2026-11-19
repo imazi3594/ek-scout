@@ -275,7 +275,7 @@ export function AboutPage({ onOpenChangelog }: { onOpenChangelog?: () => void })
           <a className="text-fg underline decoration-border underline-offset-2" href="https://w.atwiki.jp/eiketsu-taisen/" target="_blank" rel="noreferrer">
             英傑大戦wiki
           </a>
-          ，對戰時不必另開網頁翻查。
+          {" "}與其他網站。
         </p>
         <p className="mt-3">英傑大戦為 SEGA 的遊戲。此為玩家自用速查，與官方無關。</p>
       </section>
