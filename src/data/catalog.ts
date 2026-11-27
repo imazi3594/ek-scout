@@ -544,9 +544,9 @@ export const CARD_COUNT = payload.count;
 
 /** 遊戲版／資料日／App 版號與發佈日。刮卡資料後改 gameVer、gameDate、dataDate；發佈 App 程式改動時改 appVer、appDate。 */
 export const DATA_META = {
-  gameVer: "3.5.0K",
+  gameVer: "3.5.0L",
   pack: "第６彈 古幻相剋の八象",
-  gameDate: "2026-10-21",
+  gameDate: "2026-11-25",
   dataDate: "2026-11-24",
   appVer: "1.1.5",
   appDate: "2026-11-11",
