@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Copy, Download, RefreshCw, Share, Smartphone } from "lucide-react";
 import { CARD_COUNT, DATA_META } from "@/data/catalog";
 import { deviceKind, isStandalone, subscribeInstall, type BeforeInstall } from "@/lib/install";
+import { currentTextSelect, toggleTextSelect } from "@/lib/text-select";
+import { cn } from "@/lib/utils";
 
 const FEATURES = [
   { icon: "🔍", title: "極速搜查", body: "輸入武將名稱、卡號或計略字詞，即可查找卡牌。" },
@@ -22,7 +24,12 @@ export function AboutPage({ onOpenChangelog }: { onOpenChangelog?: () => void })
   const [hint, setHint] = useState("");
   const [updateNote, setUpdateNote] = useState("");
   const [checking, setChecking] = useState(false);
+  const [textOn, setTextOn] = useState(false);
   const noteTimer = useRef<number | null>(null);
+
+  useLayoutEffect(() => {
+    setTextOn(currentTextSelect());
+  }, []);
 
   function showNote(text: string, persist = false) {
     if (noteTimer.current) window.clearTimeout(noteTimer.current);
@@ -141,13 +148,26 @@ export function AboutPage({ onOpenChangelog }: { onOpenChangelog?: () => void })
         </div>
       ) : null}
       <div className="flex flex-col items-center text-center">
-        <img
-          src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
-          alt=""
-          width={96}
-          height={96}
-          className="size-24 rounded-3xl shadow-[var(--shadow-border)]"
-        />
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-pressed={textOn}
+          aria-label="標誌"
+          onClick={() => setTextOn(toggleTextSelect())}
+          className={cn(
+            "cursor-default select-none rounded-3xl focus:outline-none focus-visible:outline-none",
+            textOn && "ring-2 ring-cost/80 ring-offset-2 ring-offset-bg",
+          )}
+        >
+          <img
+            src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
+            alt=""
+            width={96}
+            height={96}
+            draggable={false}
+            className="pointer-events-none size-24 rounded-3xl shadow-[var(--shadow-border)]"
+          />
+        </button>
         <div className="mt-4 flex items-center gap-2">
           <h2 className="font-display text-2xl tracking-tight">英傑大戦⚡️速查</h2>
         </div>

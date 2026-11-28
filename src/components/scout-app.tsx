@@ -32,6 +32,7 @@ import { GuidePage, ToolsPage, type ToolId } from "@/components/guide-page";
 import { DeckCountBadge } from "@/components/deck-sim";
 import { cn } from "@/lib/utils";
 import { deviceKind, initInstallCapture, isStandalone, subscribeInstall, type BeforeInstall } from "@/lib/install";
+import { restoreTextSelect } from "@/lib/text-select";
 import type { GuideTopic } from "@/data/guide";
 
 const StableCardDetail = memo(CardDetail);
@@ -113,6 +114,10 @@ export function ScoutApp() {
   const inputRef = useRef<HTMLInputElement>(null);
   const openCardRef = useRef<(id: string) => void>(() => {});
   const openHit = useCallback((id: string) => openCardRef.current(id), []);
+
+  useLayoutEffect(() => {
+    restoreTextSelect();
+  }, []);
 
   useEffect(() => {
     setStatMode(localStorage.getItem("ek-stat-mode") === "1");

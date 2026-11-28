@@ -64,6 +64,14 @@
     -webkit-touch-callout: none;
   }
 
+  /* Set from the About lightning mark. Absent means selection stays off. */
+  html[data-text],
+  html[data-text] body {
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+  }
+
   input,
   textarea,
   [contenteditable="true"] {

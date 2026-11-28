@@ -548,8 +548,8 @@ export const DATA_META = {
   pack: "第６彈 古幻相剋の八象",
   gameDate: "2026-11-25",
   dataDate: "2026-11-24",
-  appVer: "1.1.5",
-  appDate: "2026-11-11",
+  appVer: "1.1.6",
+  appDate: "2026-11-28",
 } as const;
 
 export const CARD_BY_ID: Record<string, Card> = Object.fromEntries(CARDS.map((c) => [c.id, c]));
