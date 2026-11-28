@@ -287,15 +287,19 @@ export function AboutPage({ onOpenChangelog }: { onOpenChangelog?: () => void })
         <p className="text-xs text-faint">Credit</p>
         <p className="mt-2 text-fg">Grok（xAI）設計與製作</p>
         <p className="mt-3">
-          數值整理及翻譯自{" "}
+          數值整理及翻譯自
+          <a className="text-fg underline decoration-border underline-offset-2" href="https://www.eiketsu-taisen.com/" target="_blank" rel="noreferrer">
+            官方網站
+          </a>
+          {"、"}
           <a className="text-fg underline decoration-border underline-offset-2" href="https://eiketsudb.com/" target="_blank" rel="noreferrer">
             英傑大戦データベース
           </a>
-          {" "}與{" "}
+          {"、"}
           <a className="text-fg underline decoration-border underline-offset-2" href="https://w.atwiki.jp/eiketsu-taisen/" target="_blank" rel="noreferrer">
             英傑大戦wiki
           </a>
-          {" "}與其他網站。
+          {" 與其他網站。"}
         </p>
         <p className="mt-3">英傑大戦為 SEGA 的遊戲。此為玩家自用速查，與官方無關。</p>
       </section>
